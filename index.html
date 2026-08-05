@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#070b1d">
+<title>Space Chemistry: Mission Bonds</title>
+<link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============================================================
+     SCREEN: MENU PRINCIPAL
+============================================================ -->
+<section id="screen-menu" class="screen active" role="dialog" aria-label="Menu principal">
+  <div class="starfield" aria-hidden="true"></div>
+  <div class="menu-box">
+    <div class="logo">
+      <div class="logo-icon" id="menu-ship" aria-hidden="true"></div>
+      <h1 class="game-title">SPACE CHEMISTRY</h1>
+      <p class="game-subtitle">MISSION BONDS</p>
+    </div>
+    <nav class="menu-buttons" aria-label="Menu">
+      <button class="btn btn-primary" data-nav="galaxy">▶ Iniciar Missão</button>
+      <button class="btn" data-nav="rules">📜 Regras</button>
+      <button class="btn" data-nav="wardrobe">🚀 Vestiário</button>
+      <button class="btn" data-nav="achievements">🏆 Conquistas</button>
+      <button class="btn" id="btn-sound">🔊 Som: Ligado</button>
+    </nav>
+    <p class="menu-hint">Use as setas ou WASD e ENTER para navegar · ESC volta</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN: REGRAS
+============================================================ -->
+<section id="screen-rules" class="screen" role="dialog" aria-label="Regras do jogo">
+  <div class="starfield" aria-hidden="true"></div>
+  <div class="panel rules-panel">
+    <h2 class="panel-title">📜 Como Jogar</h2>
+    <div class="rules-grid">
+      <article class="rule-card">
+        <h3>🎯 Objetivo</h3>
+        <p>Explore a galáxia e restaure os 5 planetas aprendendo os <strong>3 tipos de ligações químicas</strong>: iônica, covalente e metálica.</p>
+      </article>
+      <article class="rule-card">
+        <h3>🎮 Controles</h3>
+        <ul class="rule-list">
+          <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ou <kbd>←↑↓→</kbd> — mover</li>
+          <li><kbd>ESPAÇO</kbd> — interagir com máquinas</li>
+          <li><kbd>ESC</kbd> — pausar</li>
+        </ul>
+      </article>
+      <article class="rule-card">
+        <h3>✅ Como vencer</h3>
+        <p>Complete os 3 desafios de cada planeta (monte os compostos) e atravesse o <strong>portal</strong> para avançar. Conclua o Planeta Final para vencer a missão.</p>
+      </article>
+      <article class="rule-card">
+        <h3>❌ Como perder</h3>
+        <p>Você tem <strong>3 vidas</strong>. Atingir asteroides ou armadilhas elétricas custa 1 vida. Sem vidas = missão falhou.</p>
+      </article>
+      <article class="rule-card">
+        <h3>⭐ Pontuação</h3>
+        <ul class="rule-list">
+          <li>Coletar átomo: <strong>+10</strong></li>
+          <li>Composto correto: <strong>+100</strong></li>
+          <li>Resposta certa no portal: <strong>+150</strong></li>
+          <li>Erro: <strong>−20</strong></li>
+          <li>Bônus de tempo ao terminar a fase</li>
+        </ul>
+      </article>
+      <article class="rule-card">
+        <h3>🎁 Desbloqueios</h3>
+        <p>Ao concluir cada planeta você desbloqueia <strong>itens cosméticos</strong> (capacetes, trajes, naves e rastros). Troque-os no <strong>Vestiário</strong>. São apenas visuais — nunca vantagens!</p>
+      </article>
+    </div>
+    <button class="btn btn-primary" data-nav="menu">← Voltar</button>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN: MAPA DA GALÁXIA (seleção de planetas)
+============================================================ -->
+<section id="screen-galaxy" class="screen" role="dialog" aria-label="Mapa da galáxia">
+  <div class="starfield" aria-hidden="true"></div>
+  <div class="panel">
+    <h2 class="panel-title">🌌 Mapa da Galáxia</h2>
+    <p class="galaxy-sub">Complete os planetas para restaurar a galáxia.</p>
+
+    <div class="galaxy-track" id="galaxy-track" role="listbox" aria-label="Planetas"></div>
+
+    <div class="galaxy-footer">
+      <div class="ship-preview" id="ship-preview" aria-hidden="true">
+        <canvas id="ship-preview-canvas" width="120" height="90"></canvas>
+        <span>Minha nave</span>
+      </div>
+      <button class="btn btn-primary" id="btn-start-level">🚀 Lançar Missão</button>
+    </div>
+    <button class="btn btn-back" data-nav="menu">← Menu</button>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN: VESTIÁRIO
+============================================================ -->
+<section id="screen-wardrobe" class="screen" role="dialog" aria-label="Vestiário">
+  <div class="starfield" aria-hidden="true"></div>
+  <div class="panel">
+    <h2 class="panel-title">🚀 Vestiário</h2>
+    <div class="wardrobe-preview" id="wardrobe-preview" aria-hidden="true">
+      <canvas id="wardrobe-canvas" width="96" height="112"></canvas>
+      <div class="preview-info" id="wardrobe-info"></div>
+    </div>
+
+    <div class="wardrobe-tabs" role="tablist" id="wardrobe-tabs">
+      <button class="tab active" data-cat="helmets">Capacetes</button>
+      <button class="tab" data-cat="suits">Trajes</button>
+      <button class="tab" data-cat="ships">Naves</button>
+      <button class="tab" data-cat="trails">Rastros</button>
+    </div>
+
+    <div class="wardrobe-grid" id="wardrobe-grid"></div>
+    <button class="btn btn-back" data-nav="menu">← Menu</button>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN: CONQUISTAS
+============================================================ -->
+<section id="screen-achievements" class="screen" role="dialog" aria-label="Conquistas">
+  <div class="starfield" aria-hidden="true"></div>
+  <div class="panel">
+    <h2 class="panel-title">🏆 Conquistas</h2>
+    <p class="galaxy-sub" id="achievement-count"></p>
+    <div class="achieve-grid" id="achieve-grid"></div>
+    <button class="btn btn-back" data-nav="menu">← Menu</button>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN: JOGO
+============================================================ -->
+<section id="screen-game" class="screen" role="application" aria-label="Jogo">
+  <div class="game-wrapper">
+    <div id="hud" class="hud" aria-hidden="true">
+      <div class="hud-left">
+        <div class="hud-score"><span class="hud-label">PONTOS</span><span id="hud-score">0</span></div>
+        <div class="hud-lives" id="hud-lives" title="Vidas"></div>
+      </div>
+      <div class="hud-center">
+        <div class="hud-time" id="hud-time">00:00</div>
+        <div class="progress-track"><div class="progress-fill" id="hud-progress"></div></div>
+        <div class="hud-objective" id="hud-objective"></div>
+        <div class="hud-objective" id="hud-inventory"></div>
+      </div>
+      <div class="hud-right">
+        <button class="btn btn-small" id="btn-fullscreen" title="Tela cheia">⛶</button>
+        <button class="btn btn-small" id="btn-pause" title="Pausar (ESC)">⏸</button>
+      </div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="game-canvas" width="640" height="360"></canvas>
+      <div id="interact-hint" class="interact-hint" hidden>[ESPAÇO] Interagir</div>
+      <div id="gate-panel" class="gate-panel" hidden></div>
+    </div>
+
+    <div id="touch-controls" class="touch-controls" hidden aria-hidden="true">
+      <div class="touch-dpad">
+        <button data-t="up" aria-label="Cima">▲</button>
+        <button data-t="left" aria-label="Esquerda">◀</button>
+        <button data-t="down" aria-label="Baixo">▼</button>
+        <button data-t="right" aria-label="Direita">▶</button>
+      </div>
+      <button class="touch-btn" data-t="interact" aria-label="Interagir">A</button>
+    </div>
+  </div>
+
+  <!-- OVERLAY: introdução da fase -->
+  <div id="intro-card" class="overlay" hidden>
+    <div class="panel intro-panel">
+      <div class="intro-planet" id="intro-planet" aria-hidden="true"></div>
+      <h2 class="panel-title" id="intro-title"></h2>
+      <p class="intro-text" id="intro-text"></p>
+      <div class="intro-objective" id="intro-objective"></div>
+      <p class="menu-hint" id="intro-hint">Aperte <kbd>ESPAÇO</kbd> para começar</p>
+    </div>
+  </div>
+
+  <!-- OVERLAY: feedback educativo -->
+  <div id="feedback" class="overlay feedback-overlay" hidden>
+    <div class="feedback-box" id="feedback-box">
+      <div class="feedback-title" id="feedback-title"></div>
+      <p class="feedback-text" id="feedback-text"></p>
+      <p class="feedback-continue" id="feedback-continue">ESPAÇO para continuar</p>
+    </div>
+  </div>
+
+  <!-- OVERLAY: pausa -->
+  <div id="pause" class="overlay" hidden>
+    <div class="panel pause-panel">
+      <h2 class="panel-title">⏸ Pausa</h2>
+      <div class="pause-stats" id="pause-stats"></div>
+      <div class="pause-buttons">
+        <button class="btn btn-primary" id="btn-resume">▶ Continuar</button>
+        <button class="btn" id="btn-restart">↻ Recomeçar Fase</button>
+        <button class="btn" data-nav="menu" id="btn-exit-level">🚪 Sair</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY: recompensa (item desbloqueado) -->
+  <div id="reward" class="overlay" hidden>
+    <div class="panel reward-panel">
+      <div class="reward-sparkles" aria-hidden="true">✦ ✧ ✦ ✧ ✦</div>
+      <h2 class="panel-title reward-title" id="reward-title">Item Desbloqueado!</h2>
+      <div class="reward-item" id="reward-item">
+        <div class="reward-icon" id="reward-icon"></div>
+        <div>
+          <p class="reward-name" id="reward-name"></p>
+          <p class="reward-type" id="reward-type"></p>
+        </div>
+      </div>
+      <div class="reward-buttons">
+        <button class="btn btn-primary" id="btn-equip-now">Equipar Agora</button>
+        <button class="btn" id="btn-reward-continue">Continuar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY: vitória -->
+  <div id="victory" class="overlay" hidden>
+    <div class="panel victory-panel">
+      <h2 class="panel-title victory-title" id="victory-title"></h2>
+      <div class="victory-stats" id="victory-stats"></div>
+      <div class="victory-achievements" id="victory-achievements"></div>
+      <div class="reward-buttons">
+        <button class="btn btn-primary" id="btn-victory-menu">Menu Principal</button>
+        <button class="btn" id="btn-victory-replay">Jogar Novamente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY: derrota -->
+  <div id="defeat" class="overlay" hidden>
+    <div class="panel defeat-panel">
+      <h2 class="panel-title defeat-title">💥 Missão Falhou!</h2>
+      <p class="defeat-text">Suas 3 vidas acabaram.</p>
+      <div class="defeat-stats" id="defeat-stats"></div>
+      <div class="reward-buttons">
+        <button class="btn btn-primary" id="btn-defeat-retry">↻ Tentar Novamente</button>
+        <button class="btn" id="btn-defeat-menu">Menu Principal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AVISO: orientação do aparelho (retrato) -->
+  <div id="rotate-hint" class="rotate-hint" hidden>
+    <span class="rotate-icon" aria-hidden="true">📱</span>
+    <span id="rotate-msg">Gire o celular para o melhor modo de jogo</span>
+  </div>
+</section>
+
+<!-- Overlay global: notificação de conquista -->
+<div id="toast" class="toast" hidden aria-live="polite"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
