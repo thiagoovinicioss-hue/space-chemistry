@@ -64,6 +64,7 @@ const DIALOGUES = {
     'Eu sou o Prof. Lewis. A galáxia perdeu toda a sua energia química.',
     'Sua missão: explorar cada planeta e restaurar as ligações entre os átomos.',
     'Colete os cristais (elementos) pelo mapa e monte o composto na Máquina de Fusão.',
+    'Alguns blocos são quebráveis: aproxime-se e aperte ESPAÇO (ou golpeie com o sabre J).',
     'No Planeta Final, um questionário vai testar tudo o que você aprendeu.',
     'Cuidado com asteroides e alienígenas — use seu sabre de luz para se defender!',
     'Agora vá! Comece coletando os cristais de hidrogênio e oxigênio para fazer água.'
@@ -254,6 +255,9 @@ const AudioSys = {
       case 'fusion': this.tone({ freq: 520, slideTo: 1040, type: 'sine', dur: 0.25, vol: 0.16 }); break;
       case 'chest': this.tone({ freq: 780, slideTo: 1170, type: 'sine', dur: 0.2, vol: 0.18 }); break;
       case 'switch': this.tone({ freq: 140, type: 'square', dur: 0.12, vol: 0.16 }); this.tone({ freq: 620, type: 'sine', dur: 0.16, vol: 0.12, delay: 0.12 }); break;
+      case 'break': this.tone({ freq: 300, slideTo: 90, type: 'sawtooth', dur: 0.18, vol: 0.16 }); this.noise({ dur: 0.12, vol: 0.12 }); break;
+      case 'npc': this.tone({ freq: 520, slideTo: 780, type: 'sine', dur: 0.2, vol: 0.14 }); break;
+      case 'charge': this.tone({ freq: 880, slideTo: 1320, type: 'sine', dur: 0.1, vol: 0.12 }); break;
       case 'arrival': this.tone({ freq: 160, slideTo: 480, type: 'sine', dur: 0.8, vol: 0.15 }); break;
       case 'travel': this.tone({ freq: 110, slideTo: 220, type: 'sine', dur: 1.2, vol: 0.12 }); break;
       case 'saberWindup': this.tone({ freq: 90, slideTo: 320, type: 'sawtooth', dur: 0.12, vol: 0.1 }); break;
@@ -404,6 +408,44 @@ const SPRITES = {
     ]
   },
 
+  /* Robô guardião de planeta (12 x 12 px) */
+  robot: {
+    grid: [
+      '....HHHH....',
+      '...HHHHHH...',
+      '...HGGGGH...',
+      '...HGGGGH...',
+      '...HHHHHH...',
+      '....HHHH....',
+      '...hhhhhh...',
+      '..hhhhhhhh..',
+      '..hVVVVVVh..',
+      '..hVVVVVVh..',
+      '...hhhhhh...',
+      '..ww....ww..'
+    ]
+  },
+
+  /* Sábio alienígena (12 x 14 px) */
+  alienSage: {
+    grid: [
+      '.....SS.....',
+      '....SSSS....',
+      '...SSSSSS...',
+      '..SSSSSSSS..',
+      '..SWWWWWWS..',
+      '..SWWDDWWS..',
+      '..SWWWWWWS..',
+      '...SSSSSS...',
+      '....sSSs....',
+      '...ssssss...',
+      '..ssssssss..',
+      '..sVVVVVVs..',
+      '...ss..ss...',
+      '...ss..ss...'
+    ]
+  },
+
   /* Cientista "Prof. Lewis" (12 x 14 px) */
   scientist: {
     grid: [
@@ -437,38 +479,6 @@ const SPRITES = {
       'cccccccccccc',
       '.cccccccccc.',
       '..cccccccc..'
-    ]
-  },
-
-  /* Rocha decorativa (10 x 8 px) */
-  rock: {
-    grid: [
-      '..rrrrrr..',
-      '.rrrrrrrr.',
-      'rrrrrrrrrr',
-      'rrrrrrrrrr',
-      'rrrrrrrrrr',
-      'rrrrrrrrrr',
-      '.rrrrrrrr.',
-      '..rrrrrr..'
-    ]
-  },
-
-  /* Árvore alienígena (10 x 12 px) */
-  tree: {
-    grid: [
-      '...tttt...',
-      '..tttttt..',
-      '.tttttttt.',
-      '.tggggggt.',
-      '.tggggggt.',
-      '.tttttttt.',
-      '..tttttt..',
-      '...tttt...',
-      '...tttt...',
-      '...tttt...',
-      '...tttt...',
-      '...tttt...'
     ]
   },
 
@@ -538,13 +548,30 @@ const ELEMENTS = {
   Al: { symbol: 'Al', name: 'Alumínio', color: '#c8f0ff', type: 'metal', valence: 3, ion: 'Al³⁺' }
 };
 
-/* --- Temas visuais por planeta --- */
+/* --- Temas visuais por planeta (superfícies circulares) ---
+   Cada mundo tem identidade própria: solo, paredes (montanhas/vegetação/
+   metal), lagos de energia, pontes e atmosfera. */
 const THEMES = {
-  tutorial: { sky1: '#05070f', sky2: '#0b1030', wall: '#2b3554', wallTop: '#3d4a73', floor: '#151c3d', floorAlt: '#182147', accent: '#59d3ff', planet: '#59d3ff' },
-  ionic:    { sky1: '#1a0516', sky2: '#2b0a2e', wall: '#4a2a55', wallTop: '#6b3d78', floor: '#241333', floorAlt: '#2a173c', accent: '#ff9df2', planet: '#ff9df2' },
-  covalent: { sky1: '#03141f', sky2: '#0a2a44', wall: '#1f4a6b', wallTop: '#2f6a96', floor: '#0e2333', floorAlt: '#122b40', accent: '#7ff5ff', planet: '#7ff5ff' },
-  metallic: { sky1: '#1c1203', sky2: '#3a2a10', wall: '#5a4630', wallTop: '#7a5f40', floor: '#2a2010', floorAlt: '#332714', accent: '#ffd166', planet: '#ffd166' },
-  final:    { sky1: '#0a061e', sky2: '#1d1040', wall: '#3a2a6b', wallTop: '#5440a0', floor: '#1c1433', floorAlt: '#231a40', accent: '#c8a2ff', planet: '#c8a2ff' }
+  tutorial: { sky1: '#02040c', sky2: '#0a1030', floor: '#161d3a', floorAlt: '#1a2248',
+    wall: '#2b3554', wallTop: '#3d4a73', edge: '#0d1226',
+    water: '#59d3ff', waterHi: '#7ff5ff', bridge: '#8a6a33',
+    accent: '#59d3ff', planet: '#59d3ff', rim: '#59d3ff' },
+  ionic:    { sky1: '#06031a', sky2: '#150a38', floor: '#1b3a8a', floorAlt: '#21449e',
+    wall: '#5a3aa8', wallTop: '#8a5fe0', edge: '#241068',
+    water: '#3aa0ff', waterHi: '#8fdbff', bridge: '#4a7ad0',
+    accent: '#ff9df2', planet: '#7fb0ff', rim: '#7fd4ff' },
+  covalent: { sky1: '#02121a', sky2: '#0a2a33', floor: '#123b31', floorAlt: '#17483a',
+    wall: '#1d5a3e', wallTop: '#2f9e5d', edge: '#0d2a22',
+    water: '#1d7a9e', waterHi: '#7ff5ff', bridge: '#6b4a2a',
+    accent: '#7ff5ff', planet: '#35d0a0', rim: '#7ff5ff' },
+  metallic: { sky1: '#120a04', sky2: '#2a1c08', floor: '#33384a', floorAlt: '#3a4052',
+    wall: '#4a4f5e', wallTop: '#6a7084', edge: '#22252f',
+    water: '#59d34a', waterHi: '#8dff5d', bridge: '#8a6a33',
+    accent: '#ffd166', planet: '#c98a2e', rim: '#ffd166' },
+  final:    { sky1: '#0a061e', sky2: '#1d1040', floor: '#241a44', floorAlt: '#2a204e',
+    wall: '#3a2a6b', wallTop: '#5440a0', edge: '#1c1433',
+    water: '#4a3a8a', waterHi: '#c8a2ff', bridge: '#6b5ac0',
+    accent: '#c8a2ff', planet: '#7a4ad0', rim: '#c8a2ff' }
 };
 
 /* --- Cosmeticos (somente visuais, nunca vantagens) --- */
@@ -637,153 +664,214 @@ const RECIPES = {
   }
 };
 
-/* --- Fases (planetas) ---
+/* --- Fases (planetas circulares) ---
+   Cada planeta é uma superfície ESFÉRICA: a área jogável é um círculo de
+   raio `radius` (em tiles) e tudo fora dele é espaço. As bordas exibem a
+   curvatura do planeta (terminador + atmosfera).
    Representação:
-   - walls: [x0, y0, x1, y1] retângulos de parede
+   - radius: raio da área jogável em tiles (centro = (cx, cy))
+   - walls: [x0, y0, x1, y1] retângulos sólidos (montanhas/vegetação/metal)
+   - breakables: [[x,y]] blocos sólidos quebráveis (revelam cristais/baús)
+   - lakes: [x0,y0,x1,y1] lagos/rios/ácido (impassáveis; cruze pelas pontes)
+   - bridges: [[x,y]] células de ponte (atravessam lagos)
+   - conveyors: [x0,y0,x1,y1,dir] esteiras que empurram o jogador
+   - gears: [[x,y]] engrenagens giratórias sólidas
+   - pipes: [x0,y0,x1,y1] dutos de energia animados
+   - npcs: [{x,y,type,name,lines,reward}] habitantes interativos
+   - charges: [[x,y]] motes de energia coletáveis (+2 pontos)
+   - critters: [[x,y]] insetos/vaga-lumes coletáveis (+5 pontos)
    - crystals: { Elemento: [[x,y], ...] } posições em tiles
-   - hazards: [ [x,y] ] asteroides
-   - traps: [ {x, y, w, h} ] armadilhas elétricas
-   - gates: [ {x, y, w, h, type} ] portais de classificação
-   - machine: {x, y, label, type}
-   - recipes: id das receitas a montar em ordem
+   - hazards: [[x,y]] asteroides · traps: [{x,y,w,h}] armadilhas elétricas
+   - gates: [{x,y,w,h,type}] portais de classificação
+   - machine: {x,y,label,type} · recipes: id das receitas em ordem
+   - standby: célula segura para reposicionar o jogador
 */
 const LEVELS = [
 
-  /* ---------- 0 · TUTORIAL: Estação Orbital ---------- */
+  /* ---------- 0 · TUTORIAL: Estação Orbital (plataforma circular) ---------- */
   {
     id: 'tutorial', name: 'Estação Orbital', theme: 'tutorial',
     intro: 'Bem-vindo, recruta! O planeta vizinho perdeu sua energia. Antes de partir, aprenda a pilotar seu traje. Colete os cristais e monte a molécula de água no computador.',
-    spawn: { x: 4, y: 8 }, w: 28, h: 17,
-    machine: { x: 22, y: 8, label: 'Computador de Bordo', type: 'assembler' },
-    portal: { x: 26, y: 8 },
+    radius: 10,
+    spawn: { x: 11, y: 19 }, machine: { x: 11, y: 11, label: 'Computador de Bordo', type: 'assembler' },
+    portal: { x: 11, y: 4 }, standby: { x: 2, y: 12 },
     walls: [
-      [11, 2, 11, 5], [6, 10, 8, 10], [17, 12, 19, 12], [21, 3, 23, 3], [14, 6, 16, 6], [3, 12, 4, 12]
+      [4, 7, 5, 7], [16, 7, 17, 7], [4, 14, 5, 14],
+      [17, 13, 20, 13], [17, 16, 20, 16], [20, 13, 20, 16], [17, 13, 17, 16]
     ],
-    crystals: { H: [[7, 5], [13, 4]], O: [[10, 12]] },
-    hazards: [[5, 3], [18, 10]],
+    breakables: [[10, 8], [13, 8], [11, 14]],
+    crystals: { H: [[10, 8], [5, 12], [15, 18]], O: [[13, 8], [16, 12], [18, 15]] },
+    hazards: [[8, 12], [15, 12]],
+    charges: [[6, 9], [9, 10], [14, 10], [17, 9], [7, 13], [15, 13], [9, 16], [14, 16], [4, 11], [19, 11], [11, 14]],
     recipes: ['H2O'],
     objective: 'Monte a molécula de água (H₂O)',
     planetColor: '#59d3ff',
     enemies: [],
+    npcs: [],
+    critters: [],
     decor: [
-      { t: 'rock', x: 2, y: 3 },
-      { t: 'rock', x: 24, y: 5 },
-      { t: 'tree', x: 25, y: 12 },
-      { t: 'tree', x: 2, y: 14 },
-      { t: 'river', x: 5, y: 14, w: 4, h: 1 },
-      { t: 'chest', x: 16, y: 10, el: 'O' }
+      { t: 'chest', x: 19, y: 14, el: 'H' },
+      { t: 'switch', x: 3, y: 16, opens: [17, 15] }
     ]
   },
 
-  /* ---------- 1 · PLANETA IÔNICO: Krystália ---------- */
+  /* ---------- 1 · PLANETA IÔNICO: Krystália (solo azul, lagos de energia) ---------- */
   {
     id: 'ionic', name: 'Planeta Iônico', theme: 'ionic',
     intro: 'Krystália está em chamas! Aqui, METAL + AMETAL trocam elétrons e formam cristais iônicos. Colete os elementos e monte os compostos na Fornalha Iônica.',
-    spawn: { x: 3, y: 14 }, w: 30, h: 17,
-    machine: { x: 14, y: 8, label: 'Fornalha Iônica', type: 'furnace' },
-    portal: { x: 27, y: 8 },
+    radius: 14,
+    spawn: { x: 15, y: 24 }, machine: { x: 15, y: 15, label: 'Fornalha Iônica', type: 'furnace' },
+    portal: { x: 15, y: 4 }, standby: { x: 2, y: 12 },
     walls: [
-      [8, 7, 10, 7], [18, 7, 20, 7], [8, 9, 10, 9], [18, 9, 20, 9],
-      [13, 3, 15, 3], [25, 10, 26, 12], [5, 8, 6, 9], [22, 4, 23, 4], [4, 2, 5, 2]
+      [3, 7, 3, 10], [3, 14, 3, 16], [3, 20, 3, 22],
+      [27, 7, 27, 10], [27, 14, 27, 16], [27, 20, 27, 22],
+      [6, 4, 7, 5], [23, 4, 24, 5],
+      [9, 3, 21, 3],
+      [12, 25, 14, 25], [16, 25, 18, 25],
+      [6, 19, 9, 19], [6, 21, 9, 21], [6, 19, 6, 21], [9, 19, 9, 21]
     ],
+    breakables: [[13, 23], [21, 7], [6, 10], [12, 22]],
+    lakes: [[3, 12, 5, 13], [25, 12, 27, 13], [13, 19, 17, 20]],
+    bridges: [[4, 12, 5, 12], [25, 12, 26, 12], [15, 19, 16, 19]],
+    pipes: [[15, 15, 15, 12], [15, 15, 15, 19], [15, 15, 8, 13], [15, 15, 22, 13]],
     crystals: {
-      Na: [[4, 4], [10, 12]],
-      Cl: [[6, 13], [22, 3]],
-      Mg: [[18, 4]],
-      O: [[8, 3], [20, 13]],
-      K: [[24, 5]],
-      Br: [[12, 13]]
+      Na: [[15, 24], [5, 21]],
+      Cl: [[4, 7], [12, 22]],
+      Mg: [[4, 14]],
+      O: [[15, 13], [21, 7], [13, 23], [25, 6], [26, 15]],
+      K: [[14, 6], [4, 15]],
+      Br: [[11, 21], [4, 21]]
     },
-    hazards: [[12, 3], [21, 10], [16, 13], [3, 8], [26, 5], [7, 15]],
+    hazards: [[12, 3], [21, 10], [16, 13], [3, 8], [24, 7], [7, 15]],
+    charges: [[5, 6], [9, 8], [17, 6], [22, 9], [8, 11], [20, 11], [13, 9], [18, 17], [6, 18], [22, 20], [9, 22], [20, 22], [15, 18], [6, 10]],
     recipes: ['NaCl', 'MgO', 'KBr'],
     objective: 'Monte os compostos iônicos',
-    planetColor: '#ff9df2',
+    planetColor: '#7fb0ff',
     enemies: [
-      { type: 'green', x: 10, y: 6, opens: [19, 9] },
-      { type: 'green', x: 20, y: 6 }
+      { type: 'green', x: 8, y: 13, opens: [3, 15] },
+      { type: 'green', x: 22, y: 13, opens: [27, 15] },
+      { type: 'green', x: 15, y: 12 }
     ],
+    npcs: [
+      { type: 'robot', name: 'Guardião Antigo', x: 9, y: 16,
+        lines: [
+          'Sou o Guardião das Fornalhas, viajante. Há milênios esta forja unia metais e ametais.',
+          'Os lagos azuis são energia iônica pura. Atravesse-os pelas pontes de cristal.',
+          'Os cristais guardam os elementos. Quebre os blocos de cristal para revelá-los.',
+          'Pegue esta recompensa e restaure a Fornalha Iônica!'
+        ],
+        reward: { type: 'score', v: 75 } }
+    ],
+    critters: [],
     decor: [
-      { t: 'rock', x: 2, y: 4 },
-      { t: 'rock', x: 28, y: 5 },
-      { t: 'tree', x: 28, y: 13 },
-      { t: 'tree', x: 2, y: 10 },
-      { t: 'river', x: 2, y: 2, w: 3, h: 1 },
-      { t: 'chest', x: 26, y: 13, el: 'Mg' },
-      { t: 'switch', x: 26, y: 15, opens: [14, 3] }
+      { t: 'chest', x: 8, y: 20, el: 'Mg' },
+      { t: 'switch', x: 20, y: 17, opens: [9, 20] }
     ]
   },
 
-  /* ---------- 2 · PLANETA COVALENTE: Nébula ---------- */
+  /* ---------- 2 · PLANETA COVALENTE: Nébula (vegetação, rios, insetos) ---------- */
   {
     id: 'covalent', name: 'Planeta Covalente', theme: 'covalent',
     intro: 'Nébula é feita de gases. Aqui, AMETAL + AMETAL COMPARTILHAM elétrons. Monte as moléculas no Montador Molecular e limpe a atmosfera.',
-    spawn: { x: 2, y: 8 }, w: 30, h: 17,
-    machine: { x: 14, y: 8, label: 'Montador Molecular', type: 'assembler' },
-    portal: { x: 27, y: 8 },
+    radius: 14,
+    spawn: { x: 15, y: 27 }, machine: { x: 15, y: 15, label: 'Montador Molecular', type: 'assembler' },
+    portal: { x: 15, y: 4 }, standby: { x: 2, y: 12 },
     walls: [
-      [8, 5, 10, 5], [18, 5, 20, 5], [8, 11, 10, 11], [18, 11, 20, 11],
-      [5, 7, 6, 7], [22, 7, 23, 7], [12, 13, 13, 13], [16, 3, 17, 3], [24, 4, 25, 4]
+      [3, 7, 4, 8], [26, 7, 27, 8],
+      [3, 16, 4, 17], [26, 16, 27, 17],
+      [12, 3, 14, 3], [11, 22, 13, 22], [18, 19, 20, 20],
+      [23, 14, 25, 14], [23, 16, 25, 16], [23, 14, 23, 16], [25, 14, 25, 16]
     ],
+    breakables: [[11, 5], [8, 13], [19, 20], [10, 20]],
+    lakes: [[8, 9, 10, 9], [20, 9, 22, 9], [15, 12, 15, 16]],
+    bridges: [[9, 9], [21, 9], [15, 14]],
     crystals: {
-      H: [[5, 3], [9, 6], [21, 6], [10, 14], [20, 13]],
-      O: [[7, 12], [13, 5], [23, 6]],
-      C: [[19, 4]],
-      N: [[6, 9]]
+      H: [[7, 5], [9, 6], [21, 6], [10, 14], [20, 13], [12, 20], [4, 17]],
+      O: [[7, 12], [13, 5], [23, 6], [15, 17], [26, 8]],
+      C: [[19, 4], [19, 20]],
+      N: [[6, 9], [13, 13]]
     },
     hazards: [[4, 13], [21, 3], [10, 9], [25, 12], [15, 14]],
+    charges: [[6, 7], [9, 12], [17, 10], [23, 10], [7, 16], [18, 14], [12, 9], [20, 17], [14, 22], [10, 19], [11, 5], [8, 13], [10, 20]],
+    critters: [[9, 13], [16, 8], [21, 11], [8, 18], [19, 16], [12, 17]],
     recipes: ['H2O', 'CO2', 'NH3'],
     objective: 'Monte as moléculas covalentes',
-    planetColor: '#7ff5ff',
+    planetColor: '#35d0a0',
     enemies: [
-      { type: 'purple', x: 11, y: 8, opens: [9, 5] },
-      { type: 'purple', x: 21, y: 8 }
+      { type: 'purple', x: 12, y: 8, opens: [4, 17] },
+      { type: 'purple', x: 22, y: 8, opens: [26, 8] }
+    ],
+    npcs: [
+      { type: 'sage', name: 'Sábia da Nébula', x: 13, y: 19,
+        lines: [
+          'As plantas desta nébula compartilham elétrons para sobreviver — como os ametais!',
+          'Os cogumelos brilhantes quebram fácil. Espreite o que escondem...',
+          'Os insetos voadores são inocentes. Deixe-os pousar em você!',
+          'Monte as moléculas no Montador Molecular para limpar a atmosfera.'
+        ],
+        reward: { type: 'score', v: 75 } }
     ],
     decor: [
-      { t: 'rock', x: 2, y: 4 },
-      { t: 'rock', x: 28, y: 14 },
-      { t: 'tree', x: 3, y: 2 },
-      { t: 'tree', x: 26, y: 4 },
-      { t: 'river', x: 5, y: 2, w: 5, h: 1 },
-      { t: 'chest', x: 16, y: 13, el: 'C' },
-      { t: 'switch', x: 28, y: 9, opens: [9, 11] }
+      { t: 'chest', x: 24, y: 15, el: 'C' },
+      { t: 'switch', x: 6, y: 15, opens: [24, 14] }
     ]
   },
 
-  /* ---------- 3 · PLANETA METÁLICO: Ferravil ---------- */
+  /* ---------- 3 · PLANETA METÁLICO: Ferravil (metal, engrenagens, esteiras) ---------- */
   {
     id: 'metallic', name: 'Planeta Metálico', theme: 'metallic',
     intro: 'Ferravil perdeu toda a energia! Os metais guardam elétrons livres no "mar de elétrons" e conduzem corrente. Colete os metais e alimente o Núcleo de Energia.',
-    spawn: { x: 2, y: 8 }, w: 30, h: 17,
-    machine: { x: 14, y: 8, label: 'Núcleo de Energia', type: 'core' },
-    portal: { x: 27, y: 8 },
+    radius: 14,
+    spawn: { x: 15, y: 27 }, machine: { x: 15, y: 15, label: 'Núcleo de Energia', type: 'core' },
+    portal: { x: 15, y: 4 }, standby: { x: 2, y: 12 },
     walls: [
-      [8, 4, 10, 4], [18, 4, 20, 4], [8, 12, 10, 12], [18, 12, 20, 12],
-      [5, 6, 6, 6], [22, 6, 23, 6], [13, 3, 15, 3], [24, 13, 25, 13]
+      [4, 6, 5, 7], [25, 6, 26, 7],
+      [4, 16, 5, 17], [25, 16, 26, 17],
+      [9, 3, 21, 3], [12, 25, 18, 25],
+      [11, 18, 12, 19], [18, 18, 19, 19],
+      [22, 14, 25, 14], [22, 16, 25, 16], [22, 14, 22, 16], [25, 14, 25, 16]
     ],
+    breakables: [[9, 5], [22, 13], [12, 21]],
+    lakes: [[6, 11, 7, 12], [23, 11, 24, 12], [13, 22, 17, 22]],
+    bridges: [[14, 22, 16, 22]],
+    conveyors: [
+      [8, 8, 11, 8, '>'], [19, 8, 22, 8, '<'],
+      [10, 13, 13, 13, '>'], [17, 13, 20, 13, '<'],
+      [9, 22, 12, 22, '>'], [18, 22, 21, 22, '<']
+    ],
+    gears: [[13, 9], [17, 9], [13, 20], [17, 20], [8, 13]],
+    pipes: [[15, 15, 15, 10], [15, 15, 15, 20], [15, 15, 10, 8], [15, 15, 20, 8], [15, 15, 8, 13], [15, 15, 22, 13]],
     crystals: {
-      Cu: [[5, 4]],
-      Fe: [[6, 12]],
-      Au: [[23, 5]],
-      Al: [[24, 12]]
+      Cu: [[6, 5], [9, 5], [6, 16]],
+      Fe: [[6, 10], [24, 15]],
+      Au: [[23, 5], [22, 13]],
+      Al: [[23, 4], [24, 10], [12, 21], [24, 15]]
     },
     hazards: [[12, 3], [21, 3], [15, 14], [3, 10]],
-    traps: [{ x: 10, y: 10, w: 5, h: 1 }],
-    wires: [[14, 3, 22, 3], [14, 13, 22, 13], [5, 10, 13, 10], [16, 10, 24, 10]],
+    traps: [{ x: 12, y: 12, w: 4, h: 1 }],
+    charges: [[6, 8], [12, 10], [18, 10], [23, 8], [8, 15], [14, 12], [16, 12], [20, 15], [9, 19], [19, 21], [6, 20], [24, 19], [15, 21], [11, 24]],
     recipes: ['CU', 'FE', 'AU'],
     objective: 'Alimente o núcleo com os metais certos',
     planetColor: '#ffd166',
     enemies: [
-      { type: 'robot', x: 11, y: 8, opens: [9, 4] },
-      { type: 'robot', x: 21, y: 8 }
+      { type: 'robot', x: 10, y: 8, opens: [5, 16] },
+      { type: 'robot', x: 22, y: 8, opens: [26, 16] },
+      { type: 'robot', x: 15, y: 11 }
     ],
+    npcs: [
+      { type: 'robot', name: 'Capataz Ferrov', x: 15, y: 18,
+        lines: [
+          'Bem-vindo às fundições de Ferravil. Aqui o metal reina — como o mar de elétrons!',
+          'As esteiras transportam sucata. Não deixe que elas te empurrem para fora.',
+          'As engrenagens ainda giram. Quebre as caixas de sucata para achar metais raros.',
+          'Alimente o Núcleo de Energia com cobre, ferro e ouro!'
+        ],
+        reward: { type: 'score', v: 75 } }
+    ],
+    critters: [],
     decor: [
-      { t: 'rock', x: 2, y: 4 },
-      { t: 'rock', x: 28, y: 4 },
-      { t: 'tree', x: 26, y: 3 },
-      { t: 'tree', x: 2, y: 14 },
-      { t: 'river', x: 5, y: 15, w: 4, h: 1 },
-      { t: 'chest', x: 16, y: 3, el: 'Fe' },
-      { t: 'switch', x: 3, y: 3, opens: [19, 12] }
+      { t: 'chest', x: 23, y: 15, el: 'Fe' },
+      { t: 'switch', x: 8, y: 23, opens: [22, 15] }
     ]
   },
 
@@ -791,27 +879,31 @@ const LEVELS = [
   {
     id: 'final', name: 'Planeta Final', theme: 'final',
     intro: 'O Núcleo Cósmico precisa que você aplique TUDO que aprendeu. Classifique as ligações nos portais e restaure a galáxia!',
-    spawn: { x: 2, y: 14 }, w: 30, h: 18,
-    machine: { x: 24, y: 8, label: 'Reator da Galáxia', type: 'reactor' },
-    portal: { x: 28, y: 8 },
+    radius: 14,
+    spawn: { x: 15, y: 27 }, machine: { x: 15, y: 15, label: 'Reator da Galáxia', type: 'reactor' },
+    portal: { x: 15, y: 4 }, standby: { x: 15, y: 12 },
     walls: [
-      [2, 3, 3, 3], [2, 9, 3, 10], [11, 2, 12, 3], [18, 2, 19, 3],
-      [22, 3, 23, 5], [27, 3, 27, 5], [26, 11, 27, 12], [15, 8, 16, 9]
+      [3, 3, 5, 5], [25, 3, 27, 5],
+      [6, 5, 8, 5], [22, 5, 24, 5],
+      [4, 19, 6, 19], [4, 23, 6, 23], [4, 19, 4, 23], [6, 19, 6, 23],
+      [24, 19, 26, 19], [24, 23, 26, 23], [24, 19, 24, 23], [26, 19, 26, 23]
     ],
+    breakables: [[13, 23], [17, 23]],
     gates: [
-      { x: 5, y: 5, w: 2, h: 2, type: 'ionic' },
-      { x: 9, y: 5, w: 2, h: 2, type: 'covalent' },
-      { x: 13, y: 5, w: 2, h: 2, type: 'metallic' },
-      { x: 17, y: 5, w: 2, h: 2, type: 'covalent' }
+      { x: 9, y: 8, w: 2, h: 2, type: 'ionic' },
+      { x: 13, y: 8, w: 2, h: 2, type: 'covalent' },
+      { x: 17, y: 8, w: 2, h: 2, type: 'metallic' },
+      { x: 21, y: 8, w: 2, h: 2, type: 'covalent' }
     ],
     crystals: {
-      Na: [[4, 4]],
-      Cl: [[6, 3]],
-      O: [[3, 11]],
-      H: [[5, 13]]
+      Na: [[5, 4], [9, 17]],
+      Cl: [[25, 4], [20, 13]],
+      O: [[15, 16], [13, 6]],
+      H: [[5, 13], [21, 17]]
     },
     hazards: [[8, 10], [11, 14], [21, 11], [25, 12], [17, 15]],
-    traps: [{ x: 10, y: 12, w: 6, h: 1 }],
+    traps: [{ x: 12, y: 12, w: 4, h: 1 }],
+    charges: [[7, 9], [11, 11], [19, 11], [23, 9], [8, 15], [22, 15], [10, 18], [20, 18], [13, 22], [17, 22], [13, 23], [17, 23], [15, 21], [6, 12], [25, 21]],
     recipes: ['NaCl'],
     objective: 'Classifique as ligações e reative o reator',
     planetColor: '#c8a2ff',
@@ -822,16 +914,24 @@ const LEVELS = [
       { formula: 'NH₃', bond: 'covalent', learn: 'N e H são ametais que compartilham elétrons. NH₃ é ligação COVALENTE.' }
     ],
     enemies: [
-      { type: 'crystal', x: 8, y: 8, opens: [3, 3] },
-      { type: 'crystal', x: 21, y: 8 }
+      { type: 'crystal', x: 8, y: 8, opens: [5, 4] },
+      { type: 'crystal', x: 22, y: 8, opens: [25, 4] }
     ],
+    npcs: [
+      { type: 'sage', name: 'Astrônomo do Núcleo', x: 15, y: 18,
+        lines: [
+          'O Núcleo Cósmico guarda a energia de toda a galáxia.',
+          'Classifique as ligações nos portais: iônica, covalente e metálica.',
+          'Metal + ametal é iônica. Ametal + ametal é covalente. Metal puro é metálica.',
+          'Restaura a galáxia, astronauta. Você é a última esperança!'
+        ],
+        reward: { type: 'score', v: 100 } }
+    ],
+    critters: [],
     decor: [
-      { t: 'rock', x: 20, y: 6 },
-      { t: 'rock', x: 4, y: 15 },
-      { t: 'tree', x: 25, y: 6 },
-      { t: 'river', x: 3, y: 16, w: 7, h: 1 },
-      { t: 'chest', x: 20, y: 12, el: 'O' },
-      { t: 'switch', x: 28, y: 15, opens: [26, 11] }
+      { t: 'chest', x: 5, y: 21, el: 'H' },
+      { t: 'switch', x: 23, y: 20, opens: [6, 21] },
+      { t: 'switch', x: 6, y: 18, opens: [24, 21] }
     ]
   }
 ];
@@ -1042,14 +1142,52 @@ function buildLevel(idx) {
   const lv = LEVELS[idx];
   const theme = THEMES[lv.theme];
 
-  /* Grade com bordas sólidas */
-  const g = new Grid(lv.w, lv.h);
-  for (let y = 0; y < lv.h; y++) {
-    for (let x = 0; x < lv.w; x++) {
-      g.set(x, y, (x === 0 || y === 0 || x === lv.w - 1 || y === lv.h - 1) ? '#' : '.');
+  /* Planeta circular: área jogável é um disco de raio `radius`.
+     Fora do disco (espaço) é sólido e não é desenhado. */
+  const R = lv.radius || 14;
+  const cx = R + 1, cy = R + 1;          /* centro do planeta em tiles */
+  const w = R * 2 + 3, h = R * 2 + 3;
+  const inDisc = (tx, ty) => Math.hypot(tx - cx, ty - cy) <= R;
+
+  const g = new Grid(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      g.set(x, y, inDisc(x, y) ? '.' : '#');
     }
   }
+
+  /* Montanhas / estruturas (paredes) */
   lv.walls.forEach(([x0, y0, x1, y1]) => g.rect(x0, y0, x1, y1, '#'));
+
+  /* Blocos quebráveis (revelam cristais/baús) */
+  const breakables = (lv.breakables || []).map(([x, y]) => {
+    g.set(x, y, 'B');
+    return { tx: x, ty: y, x: x * TILE + TILE / 2, y: y * TILE + TILE / 2, hit: false };
+  });
+
+  /* Lagos de energia / rios / ácido (impassáveis) */
+  const lakes = (lv.lakes || []).map(([x0, y0, x1, y1]) => {
+    g.rect(x0, y0, x1, y1, '~');
+    return { x0, y0, x1, y1 };
+  });
+
+  /* Pontes (células de travessia sobre lagos) */
+  (lv.bridges || []).forEach(([x0, y0, x1, y1]) => g.rect(x0, y0, x1, y1, '='));
+
+  /* Esteiras (empurram o jogador) */
+  const conveyors = (lv.conveyors || []).map(([x0, y0, x1, y1, dir]) => {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) g.set(x, y, dir === '<' ? '<' : '>');
+    return { x0, y0, x1, y1, dir: dir === '<' ? -1 : 1 };
+  });
+
+  /* Engrenagens giratórias (sólidas) */
+  const gears = (lv.gears || []).map(([x, y]) => {
+    g.set(x, y, '#');
+    return { x: x * TILE + TILE / 2, y: y * TILE + TILE / 2, r: 14, rot: rand(0, 6.28) };
+  });
+
+  /* Dutos de energia (conduzem força entre máquinas e lagos) */
+  const pipes = (lv.pipes || []).map(([x0, y0, x1, y1]) => ({ x0, y0, x1, y1 }));
 
   /* Cristais de elementos */
   const crystals = [];
@@ -1084,7 +1222,7 @@ function buildLevel(idx) {
       hp: type.hp, maxHp: type.hp, speed: type.speed, radius: type.radius,
       x: e.x * TILE + TILE / 2, y: e.y * TILE + TILE / 2,
       baseX: e.x * TILE + TILE / 2, baseY: e.y * TILE + TILE / 2,
-      range: (e.range || 3) * TILE,
+      range: (e.range || 4) * TILE,
       dir: 1, t: rand(0, 6.28), hitCd: 0, alive: true, flash: 0, w: 20, h: 22,
       state: 'patrol',        /* patrol | chase */
       face: 1,                /* -1 esquerda, 1 direita */
@@ -1097,7 +1235,7 @@ function buildLevel(idx) {
     };
   });
 
-  /* Decor: rochas, árvores, rios de energia, baús, interruptores */
+  /* Decor funcional: baús e interruptores (abrem passagens/portas) */
   const decor = (lv.decor || []).map(d => {
     const base = {
       t: d.t, x: d.x * TILE, y: d.y * TILE,
@@ -1111,9 +1249,28 @@ function buildLevel(idx) {
     return base;
   });
 
+  /* Motes de energia coletáveis (+2) */
+  const charges = (lv.charges || []).map(([x, y]) => ({
+    x: x * TILE + TILE / 2, y: y * TILE + TILE / 2, taken: false, t: rand(0, 6.28)
+  }));
+
+  /* Insetos / vaga-lumes coletáveis (+5) */
+  const critters = (lv.critters || []).map(([x, y]) => ({
+    x: x * TILE + TILE / 2, y: y * TILE + TILE / 2, baseX: x * TILE + TILE / 2, baseY: y * TILE + TILE / 2,
+    taken: false, t: rand(0, 6.28), gone: false
+  }));
+
+  /* NPCs interativos */
+  const npcs = (lv.npcs || []).map(n => ({
+    type: n.type, name: n.name, x: n.x * TILE + TILE / 2, y: n.y * TILE + TILE / 2,
+    lines: n.lines || [], reward: n.reward || null, talked: false, t: rand(0, 6.28)
+  }));
+
   return {
     idx, lv, theme, g, crystals, hazards, traps, gates, machine, portal,
-    enemies, decor,
+    enemies, decor, breakables, lakes, bridges: (lv.bridges || []).slice(), conveyors, gears, pipes,
+    npcs, charges, critters,
+    R, cx, cy, inDisc, standby: lv.standby || { x: 2, y: 12 },
     orbs: [],            /* energia deixada pelos alienígenas derrotados */
     scientist: { x: lv.spawn.x * TILE + TILE / 2, y: lv.spawn.y * TILE + TILE / 2 },
     gatesDone: false,
@@ -1141,7 +1298,9 @@ function playerRect(p) {
 }
 
 function isSolid(level, tx, ty) {
-  return level.g.get(tx, ty) === '#';
+  const c = level.g.get(tx, ty);
+  /* sólidos: parede/montanha (#), bloco quebrável (B) e lago/rio (~) */
+  return c === '#' || c === 'B' || c === '~';
 }
 
 /* Movimenta com colisão por eixo contra os tiles */
@@ -1205,15 +1364,100 @@ function closeFeedback() {
   else Game.locked = false;
 }
 
+/* --- Habitantes (NPCs) interativos e blocos quebráveis --- */
+
+function nearestNPC(radius) {
+  const lv = Game.level;
+  if (!lv || !lv.npcs) return null;
+  let best = null, bd = radius;
+  for (const n of lv.npcs) {
+    if (n.talked) continue;
+    const d = dist(Game.player.x, Game.player.y, n.x, n.y);
+    if (d < bd) { bd = d; best = n; }
+  }
+  return best;
+}
+
+function nearestBreakable(radius) {
+  const lv = Game.level;
+  if (!lv || !lv.breakables) return null;
+  let best = null, bd = radius;
+  for (const b of lv.breakables) {
+    if (b.hit) continue;
+    const d = dist(Game.player.x, Game.player.y, b.x, b.y);
+    if (d < bd) { bd = d; best = b; }
+  }
+  return best;
+}
+
+/* Aplica a recompensa de um NPC (pontos, átomo ou passagem) */
+function npcReward(npc) {
+  const r = npc.reward;
+  if (!r) return;
+  if (r.type === 'score') {
+    if (!Game.replay) {
+      Game.run.score += r.v;
+      updateHudScore();
+      spawnFloater(npc.x, npc.y - 22, '+' + r.v);
+    }
+  } else if (r.type === 'atom') {
+    Game.inventory[r.el] = (Game.inventory[r.el] || 0) + 1;
+    spawnFloater(npc.x, npc.y - 22, '+' + ELEMENTS[r.el].symbol);
+    updateObjectiveHud();
+    AudioSys.sfx('collect');
+  } else if (r.type === 'opens') {
+    Game.level.g.set(r.x, r.y, '.');
+    AudioSys.sfx('switch');
+    burst(r.x * TILE + TILE / 2, r.y * TILE + TILE / 2, '#7ff5ff', 14);
+    spawnFloater(r.x * TILE + TILE / 2, (r.y - 1) * TILE, 'Passagem secreta!');
+  }
+}
+
+function talkToNpc(npc) {
+  if (Game.dialog) return;
+  Game.locked = true;
+  AudioSys.sfx('npc');
+  const conf = DIALOG_CONFIG[npc.type] || DIALOG_CONFIG.alien;
+  openDialog({
+    portrait: conf,
+    lines: npc.lines,
+    setPhase: false,             /* permanece na fase explore */
+    onEnd: () => {
+      npc.talked = true;
+      npcReward(npc);
+      Game.locked = false;
+    }
+  });
+}
+
+/* Destrói um bloco quebrável: revela o que estava escondido */
+function destroyBreakable(lv, b) {
+  if (b.hit) return;
+  b.hit = true;
+  lv.g.set(b.tx, b.ty, '.');
+  AudioSys.sfx('break');
+  shake(3);
+  burst(b.x, b.y, lv.theme.accent, 14);
+  spawnFloater(b.x, b.y - 16, 'Quebrado!');
+}
+
 /* Caminho do desafio atual */
 function currentRecipe() {
   return RECIPES[Game.level.lv.recipes[Game.recipeIndex]];
 }
 
-/* Interação: pressionar ESPAÇO perto de uma máquina */
+/* Interação: pressionar ESPAÇO perto de um NPC, bloco quebrável ou máquina */
 function tryInteract() {
   const lv = Game.level;
   if (!lv) return;
+
+  /* 1) NPC por perto: conversa com o habitante do planeta */
+  const npc = nearestNPC(48);
+  if (npc && !Game.locked) { talkToNpc(npc); return; }
+
+  /* 2) Bloco quebrável por perto: quebra com ESPAÇO (mecânica de mineração) */
+  const br = nearestBreakable(52);
+  if (br && !Game.locked) { destroyBreakable(lv, br); return; }
 
   /* No Planeta Final os portais bloqueiam o reator */
   if (lv.idx === FINAL_INDEX && !lv.gatesDone) {
@@ -1360,8 +1604,9 @@ function checkGates() {
 
 function teleportToStandby() {
   const lv = Game.level;
-  Game.player.x = 2 * TILE + TILE / 2;
-  Game.player.y = 12 * TILE + TILE / 2;
+  const s = lv.standby || { x: 2, y: 12 };
+  Game.player.x = s.x * TILE + TILE / 2;
+  Game.player.y = s.y * TILE + TILE / 2;
 }
 
 /* =====================================================================
@@ -1436,6 +1681,9 @@ function update(dt) {
   if (Game.phase === 'dialog') { updateDialog(dt); return; }
   if (Game.phase === 'travel') { updateTravel(dt); updateParticles(dt); return; }
 
+  /* Diálogo aberto sem troca de fase (ex.: conversa com um NPC no planeta) */
+  if (Game.dialog) { updateDialog(dt); return; }
+
   /* Jogador congelado (feedback/intro) */
   if (Game.locked) {
     updateParticles(dt);
@@ -1479,6 +1727,16 @@ function update(dt) {
     emitParticle(p.x - p.moveX * 10 + rand(-3, 3), p.y - p.moveY * 10 + rand(-3, 3), rand(-8, 8), rand(-8, 8), trail.color, 0.4 + rand(0, 0.3), 2);
   }
 
+  /* --- Esteiras: empurram o jogador na direção do fluxo --- */
+  for (const cv of lv.conveyors) {
+    const rx = cv.x0 * TILE, ry = cv.y0 * TILE;
+    const rw = (cv.x1 - cv.x0 + 1) * TILE, rh = (cv.y1 - cv.y0 + 1) * TILE;
+    if (p.x > rx - TILE / 2 && p.x < rx + rw + TILE / 2 &&
+        p.y > ry - TILE / 2 && p.y < ry + rh + TILE / 2) {
+      moveEntity(lv, p, 'x', cv.dir * 90 * dt);
+    }
+  }
+
   /* --- Coleta de cristais --- */
   for (const c of lv.crystals) {
     if (c.taken) continue;
@@ -1494,7 +1752,37 @@ function update(dt) {
       AudioSys.sfx('collect');
       burst(c.x, c.y, ELEMENTS[c.el].color);
       updateObjectiveHud();
-      updateObjectiveHud();
+    }
+  }
+
+  /* --- Motes de energia (pontos) --- */
+  for (const c of lv.charges) {
+    if (c.taken) continue;
+    if (dist(p.x, p.y, c.x, c.y) < 24) {
+      c.taken = true;
+      if (!Game.replay) {
+        Game.run.score += 2;
+        spawnFloater(c.x, c.y - 14, '+2');
+        updateHudScore();
+      }
+      AudioSys.sfx('charge');
+      burst(c.x, c.y, lv.theme.accent, 5);
+    }
+  }
+
+  /* --- Insetos / vaga-lumes (pontos) --- */
+  for (const c of lv.critters) {
+    if (c.taken) continue;
+    if (dist(p.x, p.y, c.x, c.y) < 24) {
+      c.taken = true;
+      c.gone = true;
+      if (!Game.replay) {
+        Game.run.score += 5;
+        spawnFloater(c.x, c.y - 14, '+5');
+        updateHudScore();
+      }
+      AudioSys.sfx('charge');
+      burst(c.x, c.y, '#7ff5ff', 6);
     }
   }
 
@@ -1626,7 +1914,7 @@ function drawBackground() {
   }
   ctx.globalAlpha = 1;
 
-  /* Planeta de fundo */
+  /* Lua/planeta distante no céu */
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = th.planet;
   ctx.beginPath();
@@ -1636,6 +1924,16 @@ function drawBackground() {
   ctx.fillStyle = '#fff';
   ctx.beginPath();
   ctx.arc(VIEW_W - 96, 38, 12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  /* Halo do planeta onde o jogador está (mostra a curvatura) */
+  const cx = lv.cx * TILE - camX, cy = lv.cy * TILE - camY;
+  const R = lv.R * TILE;
+  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = th.rim;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R + 10, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalAlpha = 1;
 }
@@ -1654,15 +1952,89 @@ function drawTiles() {
         ctx.fillStyle = ((tx + ty) % 2 === 0) ? th.floor : th.floorAlt;
         ctx.fillRect(dx, dy, TILE, TILE);
       } else if (cell === '#') {
+        if (!lv.inDisc(tx, ty)) continue;   /* espaço vazio fora do disco */
         ctx.fillStyle = th.wall;
         ctx.fillRect(dx, dy, TILE, TILE);
         ctx.fillStyle = th.wallTop;
         ctx.fillRect(dx, dy, TILE, 4);
         ctx.fillStyle = 'rgba(0,0,0,0.25)';
         ctx.fillRect(dx, dy + TILE - 4, TILE, 4);
+      } else if (cell === 'B') {
+        /* Bloco quebrável: rocha rachada com a cor do planeta */
+        ctx.fillStyle = th.wall;
+        ctx.fillRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillRect(dx, dy + TILE - 5, TILE, 5);
+        ctx.strokeStyle = th.accent;
+        ctx.globalAlpha = 0.5;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(dx + 8, dy + 6); ctx.lineTo(dx + 12, dy + 14); ctx.lineTo(dx + 9, dy + 22);
+        ctx.moveTo(dx + 22, dy + 10); ctx.lineTo(dx + 19, dy + 18); ctx.lineTo(dx + 24, dy + 26);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      } else if (cell === '~') {
+        /* Lago de energia / rio: água animada */
+        const ph = (Game.run.time * 2 + tx * 1.3 + ty * 0.7) % 1;
+        ctx.fillStyle = th.water;
+        ctx.fillRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = ph > 0.5 ? th.waterHi : th.water;
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(dx, dy + 8);
+        ctx.quadraticCurveTo(dx + TILE * 0.35, dy + 5 + ph * 6, dx + TILE * 0.7, dy + 9);
+        ctx.quadraticCurveTo(dx + TILE * 0.85, dy + 11 + ph * 4, dx + TILE, dy + 8);
+        ctx.lineTo(dx + TILE, dy + TILE);
+        ctx.lineTo(dx, dy + TILE);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      } else if (cell === '=') {
+        /* Ponte de madeira/metal */
+        ctx.fillStyle = th.bridge;
+        ctx.fillRect(dx, dy, TILE, TILE);
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        for (let k = 0; k < TILE; k += 8) ctx.fillRect(dx, dy + k, TILE, 1);
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(dx + 0.5, dy + 0.5, TILE - 1, TILE - 1);
+      } else if (cell === '>' || cell === '<') {
+        /* Esteira: trilho metálico com setas em movimento */
+        ctx.fillStyle = th.floorAlt;
+        ctx.fillRect(dx, dy, TILE, TILE);
+        ctx.strokeStyle = th.accent;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(dx + 1, dy + 1, TILE - 2, TILE - 2);
+        const off = (Game.run.time * 60) % TILE;
+        ctx.fillStyle = th.accent;
+        ctx.globalAlpha = 0.8;
+        for (let k = 0; k < TILE; k += 16) {
+          const ax = dx + ((k - off) % TILE + TILE) % TILE;
+          if (cell === '>') {
+            ctx.beginPath();
+            ctx.moveTo(ax, dy + 6); ctx.lineTo(ax + 8, dy + TILE / 2); ctx.lineTo(ax, dy + TILE - 6);
+            ctx.closePath(); ctx.fill();
+          } else {
+            ctx.beginPath();
+            ctx.moveTo(ax + 8, dy + 6); ctx.lineTo(ax, dy + TILE / 2); ctx.lineTo(ax + 8, dy + TILE - 6);
+            ctx.closePath(); ctx.fill();
+          }
+        }
+        ctx.globalAlpha = 1;
       }
     }
   }
+
+  /* Sombreamento esférico (curvatura do planeta nas bordas do disco) */
+  const cx = lv.cx * TILE - camX, cy = lv.cy * TILE - camY;
+  const R = lv.R * TILE;
+  const rg = ctx.createRadialGradient(cx, cy, R * 0.5, cx, cy, R);
+  rg.addColorStop(0, 'rgba(0,0,0,0)');
+  rg.addColorStop(0.8, 'rgba(0,0,0,0.15)');
+  rg.addColorStop(1, 'rgba(0,0,0,0.6)');
+  ctx.fillStyle = rg;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R + 6, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawWires() {
@@ -2191,6 +2563,7 @@ function render() {
   }
   drawBackground();
   drawTiles();
+  drawPipes();
   drawWires();
   drawDecor();
   drawCrystals();
@@ -2199,6 +2572,10 @@ function render() {
   drawMachines();
   drawPortal();
   drawHazards();
+  drawGears();
+  drawCharges();
+  drawCritters();
+  drawNpcs();
   drawPlayer();
   drawOrbs();
   drawSaber();
@@ -2272,6 +2649,33 @@ const DIALOG_CONFIG = {
     palette: { h: '#7a4a22', G: '#3aa0ff', s: '#ffd9a8', S: '#eef2ff', B: '#2b6f9e', w: '#2b3554' },
     eyes: [{ row: 8, col: 3, w: 6, h: 2 }],
     mouth: { row: 10, col: 3, w: 6 }
+  },
+  alien: {
+    sprite: SPRITES.alien,
+    scale: 6,
+    name: 'Alienígena',
+    caption: 'Habitante do planeta',
+    palette: { E: '#3aa06e', W: '#ffffff', D: '#0c1226' },
+    eyes: [{ row: 5, col: 3, w: 6, h: 2 }],
+    mouth: { row: 7, col: 4, w: 4 }
+  },
+  robot: {
+    sprite: SPRITES.robot,
+    scale: 6,
+    name: 'Robô Guardião',
+    caption: 'Guardião da máquina',
+    palette: { H: '#4a5a6e', G: '#9fb0d8', h: '#2b3554', V: '#3aa0ff', w: '#0c1226' },
+    eyes: [{ row: 4, col: 3, w: 6, h: 2 }],
+    mouth: { row: 8, col: 3, w: 6 }
+  },
+  sage: {
+    sprite: SPRITES.alienSage,
+    scale: 6,
+    name: 'Sábio Alienígena',
+    caption: 'Conselheiro do planeta',
+    palette: { S: '#35d0a0', W: '#ffffff', D: '#0c1226', s: '#1d5a3e', V: '#7ff5ff', w: '#0c1226' },
+    eyes: [{ row: 5, col: 3, w: 6, h: 2 }],
+    mouth: { row: 7, col: 4, w: 4 }
   }
 };
 
@@ -2784,6 +3188,16 @@ function updateCombat(dt) {
         }
       }
     }
+    /* Quebráveis também são destruídos pelo golpe do sabre */
+    for (const b of Game.level.breakables) {
+      if (b.hit) continue;
+      if (dist(p.x, p.y, b.x, b.y) < 46) {
+        const angTo = Math.atan2(b.y - p.y, b.x - p.x);
+        let diff = Math.abs(angTo - a);
+        if (diff > Math.PI) diff = Math.PI * 2 - diff;
+        if (diff < 0.9) destroyBreakable(Game.level, b);
+      }
+    }
     if (s.t >= SABER_SWING) {
       s.phase = 'idle';
       s.t = 0;
@@ -3050,33 +3464,12 @@ function drawSaber() {
   ctx.restore();
 }
 
-/* ---------------- Decor: rochas, árvores, rios, baús, interruptores ---------------- */
+/* ---------------- Decor funcional: baús e interruptores ---------------- */
 function drawDecor() {
   const lv = Game.level;
   if (!lv.decor) return;
   const t = performance.now() / 1000;
   for (const d of lv.decor) {
-    if (d.t === 'river') {
-      /* Rio de energia animado */
-      const x0 = Math.max(0, Math.floor((d.x - camX) / TILE));
-      const x1 = Math.min(lv.g.w - 1, Math.ceil((d.x + d.w - camX) / TILE));
-      const y0 = Math.max(0, Math.floor((d.y - camY) / TILE));
-      const y1 = Math.min(lv.g.h - 1, Math.ceil((d.y + d.h - camY) / TILE));
-      for (let ty = y0; ty <= y1; ty++) {
-        for (let tx = x0; tx <= x1; tx++) {
-          const cell = lv.g.get(tx, ty);
-          if (cell !== '.') continue;
-          const dx = tx * TILE - camX;
-          const dy = ty * TILE - camY;
-          const wave = Math.sin(t * 2 + tx * 0.7 + ty);
-          ctx.fillStyle = wave > 0 ? '#1d7a9e' : '#16708e';
-          ctx.fillRect(dx, dy, TILE, TILE);
-          ctx.fillStyle = 'rgba(127,245,255,0.5)';
-          ctx.fillRect(dx + 4, dy + TILE / 2 + Math.sin(t * 3 + tx) * 4, 8, 2);
-        }
-      }
-      continue;
-    }
     if (d.t === 'chest') {
       const bob = Math.sin(t * 2 + d.phase) * 2;
       const sc = 2;
@@ -3111,15 +3504,159 @@ function drawDecor() {
       ctx.fill();
       continue;
     }
-    /* Rochas e árvores */
-    const sprite = d.t === 'rock' ? SPRITES.rock : d.t === 'tree' ? SPRITES.tree : null;
-    if (!sprite) continue;
-    const sc = d.t === 'rock' ? 3 : 3;
-    const sz = spriteSize(sprite, sc);
-    const dx = Math.round(d.x - camX + TILE / 2);
-    const dy = Math.round(d.y - camY + TILE);
-    const palette = d.t === 'rock' ? { r: '#6b5f55' } : { t: '#2f9e5d', g: '#5dffa6' };
-    drawSprite(ctx, sprite, dx - sz.w / 2, dy - sz.h, sc, palette);
+  }
+}
+
+/* ---------------- Dutos de energia (metálico) ---------------- */
+function drawPipes() {
+  const lv = Game.level;
+  if (!lv.pipes) return;
+  const th = lv.theme;
+  ctx.save();
+  for (const p of lv.pipes) {
+    ctx.strokeStyle = th.wallTop;
+    ctx.lineWidth = 7;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(p.x0 * TILE + TILE / 2 - camX, p.y0 * TILE + TILE / 2 - camY);
+    ctx.lineTo(p.x1 * TILE + TILE / 2 - camX, p.y1 * TILE + TILE / 2 - camY);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.strokeStyle = th.accent;
+    ctx.globalAlpha = 0.35;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(p.x0 * TILE + TILE / 2 - camX, p.y0 * TILE + TILE / 2 - camY);
+    ctx.lineTo(p.x1 * TILE + TILE / 2 - camX, p.y1 * TILE + TILE / 2 - camY);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
+/* ---------------- Engrenagens giratórias (metálico) ---------------- */
+function drawGears() {
+  const lv = Game.level;
+  if (!lv.gears) return;
+  const th = lv.theme;
+  for (const gr of lv.gears) {
+    gr.rot += 0.01;
+    const gx = gr.x - camX, gy = gr.y - camY;
+    ctx.save();
+    ctx.translate(gx, gy);
+    ctx.rotate(gr.rot);
+    ctx.fillStyle = th.wallTop;
+    ctx.beginPath();
+    ctx.arc(0, 0, gr.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = th.wall;
+    for (let i = 0; i < 8; i++) {
+      ctx.save();
+      ctx.rotate(i * Math.PI / 4);
+      ctx.fillRect(-3, -gr.r - 3, 6, 6);
+      ctx.restore();
+    }
+    ctx.fillStyle = th.accent;
+    ctx.beginPath();
+    ctx.arc(0, 0, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* ---------------- Motes de energia coletáveis ---------------- */
+function drawCharges() {
+  const lv = Game.level;
+  if (!lv.charges) return;
+  const t = performance.now() / 1000;
+  const th = lv.theme;
+  for (const c of lv.charges) {
+    if (c.taken) continue;
+    c.t += 0.05;
+    const cx = c.x - camX, cy = c.y - camY + Math.sin(c.t * 2) * 3;
+    ctx.shadowColor = th.accent;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = th.accent;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 4 + Math.sin(c.t) * 1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.beginPath();
+    ctx.arc(cx - 1, cy - 1, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/* ---------------- Insetos / vaga-lumes coletáveis ---------------- */
+function drawCritters() {
+  const lv = Game.level;
+  if (!lv.critters) return;
+  const t = performance.now() / 1000;
+  for (const c of lv.critters) {
+    if (c.taken) continue;
+    c.t += 0.04;
+    const ox = Math.sin(c.t * 1.5 + c.baseX) * 10;
+    const oy = Math.cos(c.t * 1.2 + c.baseY) * 6;
+    const cx = c.baseX - camX + ox, cy = c.baseY - camY + oy;
+    const fl = Math.abs(Math.sin(c.t * 10)) > 0.5;
+    ctx.fillStyle = fl ? '#fff7c0' : '#ffe14d';
+    ctx.shadowColor = '#ffe14d';
+    ctx.shadowBlur = 7;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    if (fl) {
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(cx - 5, cy); ctx.lineTo(cx - 2, cy - 2); ctx.lineTo(cx - 2, cy + 2);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx + 5, cy); ctx.lineTo(cx + 2, cy - 2); ctx.lineTo(cx + 2, cy + 2);
+      ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+/* ---------------- NPCs (habitantes dos planetas) ---------------- */
+function drawNpcs() {
+  const lv = Game.level;
+  if (!lv.npcs) return;
+  const t = performance.now() / 1000;
+  const p = Game.player;
+  for (const n of lv.npcs) {
+    const sc = 2;
+    const sp = n.type === 'robot' ? SPRITES.robot :
+      n.type === 'sage' ? SPRITES.alienSage : SPRITES.alien;
+    const sz = spriteSize(sp, sc);
+    const bob = Math.sin(t * 2 + n.t) * 2;
+    const dx = Math.round(n.x - camX);
+    const dy = Math.round(n.y - camY + bob);
+    const pal = n.type === 'robot' ? { G: '#9fb0d8', V: '#3aa0ff', W: '#0c1226' } :
+      n.type === 'sage' ? { G: '#6b5f55', V: '#35d0a0', W: '#0c1226' } :
+      { G: '#3aa06e', V: '#7ff5ff', W: '#0c1226' };
+    drawSprite(ctx, sp, dx - sz.w / 2, dy - sz.h, sc, pal);
+
+    /* Nome do habitante */
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(dx - 40, dy - sz.h - 16, 80, 12);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '9px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.name, dx, dy - sz.h - 10);
+
+    /* Dica de interação quando o jogador se aproxima */
+    if (!n.talked && dist(p.x, p.y, n.x, n.y) < 52) {
+      const hb = Math.abs(Math.sin(t * 4)) * 4;
+      ctx.fillStyle = '#ffd166';
+      ctx.font = 'bold 10px "Courier New", monospace';
+      ctx.fillText('FALE [ESPAÇO]', dx, dy - sz.h - 22 + hb);
+    }
   }
 }
 
@@ -4705,10 +5242,13 @@ window.addEventListener('keydown', e => {
     }
 
     if (e.code === 'Space') {
+      if (Game.dialog) { advanceDialog(); return; }
+      if (Game.phase !== 'explore' || Game.locked) return;
       const lv = Game.level;
-      if (lv && Game.phase === 'explore' && dist(Game.player.x, Game.player.y, lv.machine.x, lv.machine.y) < 64) {
-        tryInteract();
-      }
+      if (!lv) return;
+      if (nearestNPC(48)) { tryInteract(); return; }
+      if (nearestBreakable(52)) { tryInteract(); return; }
+      if (dist(Game.player.x, Game.player.y, lv.machine.x, lv.machine.y) < 64) tryInteract();
     }
   }
 });
@@ -4724,7 +5264,10 @@ canvas.addEventListener('pointerdown', e => {
   const rect = canvas.getBoundingClientRect();
   const wx = (e.clientX - rect.left) / rect.width * VIEW_W + camX;
   const wy = (e.clientY - rect.top) / rect.height * VIEW_H + camY;
-  if (dist(wx, wy, lv.machine.x, lv.machine.y) < 64) {
+  const nearMachine = dist(wx, wy, lv.machine.x, lv.machine.y) < 64;
+  const nearNpc = (lv.npcs || []).some(n => !n.talked && dist(wx, wy, n.x, n.y) < 48);
+  const nearBr = (lv.breakables || []).some(b => !b.hit && dist(wx, wy, b.x, b.y) < 52);
+  if (nearNpc || nearBr || nearMachine) {
     tryInteract();
   } else {
     saberAttack(wx, wy);
