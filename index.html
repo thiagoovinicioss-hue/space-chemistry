@@ -266,14 +266,17 @@
     </div>
   </div>
 
-  <!-- OVERLAY: diálogo do cientista -->
+  <!-- OVERLAY: diálogo do cientista (retrato + texto, estilo PvZ/Ace Attorney) -->
   <div id="dialog" class="overlay dialog-overlay" hidden>
     <div class="dialog-box">
-      <div class="dialog-scientist" aria-hidden="true">
-        <canvas id="dialog-scientist-canvas" width="56" height="64"></canvas>
-        <span class="dialog-scientist-name">Prof. Lewis</span>
+      <div class="dialog-portrait" aria-hidden="true">
+        <canvas id="dialog-portrait-canvas" width="112" height="132"></canvas>
+        <span class="dialog-caption" id="dialog-caption"></span>
       </div>
       <div class="dialog-main">
+        <div class="dialog-nameplate">
+          <span class="dialog-name" id="dialog-name">Prof. Lewis</span>
+        </div>
         <p class="dialog-text" id="dialog-text"></p>
         <p class="dialog-continue" id="dialog-continue">▶ CONTINUAR</p>
       </div>

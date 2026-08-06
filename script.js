@@ -248,7 +248,7 @@ const AudioSys = {
       case 'saber': this.tone({ freq: 200, slideTo: 900, type: 'sawtooth', dur: 0.18, vol: 0.12 }); break;
       case 'enemyHit': this.tone({ freq: 500, slideTo: 250, type: 'square', dur: 0.12, vol: 0.14 }); break;
       case 'enemyDie': this.tone({ freq: 400, slideTo: 60, type: 'sawtooth', dur: 0.4, vol: 0.18 }); break;
-      case 'mumble': this.tone({ freq: 120, slideTo: 90, type: 'triangle', dur: 0.08, vol: 0.05 }); break;
+      case 'mumble': this.tone({ freq: 118, slideTo: 84, type: 'square', dur: 0.09, vol: 0.06 }); break;
       case 'quizRight': [660, 880, 1100].forEach((f, i) => this.tone({ freq: f, type: 'triangle', dur: 0.16, vol: 0.2, delay: i * 0.07 })); break;
       case 'quizWrong': this.tone({ freq: 260, slideTo: 140, type: 'sawtooth', dur: 0.3, vol: 0.16 }); break;
       case 'fusion': this.tone({ freq: 520, slideTo: 1040, type: 'sine', dur: 0.25, vol: 0.16 }); break;
@@ -2254,31 +2254,112 @@ function drawArrival() {
   }
 }
 
-/* ---------------- Cientista e diálogo ---------------- */
-function startDialog(onEnd) {
-  const lines = DIALOGUES[Game.levelIndex] || [];
-  if (!lines.length) { (onEnd || beginExploration)(); return; }
-  Game.phase = 'dialog';
-  Game.locked = true;
+/* ---------------- Sistema de diálogos reutilizável ----------------
+   Inspirado em Plants vs. Zombies / Ace Attorney / Steins;Gate.
+   - Retrato fixo ao lado do texto (cerca de 30% da largura).
+   - Animação idle (respiração), piscada e boca falando enquanto digita.
+   - Texto letra por letra + som de murmuração (PvZ).
+   - Espaço/Enter aceleram o texto; Espaço novamente avança a fala.
+   - Qualquer NPC pode usar: basta registrar em DIALOG_CONFIG ou passar
+     um objeto de retrato customizado para openDialog().
+   eyes/mouth são coordenadas em pixels do sprite original. */
+const DIALOG_CONFIG = {
+  scientist: {
+    sprite: SPRITES.scientist,
+    scale: 6,
+    name: 'Prof. Lewis',
+    caption: 'Orientador da Missão',
+    palette: { h: '#7a4a22', G: '#3aa0ff', s: '#ffd9a8', S: '#eef2ff', B: '#2b6f9e', w: '#2b3554' },
+    eyes: [{ row: 8, col: 3, w: 6, h: 2 }],
+    mouth: { row: 10, col: 3, w: 6 }
+  }
+};
+
+const DIALOG_CHAR_SPEED = 0.028;  /* segundos por caractere */
+const DIALOG_MUMBLE_EVERY = 0.16; /* intervalo entre os sons de murmuração */
+const DIALOG_BLINK_MIN = 1.5;     /* tempo mínimo até piscar */
+const DIALOG_BLINK_MAX = 4;       /* tempo máximo até piscar */
+const DIALOG_BLINK_DUR = 0.14;    /* duração da piscada */
+
+/* Abre um diálogo genérico.
+   opts: { lines, onEnd, portrait ('scientist' ou objeto customizado),
+           setPhase (default true: muda Game.phase para 'dialog') } */
+function openDialog(opts) {
+  opts = opts || {};
+  const conf = typeof opts.portrait === 'string'
+    ? (DIALOG_CONFIG[opts.portrait] || DIALOG_CONFIG.scientist)
+    : (opts.portrait || DIALOG_CONFIG.scientist);
+  const lines = opts.lines || [];
+  const onEnd = opts.onEnd || beginExploration;
+  if (!lines.length) { onEnd(); return; }
+
+  if (opts.setPhase !== false) {
+    Game.phase = 'dialog';
+    Game.locked = true;
+  }
   Game.dialog = {
     lines, index: 0,
     shown: 0, charT: 0, done: false, mumbleT: 0, cursorT: 0,
-    onEnd: onEnd || beginExploration
+    npc: conf,
+    idleT: 0,                        /* respiração do retrato */
+    blinkT: rand(DIALOG_BLINK_MIN, DIALOG_BLINK_MAX), blinking: 0,
+    mouthT: rand(0, 3), talking: true,
+    mumblePitch: 0,                  /* alterna o tom da murmuração */
+    onEnd: onEnd
   };
-  /* Desenha o cientista no painel (retrato grande, estilo PvZ) */
-  const c = document.getElementById('dialog-scientist-canvas');
-  if (c && c.getContext) {
-    const g = c.getContext('2d');
-    g.imageSmoothingEnabled = false;
-    g.clearRect(0, 0, c.width, c.height);
-    drawSprite(g, SPRITES.scientist, 28, 28, 4, {
-      h: '#7a4a22', G: '#3aa0ff', s: '#ffd9a8', S: '#eef2ff', B: '#2b6f9e', w: '#2b3554'
-    });
-  }
+
+  const nameEl = document.getElementById('dialog-name');
+  if (nameEl) nameEl.textContent = conf.name;
+  const capEl = document.getElementById('dialog-caption');
+  if (capEl) capEl.textContent = conf.caption || '';
+
+  drawDialogPortrait(Game.dialog);
   document.getElementById('dialog').hidden = false;
   document.getElementById('dialog-text').textContent = '';
   document.getElementById('dialog-continue').hidden = true;
   AudioSys.sfx('mumble');
+}
+
+function startDialog(onEnd) {
+  openDialog({ lines: DIALOGUES[Game.levelIndex] || [], onEnd: onEnd || beginExploration });
+}
+
+/* Retrato animado: balanço idle + piscada + boca falando */
+function drawDialogPortrait(d) {
+  const c = document.getElementById('dialog-portrait-canvas');
+  if (!c || !c.getContext) return;
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  g.clearRect(0, 0, c.width, c.height);
+
+  const conf = d.npc;
+  const px = conf.scale;
+  const sz = spriteSize(conf.sprite, px);
+  const bob = Math.sin(d.idleT * 2.2) * 1.5;
+  const x = Math.round((c.width - sz.w) / 2);
+  const y = Math.round((c.height - sz.h) / 2 + bob);
+  drawSprite(g, conf.sprite, x, y, px, conf.palette);
+
+  /* Piscada: cobre os olhos com a cor da pele */
+  if (d.blinking > 0 && conf.eyes) {
+    g.fillStyle = conf.palette.s;
+    for (const eye of conf.eyes) {
+      g.fillRect(x + eye.col * px, y + eye.row * px, eye.w * px, eye.h * px);
+    }
+  }
+
+  /* Boca: abre e fecha enquanto o texto é digitado */
+  if (d.talking && conf.mouth) {
+    const open = Math.abs(Math.sin(d.mouthT * 8));
+    const mw = Math.round(conf.mouth.w * px * (0.8 + open * 0.4));
+    const mh = Math.round(px * (0.5 + open * 0.9));
+    g.fillStyle = conf.palette.B || conf.palette.w;
+    g.fillRect(
+      x + conf.mouth.col * px + Math.round((conf.mouth.w * px - mw) / 2),
+      y + conf.mouth.row * px + Math.round(px * 0.35),
+      mw, mh
+    );
+  }
 }
 
 function updateDialog(dt) {
@@ -2286,16 +2367,25 @@ function updateDialog(dt) {
   if (!d) return;
   const line = d.lines[d.index];
   d.charT += dt;
-  const speed = 0.03; /* segundos por caractere */
-  while (d.charT >= speed && d.shown < line.length) {
-    d.charT -= speed;
+  while (d.charT >= DIALOG_CHAR_SPEED && d.shown < line.length) {
+    d.charT -= DIALOG_CHAR_SPEED;
     d.shown++;
-    d.mumbleT -= speed;
+    d.mumbleT -= DIALOG_CHAR_SPEED;
     if (d.mumbleT <= 0) {
-      d.mumbleT = 0.16;
-      AudioSys.sfx('mumble');
+      d.mumbleT = DIALOG_MUMBLE_EVERY;
+      /* Murmuração alternando o tom (estilo PvZ) */
+      d.mumblePitch = 1 - d.mumblePitch;
+      AudioSys.tone({
+        freq: d.mumblePitch ? 128 : 104,
+        slideTo: d.mumblePitch ? 92 : 78,
+        type: 'triangle',
+        dur: 0.08,
+        vol: 0.06
+      });
     }
   }
+  d.talking = d.shown < line.length;
+
   /* Typewriter com cursor piscando */
   d.cursorT -= dt;
   if (d.cursorT <= 0) d.cursorT = 0.5;
@@ -2303,17 +2393,32 @@ function updateDialog(dt) {
   document.getElementById('dialog-text').textContent = line.slice(0, d.shown) + cursor;
   if (d.shown >= line.length) {
     d.done = true;
+    d.talking = false;
     document.getElementById('dialog-text').textContent = line;
     document.getElementById('dialog-continue').hidden = false;
   }
+
+  /* Animação do retrato: respiração, piscada e boca */
+  d.idleT += dt;
+  d.mouthT += dt;
+  if (d.blinking > 0) {
+    d.blinking -= dt;
+    if (d.blinking <= 0) d.blinkT = rand(DIALOG_BLINK_MIN, DIALOG_BLINK_MAX);
+  } else {
+    d.blinkT -= dt;
+    if (d.blinkT <= 0) d.blinking = DIALOG_BLINK_DUR;
+  }
+  drawDialogPortrait(d);
 }
 
 function advanceDialog() {
   const d = Game.dialog;
   if (!d) return;
   if (!d.done) {
+    /* Espaço/Enter aceleram: revela a fala inteira */
     d.shown = d.lines[d.index].length;
     d.done = true;
+    d.talking = false;
     document.getElementById('dialog-text').textContent = d.lines[d.index];
     document.getElementById('dialog-continue').hidden = false;
     return;
@@ -2327,6 +2432,7 @@ function advanceDialog() {
     return;
   }
   d.shown = 0; d.charT = 0; d.done = false;
+  d.talking = true;
   document.getElementById('dialog-text').textContent = '';
   document.getElementById('dialog-continue').hidden = true;
 }
@@ -3766,23 +3872,12 @@ function updateClassroom(dt) {
 }
 
 function startClassroomDialog() {
-  Game.dialog = {
-    lines: CLASSROOM_DIALOGUE, index: 0, shown: 0, charT: 0, done: false, mumbleT: 0, cursorT: 0,
-    onEnd: showResults
-  };
-  const c = document.getElementById('dialog-scientist-canvas');
-  if (c && c.getContext) {
-    const g = c.getContext('2d');
-    g.imageSmoothingEnabled = false;
-    g.clearRect(0, 0, c.width, c.height);
-    drawSprite(g, SPRITES.scientist, 28, 28, 4, {
-      h: '#7a4a22', G: '#3aa0ff', s: '#ffd9a8', S: '#eef2ff', B: '#2b6f9e', w: '#2b3554'
-    });
-  }
-  document.getElementById('dialog').hidden = false;
-  document.getElementById('dialog-text').textContent = '';
-  document.getElementById('dialog-continue').hidden = true;
-  AudioSys.sfx('mumble');
+  /* Professor usa o MESMO sistema reutilizável (retrato animado + texto) */
+  openDialog({
+    lines: CLASSROOM_DIALOGUE,
+    onEnd: showResults,
+    setPhase: false /* a sala de aula continua sendo a fase atual */
+  });
 }
 
 /* Sala de aula pixel-art: lousa, mesas, alunos e o professor */
