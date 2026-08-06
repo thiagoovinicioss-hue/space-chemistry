@@ -101,9 +101,18 @@ const DIALOGUES = {
   ]
 };
 
-/* --- Configuração da viagem espacial --- */
+/* --- Configuração da viagem espacial (fase jogável) --- */
 const TRAVEL_DUR = 55;
 const TRAVEL_SPEED = 150;
+const TRAVEL_SHIP_SPEED = 225;   /* velocidade da nave (controles) */
+const TRAVEL_SHIP_R = 14;        /* raio de colisão da nave */
+
+/* Estrelas em paralaxe: 3 camadas que passam cada vez mais rápido */
+const TRAVEL_STAR_LAYERS = [
+  { n: 46, speed: 55,  max: 1, bright: 0.35 },
+  { n: 34, speed: 150, max: 2, bright: 0.55 },
+  { n: 16, speed: 310, max: 3, bright: 0.8 }
+];
 
 /* Dicas químicas que alternam no rodapé da viagem */
 const TRAVEL_TIPS = [
@@ -4396,22 +4405,22 @@ function missionDone(equip) {
 /* ---------------- Viagem espacial ---------------- */
 /* Planeta de destino da viagem (colisão dispara a aterrissagem) */
 const TR_DEST = { x: VIEW_W - 120, y: 64, r: 46 };
-const TR_ARRIVE_DUR = 1.1;
 
 function startTravel() {
   Game.phase = 'travel';
   Game.locked = true;
+  /* Fase real: esconde o "carregando" antigo e desenha tudo no canvas */
+  const tw = document.getElementById('travel-wrap');
+  if (tw) tw.hidden = true;
   Game.travel = {
     t: 0, dur: TRAVEL_DUR,
-    ship: { x: VIEW_W * 0.18, y: VIEW_H / 2, invuln: 0.5 },
-    hazards: [], spawnT: 1.2,
-    arriving: null,
+    ship: { x: VIEW_W * 0.18, y: VIEW_H / 2, invuln: 0.5, tilt: 0, flame: 0, trailT: 0 },
+    hazards: [], spawnT: 0.7,
+    arriving: null, faded: false,
     tipIdx: randInt(0, TRAVEL_TIPS.length - 1), tipT: 0,
     nextIdx: Math.min(Game.levelIndex + 1, LEVELS.length - 1)
   };
   camX = 0; camY = 0;
-  const tw = document.getElementById('travel-wrap');
-  if (tw) tw.hidden = false;
   updateTravelFill();
   AudioSys.sfx('travel');
   startFadeIn(0.5);
@@ -4423,30 +4432,52 @@ function updateTravel(dt) {
   tr.t += dt;
   const p = tr.ship;
 
-  /* Chegou: nave congela, efeito de aterrissagem + fade → próximo planeta */
+  /* Chegou: a nave voa sozinha até o planeta e o jogo faz o fade */
   if (tr.arriving) {
     tr.arriving.t += dt;
-    if (chance(0.4)) {
-      emitParticle(p.x + rand(-16, 16), p.y + rand(-10, 10), rand(-20, 20), rand(-40, -10), '#59d3ff', 0.4, 3);
+    const k = clamp(tr.arriving.t / tr.arriving.dur, 0, 1);
+    const e = easeInOut(k);
+    p.x = lerp(tr.arriving.x0, TR_DEST.x, e);
+    p.y = lerp(tr.arriving.y0, TR_DEST.y, e);
+    p.tilt = lerp(p.tilt, 0.3, dt * 4);
+    if (chance(0.5)) {
+      emitParticle(p.x + rand(-18, 18), p.y + rand(-14, 14), rand(-30, 10), rand(-60, -10), '#59d3ff', 0.5, 3);
+    }
+    if (k > 0.55 && !tr.faded) {
+      tr.faded = true;
+      startFadeOut(0.8, () => finishTravel());
     }
     updateTravelFill();
     return;
   }
 
-  /* Movimento da nave */
+  /* Movimento da nave (teclado ou D-pad do toque) */
   let mx = 0, my = 0;
   if (Input.isDown('KeyW') || Input.isDown('ArrowUp')) my -= 1;
   if (Input.isDown('KeyS') || Input.isDown('ArrowDown')) my += 1;
   if (Input.isDown('KeyA') || Input.isDown('ArrowLeft')) mx -= 1;
   if (Input.isDown('KeyD') || Input.isDown('ArrowRight')) mx += 1;
-  p.x = clamp(p.x + mx * 200 * dt, 24, VIEW_W - 24);
-  p.y = clamp(p.y + my * 200 * dt, 30, VIEW_H - 30);
+  p.x = clamp(p.x + mx * TRAVEL_SHIP_SPEED * dt, 24, VIEW_W - 24);
+  p.y = clamp(p.y + my * TRAVEL_SHIP_SPEED * dt, 30, VIEW_H - 42);
+  p.tilt = lerp(p.tilt, my * 0.45, 1 - Math.exp(-8 * dt));
+  p.flame = Math.random();
   if (p.invuln > 0) p.invuln -= dt;
 
-  /* Gera obstáculos */
+  /* Motor: rastro contínuo atrás da nave (chama + rastro cosmético) */
+  const trailC = getEquippedItem('trail');
+  p.trailT += dt;
+  if (p.trailT > 0.02) {
+    p.trailT = 0;
+    emitParticle(p.x - 20 + rand(-3, 3), p.y + rand(-5, 5), -rand(60, 120), rand(-8, 8), '#ff7a3d', 0.35, 2.4);
+    if (trailC.color) {
+      emitParticle(p.x - 14, p.y + rand(-7, 7), -rand(20, 60), rand(-10, 10), trailC.color, 0.5, 2);
+    }
+  }
+
+  /* Gera obstáculos (densidade cresce com o tempo) */
   tr.spawnT -= dt;
   if (tr.spawnT <= 0) {
-    tr.spawnT = Math.max(0.45, 1.1 - tr.t * 0.012);
+    tr.spawnT = Math.max(0.38, 1.0 - tr.t * 0.013);
     spawnTravelHazard();
   }
 
@@ -4456,30 +4487,50 @@ function updateTravel(dt) {
     h.x += h.vx * dt;
     h.y += h.vy * dt;
     h.t += dt;
+    h.rot = (h.rot || 0) + (h.rotV || 0) * dt;
     if (h.type === 'blackhole') {
       const dx = h.x - p.x, dy = h.y - p.y;
       const d = Math.max(1, dist(p.x, p.y, h.x, h.y));
       if (d < 130) {
-        p.x += dx / d * 60 * dt;
-        p.y += dy / d * 60 * dt;
+        p.x += dx / d * 70 * dt;
+        p.y += dy / d * 70 * dt;
+      }
+      if (chance(0.35)) {
+        const a = Math.atan2(dy, dx);
+        emitParticle(h.x + Math.cos(a) * 4, h.y + Math.sin(a) * 4, -Math.cos(a) * 70, -Math.sin(a) * 70, '#c77bff', 0.3, 2);
       }
     }
-    if (h.x < -40 || h.y < -40 || h.y > VIEW_H + 40 || h.x > VIEW_W + 40) {
+    /* Meteoritos soltam faíscas pelo caminho */
+    if (h.type === 'meteorite' && chance(0.45)) {
+      emitParticle(h.x + rand(-6, 6), h.y + rand(-6, 6), h.vx * -0.2, h.vy * 0.5 + rand(-20, 20), '#ff8a5d', 0.3, 2);
+    }
+    if (h.x < -50 || h.y < -50 || h.y > VIEW_H + 50 || h.x > VIEW_W + 50) {
       tr.hazards.splice(i, 1);
       continue;
     }
-    if (p.invuln <= 0 && dist(p.x, p.y, h.x, h.y) < h.r + 12) {
+    /* Colisão com a nave: dano com impacto visível */
+    if (p.invuln <= 0 && dist(p.x, p.y, h.x, h.y) < h.r + TRAVEL_SHIP_R) {
       tr.hazards.splice(i, 1);
       AudioSys.sfx('boom');
-      shake(6);
-      burst(p.x + rand(-6, 6), p.y + rand(-6, 6), '#ff8a5d', 12);
+      shake(10);
+      burst(p.x + rand(-8, 8), p.y + rand(-8, 8), h.color || '#ff8a5d', 18);
+      burst(p.x, p.y, '#ffffff', 6);
+      spawnFloater(p.x, p.y - 24, '-1 vida');
       damagePlayer();
+      p.invuln = 1.2;
     }
+  }
+
+  /* Dicas de ligações químicas alternam sozinhas no rodapé */
+  tr.tipT += dt;
+  if (tr.tipT > 6) {
+    tr.tipT = 0;
+    tr.tipIdx = (tr.tipIdx + 1) % TRAVEL_TIPS.length;
   }
 
   updateTravelFill();
 
-  /* Chegada por contato com o planeta de destino (com animação + fade) */
+  /* Chegada por contato com o planeta: fade automático, sem botão */
   if (dist(p.x, p.y, TR_DEST.x, TR_DEST.y) < TR_DEST.r + 18) {
     startTravelArrive();
     return;
@@ -4491,13 +4542,12 @@ function updateTravel(dt) {
   }
 }
 
-/* Colisão nave ↔ planeta: aterrissagem com fade */
+/* Colisão nave ↔ planeta: a nave voa até o planeta e o fade acontece sozinho */
 function startTravelArrive() {
   const tr = Game.travel;
   if (tr.arriving) return;
-  tr.arriving = { t: 0, dur: TR_ARRIVE_DUR };
+  tr.arriving = { t: 0, dur: 1.7, x0: tr.ship.x, y0: tr.ship.y };
   AudioSys.sfx('arrival');
-  startFadeOut(0.8, () => finishTravel());
 }
 
 function spawnTravelHazard() {
@@ -4505,69 +4555,134 @@ function spawnTravelHazard() {
   const roll = Math.random();
   const y = rand(36, VIEW_H - 36);
   let h;
-  if (roll < 0.26) {
-    h = { type: 'asteroid', r: rand(12, 22), vx: -TRAVEL_SPEED, vy: 0, t: 0, color: '#8a7f74' };
-  } else if (roll < 0.44) {
-    h = { type: 'meteorite', r: rand(14, 20), vx: -TRAVEL_SPEED * 1.4, vy: rand(-20, 20), t: 0, color: '#ff8a5d' };
-  } else if (roll < 0.58) {
-    h = { type: 'comet', r: rand(9, 13), vx: -TRAVEL_SPEED * 1.9, vy: rand(-30, 30), t: 0, color: '#8fd9ff' };
+  if (roll < 0.24) {
+    /* Asteróide: rocha irregular girando com crateras */
+    h = { type: 'asteroid', r: rand(12, 22), vx: -TRAVEL_SPEED * rand(0.9, 1.2), vy: rand(-8, 8), t: 0, rot: rand(0, 6.28), rotV: rand(-2, 2), color: '#8a7f74' };
+  } else if (roll < 0.42) {
+    /* Meteorito: rápido, com rastro de fogo e faíscas */
+    h = { type: 'meteorite', r: rand(13, 19), vx: -TRAVEL_SPEED * rand(1.3, 1.7), vy: rand(-30, 30), t: 0, rot: rand(0, 6.28), rotV: rand(-3, 3), color: '#ff8a5d' };
+  } else if (roll < 0.56) {
+    /* Cometa: núcleo pequeno e cauda longa, muito veloz */
+    h = { type: 'comet', r: rand(8, 12), vx: -TRAVEL_SPEED * rand(1.8, 2.3), vy: rand(-40, 40), t: 0, rot: rand(0, 6.28), rotV: 0, color: '#8fd9ff' };
   } else if (roll < 0.74) {
-    h = { type: 'satellite', r: 16, vx: -TRAVEL_SPEED * 0.85, vy: 0, t: 0, color: '#9fb0d8' };
-  } else if (roll < 0.9) {
-    h = { type: 'debris', r: rand(6, 10), vx: -TRAVEL_SPEED * rand(1.1, 1.6), vy: rand(-40, 40), t: 0, color: '#5f574e' };
+    /* Satélite abandonado: sprite com painel solar e luz piscando */
+    h = { type: 'satellite', r: 15, vx: -TRAVEL_SPEED * rand(0.7, 0.9), vy: rand(-6, 6), t: 0, rot: rand(0, 6.28), rotV: rand(-0.6, 0.6), color: '#9fb0d8' };
+  } else if (roll < 0.92) {
+    /* Lixo espacial: aglomerado de 2 a 3 pedaços girando */
+    h = { type: 'debris', r: rand(6, 9), vx: -TRAVEL_SPEED * rand(1.1, 1.5), vy: rand(-45, 45), t: 0, rot: rand(0, 6.28), rotV: rand(-4, 4), color: '#5f574e', shards: randInt(2, 3) };
   } else {
+    /* Buraco negro (raro): puxa a nave e suga partículas */
     h = { type: 'blackhole', r: 18, vx: -TRAVEL_SPEED * 0.4, vy: 0, t: 0, color: '#1a1030' };
   }
   h.x = VIEW_W + 30;
+  h.y = y;
   tr.hazards.push(h);
 }
 
 function drawTravelScene() {
   const tr = Game.travel;
   if (!tr) return;
+  const t = tr.t;
 
-  /* Fundo espacial com estrelas em movimento */
+  /* Fundo espacial: estrelas rápidas em 3 camadas de paralaxe */
   const grad = ctx.createLinearGradient(0, 0, 0, VIEW_H);
   grad.addColorStop(0, '#05070f');
-  grad.addColorStop(1, '#0b1030');
+  grad.addColorStop(0.55, '#080d24');
+  grad.addColorStop(1, '#0e1238');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-  for (let i = 0; i < 70; i++) {
-    const sx = ((i * 137 + 11) % VIEW_W);
-    const sy = ((i * 89 + 31) % VIEW_H);
-    const px = ((sx - tr.t * (20 + (i % 5) * 15)) % VIEW_W + VIEW_W) % VIEW_W;
-    ctx.fillStyle = i % 7 === 0 ? '#ffd166' : '#ffffff';
-    ctx.globalAlpha = 0.3 + (i % 5) * 0.12;
-    ctx.fillRect(px, sy, i % 4 === 0 ? 2 : 1, i % 4 === 0 ? 2 : 1);
+
+  drawTravelStars(tr);
+
+  /* Linhas de velocidade (sensação de alta velocidade) */
+  for (let i = 0; i < 10; i++) {
+    const sp = 430 + (i % 4) * 90;
+    const len = 45 + (i % 3) * 50;
+    const y = (i * 71 + 13) % VIEW_H;
+    const x = VIEW_W - ((t * sp + i * 197) % (VIEW_W + len)) + 10;
+    ctx.globalAlpha = 0.05 + (i % 4) * 0.02;
+    ctx.fillStyle = '#bffaff';
+    ctx.fillRect(x, y, len, 1);
   }
   ctx.globalAlpha = 1;
 
-  /* Planeta de destino: atmosfera pulsante + anel de aproximação */
+  drawTravelPlanet(tr);
+  drawTravelHazards(tr);
+  drawTravelShip(tr);
+  drawTravelHud(tr);
+
+  /* Barra de dicas químicas (alterna sozinha no rodapé) */
+  drawTravelTip();
+
+  drawParticles();
+  drawFloaters();
+  drawFade();
+}
+
+/* Estrelas em 3 camadas: fundo lento, meio, e estrelas grandes rápidas */
+function drawTravelStars(tr) {
+  const t = tr.t;
+  TRAVEL_STAR_LAYERS.forEach((L, li) => {
+    for (let i = 0; i < L.n; i++) {
+      const sy = ((i * 89 + 31 * (li + 1) + 7) % VIEW_H);
+      const size = 1 + (i % L.max);
+      const bx = ((i * 137 + 11 + li * 53) % VIEW_W);
+      const px = (bx - t * L.speed - (i % 7) * 23) % VIEW_W;
+      const x = (px + VIEW_W) % VIEW_W;
+      ctx.globalAlpha = L.bright + (i % 5) * 0.06;
+      ctx.fillStyle = i % 9 === 0 ? '#ffd166' : '#ffffff';
+      ctx.fillRect(Math.round(x), sy, size, size);
+    }
+  });
+  ctx.globalAlpha = 1;
+}
+
+/* Planeta de destino: brilho pulsante + anel + seta guia */
+function drawTravelPlanet(tr) {
   const nextLv = LEVELS[tr.nextIdx];
   const pulse = 1 + Math.sin(tr.t * 2) * 0.05;
   ctx.save();
   ctx.shadowColor = nextLv.planetColor;
-  ctx.shadowBlur = 24;
+  ctx.shadowBlur = 28;
   ctx.fillStyle = nextLv.planetColor;
   ctx.beginPath();
   ctx.arc(TR_DEST.x, TR_DEST.y, TR_DEST.r * pulse, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  /* Relevo do planeta */
+  ctx.fillStyle = 'rgba(255,255,255,0.1)';
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.arc(TR_DEST.x + (i - 1) * 13, TR_DEST.y + 4 + i * 5, 5 - i * 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
   ctx.lineWidth = 2;
   ctx.setLineDash([6, 6]);
   ctx.beginPath();
-  ctx.arc(TR_DEST.x, TR_DEST.y, TR_DEST.r + 12 + Math.sin(tr.t * 3) * 3, 0, Math.PI * 2);
+  ctx.arc(TR_DEST.x, TR_DEST.y, TR_DEST.r + 14 + Math.sin(tr.t * 3) * 3, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
   ctx.font = 'bold 11px "Courier New", monospace';
   ctx.textAlign = 'center';
   ctx.fillText(nextLv.name.toUpperCase(), TR_DEST.x, TR_DEST.y + TR_DEST.r + 26);
+  /* Seta guia apontando para o destino */
+  const sa = Math.sin(tr.t * 3) * 3;
+  ctx.fillStyle = 'rgba(89,211,255,0.75)';
+  ctx.beginPath();
+  ctx.moveTo(TR_DEST.x - 8, TR_DEST.y + TR_DEST.r + 38 + sa);
+  ctx.lineTo(TR_DEST.x, TR_DEST.y + TR_DEST.r + 30 + sa);
+  ctx.lineTo(TR_DEST.x + 8, TR_DEST.y + TR_DEST.r + 38 + sa);
+  ctx.closePath();
+  ctx.fill();
+}
 
-  /* Obstáculos */
+/* Obstáculos espaciais detalhados (todos giram, sem ser um sprite só) */
+function drawTravelHazards(tr) {
   for (const h of tr.hazards) {
     if (h.type === 'blackhole') {
+      ctx.save();
       ctx.fillStyle = 'rgba(26,16,48,0.95)';
       ctx.beginPath();
       ctx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
@@ -4577,73 +4692,217 @@ function drawTravelScene() {
       ctx.beginPath();
       ctx.arc(h.x, h.y, h.r + 6 + Math.sin(h.t * 3) * 3, 0, Math.PI * 2);
       ctx.stroke();
+      for (let i = 0; i < 2; i++) {
+        ctx.strokeStyle = 'rgba(199,123,255,0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(h.x, h.y, h.r - 5 + i * 6, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
       continue;
     }
     ctx.save();
     ctx.translate(h.x, h.y);
-    ctx.rotate(h.t * 2);
+    ctx.rotate(h.rot || 0);
+
     if (h.type === 'satellite') {
+      /* Satélite abandonado: painel solar + luz de alerta piscando */
       const sz = spriteSize(SPRITES.satellite, 2);
+      ctx.fillStyle = '#3aa0ff';
+      ctx.globalAlpha = 0.85;
+      ctx.fillRect(-sz.w / 2 - 9, -3, 9, 6);
+      ctx.fillRect(sz.w / 2, -3, 9, 6);
+      ctx.globalAlpha = 1;
       drawSprite(ctx, SPRITES.satellite, -sz.w / 2, -sz.h / 2, 2, { s: '#9fb0d8', w: '#59d3ff' });
-    } else if (h.type === 'comet') {
-      /* Cometa: núcleo + cauda */
-      ctx.globalAlpha = 0.7;
-      ctx.fillStyle = h.color;
+      ctx.globalAlpha = 0.4 + Math.sin(h.t * 6) * 0.3;
+      ctx.fillStyle = '#ffd166';
       ctx.beginPath();
-      ctx.ellipse(0, 0, h.r * 1.6, h.r * 0.7, 0, 0, Math.PI * 2);
+      ctx.arc(0, 0, 2, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
+    } else if (h.type === 'comet') {
+      /* Cometa: cauda longa + núcleo incandescente */
+      ctx.rotate(-0.35);
+      const trailGrad = ctx.createLinearGradient(0, 0, h.r * 6, 0);
+      trailGrad.addColorStop(0, 'rgba(143,217,255,0)');
+      trailGrad.addColorStop(0.55, 'rgba(143,217,255,0.55)');
+      trailGrad.addColorStop(1, 'rgba(143,217,255,0.95)');
+      ctx.fillStyle = trailGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, -h.r * 0.45);
+      ctx.lineTo(h.r * 6, 0);
+      ctx.lineTo(0, h.r * 0.45);
+      ctx.closePath();
+      ctx.fill();
+      ctx.rotate(0.35);
+      ctx.save();
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 8;
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.arc(0, 0, h.r * 0.6, 0, Math.PI * 2);
       ctx.fill();
-      const trailGrad = ctx.createLinearGradient(0, 0, h.r * 4, 0);
-      trailGrad.addColorStop(0, 'rgba(143,217,255,0)');
-      trailGrad.addColorStop(1, 'rgba(143,217,255,0.7)');
-      ctx.fillStyle = trailGrad;
-      ctx.beginPath();
-      ctx.moveTo(0, -h.r * 0.4);
-      ctx.lineTo(h.r * 4, 0);
-      ctx.lineTo(0, h.r * 0.4);
-      ctx.closePath();
-      ctx.fill();
-    } else {
+      ctx.restore();
       ctx.fillStyle = h.color;
       ctx.beginPath();
-      for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * Math.PI * 2;
-        const r = h.r * (0.85 + Math.abs(Math.sin(i * 2.7 + h.t)) * 0.3);
+      ctx.arc(0, 0, h.r * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (h.type === 'debris') {
+      /* Lixo espacial: pedaços de sucata girando */
+      for (let i = 0; i < (h.shards || 1); i++) {
+        ctx.save();
+        ctx.rotate(h.rot + i * 2.1);
+        ctx.fillStyle = i % 2 ? '#5f574e' : '#7d7468';
+        ctx.beginPath();
+        ctx.moveTo(6, 0);
+        ctx.lineTo(-3.6, 3.6);
+        ctx.lineTo(-2.4, -3.6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      }
+    } else {
+      /* Asteróide/meteorito: rocha irregular com crateras girando */
+      ctx.fillStyle = h.color;
+      ctx.beginPath();
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2;
+        const r = h.r * (0.82 + Math.abs(Math.sin(i * 2.7 + h.t)) * 0.3);
         const px = Math.cos(a) * r, py = Math.sin(a) * r;
         if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
       }
       ctx.closePath();
       ctx.fill();
-      if (h.type === 'meteorite') {
-        ctx.fillStyle = 'rgba(255,138,93,0.6)';
+      ctx.fillStyle = 'rgba(0,0,0,0.28)';
+      for (let i = 0; i < 3; i++) {
         ctx.beginPath();
-        ctx.arc(-h.r, 0, 4 + Math.sin(h.t * 10) * 2, 0, Math.PI * 2);
+        ctx.arc(Math.sin(h.t * 2 + i * 9) * h.r * 0.45, Math.cos(h.t * 1.7 + i * 7) * h.r * 0.45, h.r * 0.17, 0, Math.PI * 2);
         ctx.fill();
+      }
+      if (h.type === 'meteorite') {
+        /* Rastro de fogo do meteorito + brasa na frente */
+        ctx.rotate(0.2);
+        const fg = ctx.createLinearGradient(-h.r * 2, 0, 0, 0);
+        fg.addColorStop(0, 'rgba(255,138,93,0)');
+        fg.addColorStop(1, 'rgba(255,138,93,0.75)');
+        ctx.fillStyle = fg;
+        ctx.beginPath();
+        ctx.moveTo(-h.r * 2, -h.r * 0.55);
+        ctx.lineTo(0, -h.r * 0.25);
+        ctx.lineTo(0, h.r * 0.25);
+        ctx.lineTo(-h.r * 2, h.r * 0.55);
+        ctx.closePath();
+        ctx.fill();
+        ctx.save();
+        ctx.shadowColor = '#ffd166';
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath();
+        ctx.arc(h.r * 0.4, 0, 3 + Math.sin(h.t * 12) * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
     }
     ctx.restore();
   }
+}
 
-  /* Nave do jogador (cosmético equipado) */
+/* Nave: chama do motor, inclinação e piscada de escudo */
+function drawTravelShip(tr) {
+  const p = tr.ship;
   const ship = getEquippedItem('ship');
   const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' };
   const sz = spriteSize(SPRITES.ship, 3);
-  const bob = Math.sin(tr.t * 3) * 2;
-  drawSprite(ctx, SPRITES.ship, Math.round(tr.ship.x - sz.w / 2), Math.round(tr.ship.y - sz.h / 2 + bob), 3, pal);
-  /* Propulsão */
-  if (chance(0.5)) {
-    emitParticle(tr.ship.x - sz.w / 2, tr.ship.y + rand(-6, 6), -rand(40, 90), rand(-10, 10), '#ff7a3d', 0.4, 3);
+  const bob = Math.sin(tr.t * 4) * 1.5;
+
+  /* Escudo: bolha ao redor da nave quando invulnerável */
+  if (p.invuln > 0 && Math.floor(tr.t * 8) % 2 === 0) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(127,245,255,0.65)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y + bob, 27, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(127,245,255,0.07)';
+    ctx.fill();
+    ctx.restore();
   }
-  drawParticles();
 
-  /* Barra de dicas químicas (alterna sozinha no rodapé) */
-  drawTravelTip();
+  ctx.save();
+  ctx.translate(Math.round(p.x), Math.round(p.y + bob));
+  ctx.rotate(p.tilt || 0);
 
-  drawFade();
+  /* Motor ligado: chama dupla tremeluzente atrás da nave */
+  const fl = 0.55 + (p.flame || 0) * 0.9;
+  ctx.save();
+  ctx.shadowColor = '#ff7a3d';
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = '#ff7a3d';
+  ctx.beginPath();
+  ctx.moveTo(-sz.w / 2 - 4, -3);
+  ctx.lineTo(-sz.w / 2 - 4 - 14 * fl, 0);
+  ctx.lineTo(-sz.w / 2 - 4, 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#ffd166';
+  ctx.beginPath();
+  ctx.moveTo(-sz.w / 2 - 3, -1.6);
+  ctx.lineTo(-sz.w / 2 - 3 - 8 * fl, 0);
+  ctx.lineTo(-sz.w / 2 - 3, 1.6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  drawSprite(ctx, SPRITES.ship, -sz.w / 2, -sz.h / 2, 3, pal);
+  ctx.restore();
+}
+
+/* HUD da viagem: escudo (vidas), alvo e controles */
+function drawTravelHud(tr) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(4,8,20,0.55)';
+  ctx.strokeStyle = 'rgba(89,211,255,0.35)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(8, 8, 130, 26, 6); else ctx.rect(8, 8, 130, 26);
+  ctx.fill();
+  ctx.stroke();
+  ctx.font = 'bold 10px "Courier New", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#59d3ff';
+  ctx.fillText('NAVE', 16, 21);
+  for (let i = 0; i < MAX_LIVES; i++) {
+    ctx.globalAlpha = i < Game.run.lives ? 1 : 0.22;
+    drawShipPip(54 + i * 24, 21);
+  }
+  ctx.globalAlpha = 1;
+
+  /* Alvo: próximo planeta */
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.font = 'bold 10px "Courier New", monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('ALVO: ' + LEVELS[tr.nextIdx].name.toUpperCase(), VIEW_W - 12, 21);
+  ctx.restore();
+
+  /* Controles (só no começo) */
+  if (tr.t < 4) {
+    ctx.fillStyle = 'rgba(255,255,255,' + (tr.t < 3.2 ? 0.55 : (4 - tr.t) * 0.7).toFixed(2) + ')';
+    ctx.font = '10px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('WASD / setas para pilotar · toque no planeta para pousar', VIEW_W / 2, VIEW_H - 44);
+  }
+}
+
+/* Mini-nave usada como ícone de vida no HUD */
+function drawShipPip(cx, cy) {
+  const pal = { G: '#2b6f9e', V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' };
+  const sz = spriteSize(SPRITES.ship, 1);
+  drawSprite(ctx, SPRITES.ship, Math.round(cx - sz.w / 2), Math.round(cy - sz.h / 2), 1, pal);
 }
 
 /* Dica química alternando no rodapé da viagem */
