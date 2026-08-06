@@ -45,6 +45,65 @@ const COL_BOND = {
 };
 const BOND_NAME = { ionic: 'Iônica', covalent: 'Covalente', metallic: 'Metálica' };
 
+/* --- Tipos de alienígenas (combate) --- */
+const ENEMY_TYPES = {
+  green:    { name: 'Alien Verde',      color: '#5dffa6', body: '#2f7a4a', hp: 3, speed: 34, radius: 16 },
+  purple:   { name: 'Alien Roxo',       color: '#c77bff', body: '#5a2a8a', hp: 4, speed: 28, radius: 16 },
+  robot:    { name: 'Alien Robô',       color: '#b0b6c4', body: '#3a4a5e', hp: 5, speed: 22, radius: 17 },
+  crystal:  { name: 'Alien Cristalino', color: '#7ff5ff', body: '#1e7a8a', hp: 6, speed: 20, radius: 18 }
+};
+
+/* Tempo das animações de chegada */
+const ARRIVAL_DUR = 2.2;
+
+/* --- Diálogos do cientista por planeta ---
+   Cada fala aparece letra a letra; ENTER/ESPAÇO avança. */
+const DIALOGUES = {
+  0: [
+    'Bem-vindo à Estação Orbital, recruta!',
+    'Eu sou o Prof. Lewis. A galáxia perdeu toda a sua energia química.',
+    'Sua missão: explorar cada planeta e restaurar as ligações entre os átomos.',
+    'Colete os cristais (elementos) pelo mapa e monte o composto na Máquina de Fusão.',
+    'No Planeta Final, um questionário vai testar tudo o que você aprendeu.',
+    'Cuidado com asteroides e alienígenas — use seu sabre de luz para se defender!',
+    'Agora vá! Comece coletando os cristais de hidrogênio e oxigênio para fazer água.'
+  ],
+  1: [
+    'Krystália está em chamas, recruta!',
+    'Aqui aprendemos a ligação IÔNICA: metal + ametal TROCAM elétrons.',
+    'O sódio (metal) doa 1 elétron; o cloro (ametal) recebe. Formam-se os íons Na⁺ e Cl⁻.',
+    'Colete os elementos e monte NaCl, MgO e KBr na Fornalha Iônica.',
+    'Os alienígenas guardam passagens secretas. Derrote-os para avançar!',
+    'Boa sorte, astronauta!'
+  ],
+  2: [
+    'Nébula é um mundo de gases, recruta!',
+    'Aqui aprendemos a ligação COVALENTE: ametais COMPARTILHAM elétrons.',
+    'Água (H₂O), gás carbônico (CO₂) e amônia (NH₃) são ligações covalentes.',
+    'Monte essas moléculas no Montador Molecular para limpar a atmosfera.',
+    'Atente-se aos rios de energia — e aos alienígenas roxos que os protegem!'
+  ],
+  3: [
+    'Ferravil perdeu toda a eletricidade, recruta!',
+    'Nos metais, os elétrons ficam LIVRES — o famoso "mar de elétrons".',
+    'É por isso que cobre, ferro e ouro conduzem eletricidade tão bem.',
+    'Colete os metais e alimente o Núcleo de Energia na ordem certa.',
+    'Os robôs-guarda protegem as minas. Use o sabre para abrir caminho!'
+  ],
+  4: [
+    'Este é o Núcleo Cósmico, recruta! O teste final.',
+    'Aplique tudo: IÔNICA = metal + ametal trocam elétrons.',
+    'COVALENTE = ametais compartilham elétrons.',
+    'METÁLICA = metais com "mar de elétrons" livres.',
+    'Classifique as ligações nos portais, monte o NaCl no reator...',
+    '...e responda ao questionário final para restaurar a galáxia!'
+  ]
+};
+
+/* --- Configuração da viagem espacial --- */
+const TRAVEL_DUR = 55;
+const TRAVEL_SPEED = 150;
+
 /* =====================================================================
    02. UTILITÁRIOS
 ===================================================================== */
@@ -162,6 +221,17 @@ const AudioSys = {
       case 'portal': this.tone({ freq: 300, slideTo: 900, type: 'sine', dur: 0.5, vol: 0.18 }); break;
       case 'gate': this.tone({ freq: 880, slideTo: 1320, type: 'triangle', dur: 0.2, vol: 0.18 }); break;
       case 'damage': this.tone({ freq: 400, slideTo: 200, type: 'square', dur: 0.2, vol: 0.15 }); break;
+      case 'saber': this.tone({ freq: 200, slideTo: 900, type: 'sawtooth', dur: 0.18, vol: 0.12 }); break;
+      case 'enemyHit': this.tone({ freq: 500, slideTo: 250, type: 'square', dur: 0.12, vol: 0.14 }); break;
+      case 'enemyDie': this.tone({ freq: 400, slideTo: 60, type: 'sawtooth', dur: 0.4, vol: 0.18 }); break;
+      case 'mumble': this.tone({ freq: 120, slideTo: 90, type: 'triangle', dur: 0.08, vol: 0.05 }); break;
+      case 'quizRight': [660, 880, 1100].forEach((f, i) => this.tone({ freq: f, type: 'triangle', dur: 0.16, vol: 0.2, delay: i * 0.07 })); break;
+      case 'quizWrong': this.tone({ freq: 260, slideTo: 140, type: 'sawtooth', dur: 0.3, vol: 0.16 }); break;
+      case 'fusion': this.tone({ freq: 520, slideTo: 1040, type: 'sine', dur: 0.25, vol: 0.16 }); break;
+      case 'chest': this.tone({ freq: 780, slideTo: 1170, type: 'sine', dur: 0.2, vol: 0.18 }); break;
+      case 'switch': this.tone({ freq: 140, type: 'square', dur: 0.12, vol: 0.16 }); this.tone({ freq: 620, type: 'sine', dur: 0.16, vol: 0.12, delay: 0.12 }); break;
+      case 'arrival': this.tone({ freq: 160, slideTo: 480, type: 'sine', dur: 0.8, vol: 0.15 }); break;
+      case 'travel': this.tone({ freq: 110, slideTo: 220, type: 'sine', dur: 1.2, vol: 0.12 }); break;
     }
   },
 
@@ -283,6 +353,104 @@ const SPRITES = {
       '...CCCC...',
       '....CC....',
       '....CC....'
+    ]
+  },
+
+  /* Alienígena (12 x 10 px) — a mesma arte recebe cores por tipo */
+  alien: {
+    grid: [
+      '.....EE.....',
+      '....EEEE....',
+      '...EEEEEE...',
+      '..EEEEEEEE..',
+      '..EWWWWWWE..',
+      '..EWWDDWWE..',
+      '..EWWWWWWE..',
+      '...EEEEEE...',
+      '...EE..EE...',
+      '...EE..EE...'
+    ]
+  },
+
+  /* Cientista "Prof. Lewis" (12 x 14 px) */
+  scientist: {
+    grid: [
+      '....hhhh....',
+      '...hhhhhh...',
+      '...hGGGGh...',
+      '...hGGGGh...',
+      '...hssssh...',
+      '....ssss....',
+      '...ssssss...',
+      '..ssssssss..',
+      '..sSSSSSSs..',
+      '..sSSSSSSs..',
+      '..sSBBSSSs..',
+      '...ssssss...',
+      '...ww..ww...',
+      '...ww..ww...'
+    ]
+  },
+
+  /* Baú de cristais (12 x 10 px) */
+  chest: {
+    grid: [
+      '..cccccccc..',
+      '.cccccccccc.',
+      'cccccccccccc',
+      'ccwwwwwwwwcc',
+      'ccwddddddwcc',
+      'ccwwwwwwwwcc',
+      'cccccccccccc',
+      'cccccccccccc',
+      '.cccccccccc.',
+      '..cccccccc..'
+    ]
+  },
+
+  /* Rocha decorativa (10 x 8 px) */
+  rock: {
+    grid: [
+      '..rrrrrr..',
+      '.rrrrrrrr.',
+      'rrrrrrrrrr',
+      'rrrrrrrrrr',
+      'rrrrrrrrrr',
+      'rrrrrrrrrr',
+      '.rrrrrrrr.',
+      '..rrrrrr..'
+    ]
+  },
+
+  /* Árvore alienígena (10 x 12 px) */
+  tree: {
+    grid: [
+      '...tttt...',
+      '..tttttt..',
+      '.tttttttt.',
+      '.tggggggt.',
+      '.tggggggt.',
+      '.tttttttt.',
+      '..tttttt..',
+      '...tttt...',
+      '...tttt...',
+      '...tttt...',
+      '...tttt...',
+      '...tttt...'
+    ]
+  },
+
+  /* Satélite abandonado (12 x 8 px) — viagem espacial */
+  satellite: {
+    grid: [
+      '...ssssss...',
+      '..ssssssss..',
+      '..s.wwww.s..',
+      '..s.wwww.s..',
+      '..ssssssss..',
+      '...ssssss...',
+      '...s....s...',
+      '...s....s...'
     ]
   }
 };
@@ -463,7 +631,16 @@ const LEVELS = [
     hazards: [[5, 3], [18, 10]],
     recipes: ['H2O'],
     objective: 'Monte a molécula de água (H₂O)',
-    planetColor: '#59d3ff'
+    planetColor: '#59d3ff',
+    enemies: [],
+    decor: [
+      { t: 'rock', x: 2, y: 3 },
+      { t: 'rock', x: 24, y: 5 },
+      { t: 'tree', x: 25, y: 12 },
+      { t: 'tree', x: 2, y: 14 },
+      { t: 'river', x: 5, y: 14, w: 4, h: 1 },
+      { t: 'chest', x: 16, y: 10, el: 'O' }
+    ]
   },
 
   /* ---------- 1 · PLANETA IÔNICO: Krystália ---------- */
@@ -488,7 +665,20 @@ const LEVELS = [
     hazards: [[12, 3], [21, 10], [16, 13], [3, 8], [26, 5], [7, 15]],
     recipes: ['NaCl', 'MgO', 'KBr'],
     objective: 'Monte os compostos iônicos',
-    planetColor: '#ff9df2'
+    planetColor: '#ff9df2',
+    enemies: [
+      { type: 'green', x: 10, y: 6, opens: [19, 9] },
+      { type: 'green', x: 20, y: 6 }
+    ],
+    decor: [
+      { t: 'rock', x: 2, y: 4 },
+      { t: 'rock', x: 28, y: 5 },
+      { t: 'tree', x: 28, y: 13 },
+      { t: 'tree', x: 2, y: 10 },
+      { t: 'river', x: 2, y: 2, w: 3, h: 1 },
+      { t: 'chest', x: 26, y: 13, el: 'Mg' },
+      { t: 'switch', x: 26, y: 15, opens: [14, 3] }
+    ]
   },
 
   /* ---------- 2 · PLANETA COVALENTE: Nébula ---------- */
@@ -511,7 +701,20 @@ const LEVELS = [
     hazards: [[4, 13], [21, 3], [10, 9], [25, 12], [15, 14]],
     recipes: ['H2O', 'CO2', 'NH3'],
     objective: 'Monte as moléculas covalentes',
-    planetColor: '#7ff5ff'
+    planetColor: '#7ff5ff',
+    enemies: [
+      { type: 'purple', x: 11, y: 8, opens: [9, 5] },
+      { type: 'purple', x: 21, y: 8 }
+    ],
+    decor: [
+      { t: 'rock', x: 2, y: 4 },
+      { t: 'rock', x: 28, y: 14 },
+      { t: 'tree', x: 3, y: 2 },
+      { t: 'tree', x: 26, y: 4 },
+      { t: 'river', x: 5, y: 2, w: 5, h: 1 },
+      { t: 'chest', x: 16, y: 13, el: 'C' },
+      { t: 'switch', x: 28, y: 9, opens: [9, 11] }
+    ]
   },
 
   /* ---------- 3 · PLANETA METÁLICO: Ferravil ---------- */
@@ -536,7 +739,20 @@ const LEVELS = [
     wires: [[14, 3, 22, 3], [14, 13, 22, 13], [5, 10, 13, 10], [16, 10, 24, 10]],
     recipes: ['CU', 'FE', 'AU'],
     objective: 'Alimente o núcleo com os metais certos',
-    planetColor: '#ffd166'
+    planetColor: '#ffd166',
+    enemies: [
+      { type: 'robot', x: 11, y: 8, opens: [9, 4] },
+      { type: 'robot', x: 21, y: 8 }
+    ],
+    decor: [
+      { t: 'rock', x: 2, y: 4 },
+      { t: 'rock', x: 28, y: 4 },
+      { t: 'tree', x: 26, y: 3 },
+      { t: 'tree', x: 2, y: 14 },
+      { t: 'river', x: 5, y: 15, w: 4, h: 1 },
+      { t: 'chest', x: 16, y: 3, el: 'Fe' },
+      { t: 'switch', x: 3, y: 3, opens: [19, 12] }
+    ]
   },
 
   /* ---------- 4 · PLANETA FINAL: Núcleo Cósmico ---------- */
@@ -572,6 +788,18 @@ const LEVELS = [
       { formula: 'CO₂', bond: 'covalent', learn: 'C e O são ametais que COMPARTILHAM elétrons. CO₂ é ligação COVALENTE.' },
       { formula: 'Au', bond: 'metallic', learn: 'O ouro é um metal puro com "mar de elétrons" livres. Isso é ligação METÁLICA.' },
       { formula: 'NH₃', bond: 'covalent', learn: 'N e H são ametais que compartilham elétrons. NH₃ é ligação COVALENTE.' }
+    ],
+    enemies: [
+      { type: 'crystal', x: 8, y: 8, opens: [3, 3] },
+      { type: 'crystal', x: 21, y: 8 }
+    ],
+    decor: [
+      { t: 'rock', x: 20, y: 6 },
+      { t: 'rock', x: 4, y: 15 },
+      { t: 'tree', x: 25, y: 6 },
+      { t: 'river', x: 3, y: 16, w: 7, h: 1 },
+      { t: 'chest', x: 20, y: 12, el: 'O' },
+      { t: 'switch', x: 28, y: 15, opens: [26, 11] }
     ]
   }
 ];
@@ -663,6 +891,18 @@ const Game = {
   gateIndex: 0,
   levelTime: 0,
   locked: false,         /* jogador congelado (feedback/build/intro) */
+
+  /* Ciclo de gameplay por planeta:
+     'arrival' → 'dialog' → 'explore' → 'fusion' → 'quiz' → 'mission' → 'travel' */
+  phase: 'explore',
+  arrival: null,         /* animação de chegada da nave */
+  dialog: null,          /* diálogo do cientista */
+  fusion: null,          /* máquina de fusão (drag & drop) */
+  quiz: null,            /* questionário */
+  mission: null,         /* tela de missão concluída */
+  travel: null,          /* viagem espacial entre planetas */
+  saber: null,           /* sabre de luz (combate) */
+  quizStats: { correct: 0, total: 0 },
 
   /* Estado da campanha (uma tentativa) */
   run: {
@@ -791,9 +1031,40 @@ function buildLevel(idx) {
   const machine = { x: lv.machine.x * TILE + TILE / 2, y: lv.machine.y * TILE + TILE / 2 };
   const portal = { x: lv.portal.x * TILE + TILE / 2, y: lv.portal.y * TILE + TILE / 2, open: false };
 
+  /* Alienígenas (combate) */
+  const enemies = (lv.enemies || []).map(e => {
+    const type = ENEMY_TYPES[e.type] || ENEMY_TYPES.green;
+    return {
+      type: e.type, name: type.name, color: type.color, body: type.body,
+      hp: type.hp, maxHp: type.hp, speed: type.speed, radius: type.radius,
+      x: e.x * TILE + TILE / 2, y: e.y * TILE + TILE / 2,
+      baseX: e.x * TILE + TILE / 2, range: (e.range || 3) * TILE,
+      dir: 1, t: rand(0, 6.28), hitCd: 0, alive: true, flash: 0, w: 20, h: 22,
+      opens: e.opens ? { x: e.opens[0] * TILE + TILE / 2, y: e.opens[1] * TILE + TILE / 2, tx: e.opens[0], ty: e.opens[1] } : null
+    };
+  });
+
+  /* Decor: rochas, árvores, rios de energia, baús, interruptores */
+  const decor = (lv.decor || []).map(d => {
+    const base = {
+      t: d.t, x: d.x * TILE, y: d.y * TILE,
+      w: (d.w || 1) * TILE, h: (d.h || 1) * TILE, phase: rand(0, 6.28)
+    };
+    if (d.t === 'chest') { base.el = d.el; base.opened = false; base.glow = 0; }
+    if (d.t === 'switch') {
+      base.activated = false;
+      base.opens = { tx: d.opens[0], ty: d.opens[1], x: d.opens[0] * TILE + TILE / 2, y: d.opens[1] * TILE + TILE / 2 };
+    }
+    return base;
+  });
+
   return {
     idx, lv, theme, g, crystals, hazards, traps, gates, machine, portal,
+    enemies, decor,
+    orbs: [],            /* energia deixada pelos alienígenas derrotados */
+    scientist: { x: lv.spawn.x * TILE + TILE / 2, y: lv.spawn.y * TILE + TILE / 2 },
     gatesDone: false,
+    quizDone: false,
     particlesSeed: (g.w * g.h * (idx + 7)) % 1000
   };
 }
@@ -900,30 +1171,13 @@ function tryInteract() {
 
   const recipe = currentRecipe();
   if (!recipe) {
-    showFeedback('info', 'Tudo pronto!', 'Atravesse o portal para continuar a missão.');
+    showFeedback('info', 'Tudo pronto!', 'A energia deste planeta foi restaurada. Continue a missão!');
     return;
   }
 
   if (hasAll(Game.inventory, recipe.atoms)) {
-    /* --- SUCESSO: monta o composto com animação --- */
-    AudioSys.sfx('build');
-    consumeAtoms(recipe.atoms);
-    const kind = lv.idx === FINAL_INDEX ? 'reactor' : recipe.kind;
-    Game.buildAnim = {
-      kind, recipe, t: 0, dur: 2.6,
-      onDone: () => {
-        AudioSys.sfx('correct');
-        if (!Game.replay) Game.run.score += 100;
-        updateHudScore();
-        showFeedback('good', recipe.formula + ' montado! (+100)', recipe.learn, () => {
-          Game.recipeIndex++;
-          updateObjectiveHud();
-          checkRecipeDone();
-          Game.locked = false;
-        });
-      }
-    };
-    Game.locked = true;
+    /* --- SUCESSO: abre a Máquina de Fusão (drag & drop) --- */
+    Fusion.open(recipe);
     return;
   }
 
@@ -972,13 +1226,18 @@ function consumeAtoms(atoms) {
 }
 
 function checkRecipeDone() {
+  maybeEndLevel();
+}
+
+/* Overhaul: ao terminar as receitas, o jogador faz o questionário;
+   a conclusão segue pelo painel de missão (mission → travel / vitória). */
+function maybeEndLevel() {
   const lv = Game.level;
-  if (Game.recipeIndex >= lv.lv.recipes.length) {
-    if (lv.lv.gateSequence) {
-      if (lv.gatesDone) unlockPortal();
-    } else {
-      unlockPortal();
-    }
+  if (!lv) return;
+  if (Game.recipeIndex < lv.lv.recipes.length) return;
+  if (lv.lv.gateSequence && !lv.gatesDone) return;
+  if (!lv.quizDone) {
+    Quiz.start();
   }
 }
 
@@ -1001,7 +1260,7 @@ function checkGates() {
   const seq = lv.lv.gateSequence;
   if (Game.gateIndex >= seq.length) {
     lv.gatesDone = true;
-    if (Game.recipeIndex >= lv.lv.recipes.length) unlockPortal();
+    maybeEndLevel();
     return;
   }
   const cur = seq[Game.gateIndex];
@@ -1020,8 +1279,11 @@ function checkGates() {
         teleportToStandby();
         if (Game.gateIndex >= seq.length) {
           Game.level.gatesDone = true;
-          if (Game.recipeIndex >= lv.lv.recipes.length) unlockPortal();
-          else showFeedback('good', 'Portais liberados!', 'Agora monte NaCl no reator para restaurar a galáxia.', () => { Game.locked = false; });
+          if (Game.recipeIndex >= lv.lv.recipes.length) {
+            maybeEndLevel();
+          } else {
+            showFeedback('good', 'Portais liberados!', 'Agora monte NaCl no reator para restaurar a galáxia.', () => { Game.locked = false; });
+          }
         } else {
           showFeedback('good', 'Resposta certa! (+150)', cur.learn, () => { Game.locked = false; });
         }
@@ -1075,6 +1337,11 @@ function update(dt) {
     }
     return;
   }
+
+  /* Fases do overhaul com jogador congelado */
+  if (Game.phase === 'arrival') { updateArrival(dt); updateParticles(dt); return; }
+  if (Game.phase === 'dialog') { updateDialog(dt); return; }
+  if (Game.phase === 'travel') { updateTravel(dt); updateParticles(dt); return; }
 
   /* Jogador congelado (feedback/intro) */
   if (Game.locked) {
@@ -1167,6 +1434,12 @@ function update(dt) {
     completeLevel();
     return;
   }
+
+  /* --- Combate: sabre + alienígenas + orbes + decor --- */
+  updateCombat(dt);
+  updateEnemies(dt);
+  updateOrbs();
+  updateDecor(dt);
 
   /* --- Partículas --- */
   updateParticles(dt);
@@ -1809,6 +2082,7 @@ function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2
 function render() {
   const lv = Game.level;
   if (!lv) return;
+  if (Game.phase === 'travel') { drawTravelScene(); return; }
   computeCamera();
   ctx.save();
   if (shakeAmt > 0) {
@@ -1817,18 +2091,986 @@ function render() {
   drawBackground();
   drawTiles();
   drawWires();
+  drawDecor();
   drawCrystals();
   drawGates();
+  drawEnemies();
   drawMachines();
   drawPortal();
   drawHazards();
   drawPlayer();
+  drawOrbs();
+  drawSaber();
   drawParticles();
   drawFloaters();
   if (Game.buildAnim) drawBuildAnim();
+  if (Game.phase === 'arrival') drawArrival();
   ctx.restore();
   drawGatePanel();
 }
+
+/* =====================================================================
+   12.5 CICLO DO OVERHAUL — CIENTISTA, FUSÃO, QUIZ, VIAGEM E COMBATE
+   Cada planeta percorre: arrival → dialog → explore → fusion → quiz
+   → mission → travel → próximo planeta.
+===================================================================== */
+
+/* ---------------- Animação de chegada da nave ---------------- */
+function startArrival() {
+  Game.phase = 'arrival';
+  Game.arrival = { t: 0, dur: ARRIVAL_DUR };
+  Game.locked = true;
+  AudioSys.sfx('arrival');
+}
+
+function updateArrival(dt) {
+  const a = Game.arrival;
+  a.t += dt;
+  if (a.t >= a.dur) {
+    Game.arrival = null;
+    startDialog();
+  }
+}
+
+function drawArrival() {
+  const a = Game.arrival;
+  if (!a) return;
+  const prog = clamp(a.t / a.dur, 0, 1);
+  const ship = getEquippedItem('ship');
+  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' };
+  const sp = SPRITES.ship;
+  const scale = 3;
+  const w = sp.grid[0].length * scale, h = sp.grid.length * scale;
+  const sx = lerp(VIEW_W + w, VIEW_W / 2, easeInOut(prog));
+  const sy = lerp(40, VIEW_H - 40, easeInOut(prog));
+  ctx.save();
+  ctx.globalAlpha = prog > 0.85 ? 1 - (prog - 0.85) / 0.15 : 1;
+  drawSprite(ctx, sp, Math.round(sx - w / 2), Math.round(sy - h / 2), scale, pal);
+  ctx.restore();
+  /* Flash de aterrissagem */
+  if (prog > 0.8 && chance(0.3)) {
+    emitParticle(VIEW_W / 2 + rand(-20, 20), VIEW_H - 36, rand(-10, 10), rand(-30, -10), '#59d3ff', 0.5, 3);
+  }
+}
+
+/* ---------------- Cientista e diálogo ---------------- */
+function startDialog() {
+  const lines = DIALOGUES[Game.levelIndex] || [];
+  if (!lines.length) { beginExploration(); return; }
+  Game.phase = 'dialog';
+  Game.locked = true;
+  Game.dialog = {
+    lines, index: 0,
+    shown: 0, charT: 0, done: false, mumbleT: 0
+  };
+  /* Desenha o cientista no painel */
+  const c = document.getElementById('dialog-scientist-canvas');
+  if (c && c.getContext) {
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.clearRect(0, 0, c.width, c.height);
+    drawSprite(g, SPRITES.scientist, 8, 8, 3, {
+      h: '#7a4a22', G: '#3aa0ff', s: '#ffd9a8', S: '#eef2ff', B: '#2b6f9e', w: '#2b3554'
+    });
+  }
+  document.getElementById('dialog').hidden = false;
+  document.getElementById('dialog-text').textContent = '';
+  document.getElementById('dialog-continue').hidden = true;
+  AudioSys.sfx('mumble');
+}
+
+function updateDialog(dt) {
+  const d = Game.dialog;
+  if (!d) return;
+  const line = d.lines[d.index];
+  d.charT += dt;
+  const speed = 0.03; /* segundos por caractere */
+  while (d.charT >= speed && d.shown < line.length) {
+    d.charT -= speed;
+    d.shown++;
+    d.mumbleT -= speed;
+    if (d.mumbleT <= 0) {
+      d.mumbleT = 0.16;
+      AudioSys.sfx('mumble');
+    }
+  }
+  document.getElementById('dialog-text').textContent = line.slice(0, d.shown) + '▮';
+  if (d.shown >= line.length) {
+    d.done = true;
+    document.getElementById('dialog-text').textContent = line;
+    document.getElementById('dialog-continue').hidden = false;
+  }
+}
+
+function advanceDialog() {
+  const d = Game.dialog;
+  if (!d) return;
+  if (!d.done) {
+    d.shown = d.lines[d.index].length;
+    d.done = true;
+    document.getElementById('dialog-text').textContent = d.lines[d.index];
+    document.getElementById('dialog-continue').hidden = false;
+    return;
+  }
+  d.index++;
+  if (d.index >= d.lines.length) {
+    document.getElementById('dialog').hidden = true;
+    Game.dialog = null;
+    beginExploration();
+    return;
+  }
+  d.shown = 0; d.charT = 0; d.done = false;
+  document.getElementById('dialog-text').textContent = '';
+  document.getElementById('dialog-continue').hidden = true;
+}
+
+function beginExploration() {
+  Game.phase = 'explore';
+  Game.locked = false;
+}
+
+/* ---------------- Máquina de Fusão (drag & drop) ---------------- */
+const Fusion = {
+  recipe: null,
+  slots: [],       /* { el, filled, label } */
+  tray: {},        /* el -> quantidade disponível */
+  dragging: null,  /* el em arrasto */
+
+  open(recipe) {
+    Game.phase = 'fusion';
+    Game.locked = true;
+    this.recipe = recipe;
+    this.slots = [];
+    Object.keys(recipe.atoms).forEach(el => {
+      for (let i = 0; i < recipe.atoms[el]; i++) {
+        this.slots.push({ el, filled: false, label: ELEMENTS[el].symbol });
+      }
+    });
+    this.tray = {};
+    Object.keys(Game.inventory).forEach(el => {
+      if (Game.inventory[el] > 0) this.tray[el] = Game.inventory[el];
+    });
+    this.dragging = null;
+    this.renderSlots();
+    this.renderTray();
+    const sub = document.getElementById('fusion-sub');
+    sub.textContent = 'Arraste os elementos para montar ' + chem(recipe.formula) +
+      ' — ' + recipe.name + '. ' + (recipe.kind === 'metallic'
+        ? 'Lembre: metais puros usam o "mar de elétrons".'
+        : recipe.kind === 'ionic'
+          ? 'Metal doa elétron, ametal recebe.'
+          : 'Ametais compartilham elétrons.');
+    document.getElementById('fusion-error').hidden = true;
+    document.getElementById('fusion-hint').hidden = false;
+    document.getElementById('fusion').hidden = false;
+    AudioSys.sfx('fusion');
+  },
+
+  renderSlots() {
+    const wrap = document.getElementById('fusion-slots');
+    wrap.innerHTML = '';
+    this.slots.forEach((s, i) => {
+      const div = document.createElement('div');
+      div.className = 'fusion-slot' + (s.filled ? ' filled' : '');
+      div.dataset.slot = i;
+      if (s.filled) {
+        div.appendChild(this.makeChipEl(s.el));
+      } else {
+        div.innerHTML = '<span class="slot-label">' + chem(s.label) + '</span>';
+        /* Slot vazio aceita drop */
+        div.addEventListener('pointerup', e => { e.preventDefault(); Fusion.dropOn(e, i); });
+        div.addEventListener('touchend', e => { e.preventDefault(); Fusion.dropOn(e, i); }, { passive: false });
+      }
+      wrap.appendChild(div);
+    });
+  },
+
+  renderTray() {
+    const tray = document.getElementById('fusion-tray');
+    tray.innerHTML = '';
+    const els = Object.keys(this.tray);
+    if (!els.length) {
+      tray.innerHTML = '<span class="fusion-tray-label">(Nenhum cristal disponível)</span>';
+      return;
+    }
+    els.forEach(el => {
+      const count = this.tray[el];
+      const chip = this.makeChipEl(el);
+      chip.className = 'fusion-chip';
+      const badge = document.createElement('span');
+      badge.className = 'chip-count';
+      badge.textContent = '×' + count;
+      chip.appendChild(badge);
+      /* Inicia o arrasto */
+      const startDrag = e => {
+        e.preventDefault();
+        this.dragging = el;
+        document.getElementById('fusion-error').hidden = true;
+        AudioSys.sfx('click');
+      };
+      chip.addEventListener('pointerdown', startDrag);
+      chip.addEventListener('touchstart', startDrag, { passive: false });
+      tray.appendChild(chip);
+    });
+    this.dragging = null;
+  },
+
+  makeChipEl(el) {
+    const chip = document.createElement('div');
+    chip.style.background = ELEMENTS[el].color;
+    chip.style.borderColor = ELEMENTS[el].color;
+    const label = document.createElement('span');
+    label.className = 'chip-el';
+    label.textContent = ELEMENTS[el].symbol;
+    chip.appendChild(label);
+    return chip;
+  },
+
+  dropOn(e, slotIdx) {
+    if (!this.dragging) return;
+    const el = this.dragging;
+    const slot = this.slots[slotIdx];
+    if (!slot || slot.filled) return;
+    if (slot.el === el && this.tray[el] > 0) {
+      slot.filled = true;
+      this.tray[el]--;
+      if (this.tray[el] <= 0) delete this.tray[el];
+      AudioSys.sfx('gate');
+      this.renderSlots();
+      this.renderTray();
+      if (this.slots.every(s => s.filled)) {
+        this.complete();
+      }
+    } else {
+      const err = document.getElementById('fusion-error');
+      err.textContent = 'Errado! Esse espaço é para ' + chem(slot.label) + ' (' + ELEMENTS[slot.el].name + ').';
+      err.hidden = false;
+      Game.run.wrong++;
+      AudioSys.sfx('error');
+      shake(6);
+      this.dragging = null;
+      this.renderSlots();
+      this.renderTray();
+    }
+  },
+
+  complete() {
+    const recipe = this.recipe;
+    const lv = Game.level;
+    document.getElementById('fusion').hidden = true;
+    AudioSys.sfx('build');
+    consumeAtoms(recipe.atoms);
+    const kind = lv.idx === FINAL_INDEX ? 'reactor' : recipe.kind;
+    Game.buildAnim = {
+      kind, recipe, t: 0, dur: 2.6,
+      onDone: () => {
+        AudioSys.sfx('correct');
+        if (!Game.replay) Game.run.score += 100;
+        updateHudScore();
+        showFeedback('good', recipe.formula + ' montado! (+100)', recipe.learn, () => {
+          Game.recipeIndex++;
+          updateObjectiveHud();
+          Game.phase = 'explore';
+          Game.locked = false;
+          checkRecipeDone();
+        });
+      }
+    };
+    Game.phase = 'explore';
+    Game.locked = true;
+    this.recipe = null;
+    this.slots = [];
+    this.tray = {};
+  }
+};
+
+/* ---------------- Questionário ---------------- */
+const Quiz = {
+  pool: [],        /* questões da fase */
+  idx: 0,
+  correct: 0,
+  answered: false,
+  lastId: null,    /* evita repetir a mesma questão em seguida */
+
+  start() {
+    const lv = Game.level;
+    if (!lv || lv.quizDone) return;
+    lv.quizDone = true;
+    const cat = LEVEL_QUIZ[Game.levelIndex] || 'general';
+    const candidates = QUESTIONS.filter(q => q.cat === cat && q.id !== this.lastId);
+    const fallback = QUESTIONS.filter(q => q.cat === cat);
+    const source = candidates.length ? candidates : fallback;
+    /* Embaralha e pega até 3 questões */
+    const shuffled = source.slice().sort(() => Math.random() - 0.5);
+    this.pool = shuffled.slice(0, 3);
+    if (this.pool.length > 1 && this.pool[0].id === this.lastId) {
+      this.pool.push(this.pool.shift());
+    }
+    this.idx = 0;
+    this.correct = 0;
+    this.answered = false;
+    Game.quizStats = { correct: 0, total: this.pool.length };
+    if (!this.pool.length) {
+      this.finish();
+      return;
+    }
+    Game.phase = 'quiz';
+    Game.locked = true;
+    document.getElementById('quiz').hidden = false;
+    AudioSys.sfx('fusion');
+    this.show();
+  },
+
+  show() {
+    const q = this.pool[this.idx];
+    this.answered = false;
+    this.lastId = q.id;
+    document.getElementById('quiz-progress').textContent =
+      'Pergunta ' + (this.idx + 1) + ' de ' + this.pool.length + ' · Acertos: ' + this.correct;
+    document.getElementById('quiz-question').textContent = q.q;
+    document.getElementById('quiz-explain').hidden = true;
+    document.getElementById('btn-quiz-next').hidden = true;
+
+    const wrap = document.getElementById('quiz-options');
+    wrap.innerHTML = '';
+    const letters = ['A', 'B', 'C', 'D'];
+    q.opts.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'quiz-opt';
+      btn.innerHTML = '<span class="opt-letter">' + letters[i] + '</span><span>' + opt + '</span>';
+      btn.addEventListener('click', () => this.answer(i));
+      wrap.appendChild(btn);
+    });
+  },
+
+  answer(idx) {
+    if (this.answered) return;
+    this.answered = true;
+    const q = this.pool[this.idx];
+    const opts = document.querySelectorAll('#quiz-options .quiz-opt');
+    opts.forEach((o, i) => {
+      o.disabled = true;
+      if (i === q.ans) o.classList.add('correct');
+      else if (i === idx) o.classList.add('wrong');
+    });
+    const explain = document.getElementById('quiz-explain');
+    if (idx === q.ans) {
+      this.correct++;
+      Game.quizStats.correct++;
+      AudioSys.sfx('quizRight');
+      if (!Game.replay) Game.run.score += 150;
+      updateHudScore();
+      explain.className = 'quiz-explain good';
+      explain.textContent = '✅ Correto! ' + q.why;
+    } else {
+      Game.run.wrong++;
+      AudioSys.sfx('quizWrong');
+      shake(8);
+      explain.className = 'quiz-explain bad';
+      explain.textContent = '❌ Errado! ' + q.why;
+    }
+    explain.hidden = false;
+    document.getElementById('btn-quiz-next').hidden = false;
+  },
+
+  next() {
+    this.idx++;
+    if (this.idx >= this.pool.length) {
+      this.finish();
+      return;
+    }
+    this.show();
+  },
+
+  finish() {
+    document.getElementById('quiz').hidden = true;
+    Game.phase = 'explore';
+    Game.locked = false;
+    showMission();
+  }
+};
+
+/* ---------------- Combate: sabre de luz + alienígenas ---------------- */
+function createSaber() {
+  return { cd: 0, swing: 0, ang: 0 };
+}
+
+function saberAttack(tx, ty) {
+  const s = Game.saber;
+  if (!s || s.cd > 0) return;
+  s.cd = 0.45;
+  s.swing = 0.28;
+  const p = Game.player;
+  s.ang = Math.atan2(ty - p.y, tx - p.x);
+  AudioSys.sfx('saber');
+}
+
+/* Ataque via teclado/botão: mira no alien mais próximo (ou na direção do movimento) */
+function saberAttackNearest() {
+  const lv = Game.level;
+  if (!lv || !lv.enemies || Game.phase !== 'explore' || Game.locked || !Game.saber) return;
+  const p = Game.player;
+  let best = null, bd = 180;
+  for (const e of lv.enemies) {
+    if (!e.alive) continue;
+    const d = dist(p.x, p.y, e.x, e.y);
+    if (d < bd) { bd = d; best = e; }
+  }
+  const tx = best ? best.x : p.x + (p.moveX || 1) * 40;
+  const ty = best ? best.y : p.y + (p.moveY || 0) * 40;
+  saberAttack(tx, ty);
+}
+
+function updateCombat(dt) {
+  const s = Game.saber;
+  if (s.cd > 0) s.cd -= dt;
+  if (s.swing > 0) {
+    s.swing -= dt;
+    /* Acerta inimigos no alcance durante o golpe */
+    const p = Game.player;
+    for (const e of Game.level.enemies) {
+      if (!e.alive) continue;
+      if (dist(p.x, p.y, e.x, e.y) < 40) {
+        /* só acerta se o golpe estiver na direção aproximada */
+        const angTo = Math.atan2(e.y - p.y, e.x - p.x);
+        let diff = Math.abs(angTo - s.ang);
+        if (diff > Math.PI) diff = Math.PI * 2 - diff;
+        if (diff < 1.3) {
+          hitEnemy(e);
+        }
+      }
+    }
+  }
+}
+
+function hitEnemy(e) {
+  e.hp--;
+  e.flash = 0.25;
+  e.hitCd = 0.4;
+  /* Empurrão para trás */
+  const p = Game.player;
+  const dx = e.x - p.x, dy = e.y - p.y;
+  const d = Math.max(1, dist(p.x, p.y, e.x, e.y));
+  e.x += dx / d * 14;
+  e.y += dy / d * 14;
+  AudioSys.sfx('enemyHit');
+  burst(e.x, e.y, e.color, 8);
+  if (e.hp <= 0) {
+    e.alive = false;
+    AudioSys.sfx('enemyDie');
+    if (!Game.replay) Game.run.score += 50;
+    updateHudScore();
+    burst(e.x, e.y, e.color, 20);
+    spawnFloater(e.x, e.y - 14, '+50');
+    /* Drop de energia */
+    Game.level.orbs.push({ x: e.x, y: e.y, taken: false });
+    /* Abre passagem secreta se o alien guardava uma */
+    if (e.opens) {
+      Game.level.g.set(e.opens.tx, e.opens.ty, '.');
+      burst(e.opens.x, e.opens.y, '#7ff5ff', 14);
+      spawnFloater(e.opens.x, e.opens.y - 12, 'Passagem aberta!');
+      AudioSys.sfx('switch');
+    }
+  }
+}
+
+function updateEnemies(dt) {
+  const lv = Game.level;
+  const p = Game.player;
+  for (const e of lv.enemies) {
+    if (!e.alive) continue;
+    e.t += dt;
+    if (e.hitCd > 0) e.hitCd -= dt;
+    if (e.flash > 0) e.flash -= dt;
+
+    /* Patrulha em torno da base; persegue o jogador se perto */
+    const dTo = dist(p.x, p.y, e.x, e.y);
+    let mvx = 0, mvy = 0;
+    if (dTo < 110) {
+      const d = Math.max(1, dTo);
+      mvx = (p.x - e.x) / d * e.speed;
+      mvy = (p.y - e.y) / d * e.speed;
+    } else {
+      mvx = e.dir * e.speed * 0.6;
+      if (Math.abs(e.x - e.baseX) > e.range) {
+        e.dir *= -1;
+      }
+    }
+    moveEntity(lv, e, 'x', mvx * dt);
+    moveEntity(lv, e, 'y', mvy * dt);
+
+    /* Contato com o jogador = dano */
+    if (e.hitCd <= 0 && dTo < e.radius + PLAYER_R && p.invuln <= 0) {
+      e.hitCd = 1.2;
+      damagePlayer();
+    }
+  }
+}
+
+function drawEnemies() {
+  const lv = Game.level;
+  if (!lv.enemies) return;
+  for (const e of lv.enemies) {
+    if (!e.alive) continue;
+    const bob = Math.sin(e.t * 3) * 2;
+    const dx = Math.round(e.x - camX);
+    const dy = Math.round(e.y - camY + bob);
+    const sc = 2;
+    const sz = spriteSize(SPRITES.alien, sc);
+    ctx.save();
+    if (e.flash > 0) {
+      ctx.globalAlpha = 0.5;
+    }
+    drawSprite(ctx, SPRITES.alien, dx - sz.w / 2, dy - sz.h / 2, sc, {
+      E: e.flash > 0 ? '#ffffff' : e.body, W: '#ffffff', D: '#0c1226'
+    });
+    ctx.restore();
+
+    /* Barra de vida */
+    const bw = 22, bh = 3;
+    const bx = dx - bw / 2, by = dy - sz.h / 2 - 8;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+    ctx.fillStyle = '#ff5d6c';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.fillStyle = e.color;
+    ctx.fillRect(bx, by, bw * (e.hp / e.maxHp), bh);
+  }
+}
+
+/* Orbes de energia deixados pelos alienígenas */
+function drawOrbs() {
+  const lv = Game.level;
+  const t = performance.now() / 1000;
+  for (const o of lv.orbs) {
+    if (o.taken) continue;
+    const bob = Math.sin(t * 3) * 3;
+    ctx.shadowColor = '#5dffa6';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = '#5dffa6';
+    ctx.beginPath();
+    ctx.arc(o.x - camX, o.y - camY + bob, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+function updateOrbs() {
+  const lv = Game.level;
+  const p = Game.player;
+  for (const o of lv.orbs) {
+    if (o.taken) continue;
+    if (dist(p.x, p.y, o.x, o.y) < 24) {
+      o.taken = true;
+      if (!Game.replay) {
+        Game.run.score += 50;
+        spawnFloater(o.x, o.y - 12, '+50 energia');
+        updateHudScore();
+      }
+      AudioSys.sfx('collect');
+      burst(o.x, o.y, '#5dffa6', 10);
+    }
+  }
+}
+
+function drawSaber() {
+  const s = Game.saber;
+  if (!s || s.swing <= 0) return;
+  const p = Game.player;
+  const prog = 1 - s.swing / 0.28;
+  const a = s.ang + Math.sin(prog * Math.PI) * 1.6;
+  const len = 26;
+  const x1 = p.x - camX, y1 = p.y - camY - 4;
+  const x2 = x1 + Math.cos(a) * len;
+  const y2 = y1 + Math.sin(a) * len;
+  ctx.save();
+  ctx.shadowColor = '#7ff5ff';
+  ctx.shadowBlur = 10;
+  ctx.strokeStyle = '#7ff5ff';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* ---------------- Decor: rochas, árvores, rios, baús, interruptores ---------------- */
+function drawDecor() {
+  const lv = Game.level;
+  if (!lv.decor) return;
+  const t = performance.now() / 1000;
+  for (const d of lv.decor) {
+    if (d.t === 'river') {
+      /* Rio de energia animado */
+      const x0 = Math.max(0, Math.floor((d.x - camX) / TILE));
+      const x1 = Math.min(lv.g.w - 1, Math.ceil((d.x + d.w - camX) / TILE));
+      const y0 = Math.max(0, Math.floor((d.y - camY) / TILE));
+      const y1 = Math.min(lv.g.h - 1, Math.ceil((d.y + d.h - camY) / TILE));
+      for (let ty = y0; ty <= y1; ty++) {
+        for (let tx = x0; tx <= x1; tx++) {
+          const cell = lv.g.get(tx, ty);
+          if (cell !== '.') continue;
+          const dx = tx * TILE - camX;
+          const dy = ty * TILE - camY;
+          const wave = Math.sin(t * 2 + tx * 0.7 + ty);
+          ctx.fillStyle = wave > 0 ? '#1d7a9e' : '#16708e';
+          ctx.fillRect(dx, dy, TILE, TILE);
+          ctx.fillStyle = 'rgba(127,245,255,0.5)';
+          ctx.fillRect(dx + 4, dy + TILE / 2 + Math.sin(t * 3 + tx) * 4, 8, 2);
+        }
+      }
+      continue;
+    }
+    if (d.t === 'chest') {
+      const bob = Math.sin(t * 2 + d.phase) * 2;
+      const sc = 2;
+      const sz = spriteSize(SPRITES.chest, sc);
+      const dx = Math.round(d.x - camX + TILE / 2);
+      const dy = Math.round(d.y - camY + bob);
+      drawSprite(ctx, SPRITES.chest, dx - sz.w / 2, dy - sz.h / 2 + TILE - sz.h, sc,
+        d.opened ? { c: '#5a4630', w: '#9fb0d8', d: '#3a2a10' } : { c: '#8a5a2b', w: '#ffd166', d: '#5a3a1a' });
+      if (!d.opened) {
+        d.glow = (d.glow + 0.05) % (Math.PI * 2);
+        ctx.shadowColor = '#ffd166';
+        ctx.shadowBlur = 6 + Math.sin(d.glow) * 3;
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath();
+        ctx.arc(dx, dy - sz.h / 2 - 4, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      continue;
+    }
+    if (d.t === 'switch') {
+      const dx = Math.round(d.x - camX + TILE / 2);
+      const dy = Math.round(d.y - camY + TILE / 2);
+      ctx.fillStyle = d.activated ? '#5dffa6' : '#2d3a75';
+      ctx.fillRect(dx - 8, dy - 8, 16, 16);
+      ctx.strokeStyle = d.activated ? '#5dffa6' : '#59d3ff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(dx - 8, dy - 8, 16, 16);
+      ctx.fillStyle = d.activated ? '#0c1226' : '#ffd166';
+      ctx.beginPath();
+      ctx.arc(dx, dy, 3, 0, Math.PI * 2);
+      ctx.fill();
+      continue;
+    }
+    /* Rochas e árvores */
+    const sprite = d.t === 'rock' ? SPRITES.rock : d.t === 'tree' ? SPRITES.tree : null;
+    if (!sprite) continue;
+    const sc = d.t === 'rock' ? 3 : 3;
+    const sz = spriteSize(sprite, sc);
+    const dx = Math.round(d.x - camX + TILE / 2);
+    const dy = Math.round(d.y - camY + TILE);
+    const palette = d.t === 'rock' ? { r: '#6b5f55' } : { t: '#2f9e5d', g: '#5dffa6' };
+    drawSprite(ctx, sprite, dx - sz.w / 2, dy - sz.h, sc, palette);
+  }
+}
+
+function updateDecor(dt) {
+  const lv = Game.level;
+  const p = Game.player;
+  for (const d of lv.decor) {
+    if (d.t === 'chest' && !d.opened && dist(p.x, p.y, d.x + TILE / 2, d.y + TILE / 2) < 28) {
+      d.opened = true;
+      Game.inventory[d.el] = (Game.inventory[d.el] || 0) + 1;
+      if (!Game.replay) {
+        Game.run.score += 10;
+        spawnFloater(d.x + TILE / 2, d.y - 6, '+10 ' + ELEMENTS[d.el].symbol);
+        updateHudScore();
+      }
+      AudioSys.sfx('chest');
+      burst(d.x + TILE / 2, d.y + TILE / 2, ELEMENTS[d.el].color, 12);
+      updateObjectiveHud();
+    }
+    if (d.t === 'switch' && !d.activated && dist(p.x, p.y, d.x + TILE / 2, d.y + TILE / 2) < 28) {
+      d.activated = true;
+      lv.g.set(d.opens.tx, d.opens.ty, '.');
+      AudioSys.sfx('switch');
+      burst(d.opens.x, d.opens.y, '#7ff5ff', 14);
+      spawnFloater(d.opens.x, d.opens.y - 14, 'Passagem secreta!');
+    }
+  }
+}
+
+/* ---------------- Missão concluída (recompensa) ---------------- */
+function showMission() {
+  Game.phase = 'mission';
+  Game.locked = true;
+  const idx = Game.levelIndex;
+  const lv = LEVELS[idx];
+  const item = getItemById(LEVEL_REWARDS[idx]);
+
+  document.getElementById('mission-planet').textContent = '🌍 ' + lv.name + ' restaurado!';
+  const acc = Game.quizStats.total > 0
+    ? Math.round(Game.quizStats.correct / Game.quizStats.total * 100) : 100;
+  document.getElementById('mission-stats').innerHTML =
+    'Pontuação: <strong>' + Game.run.score + '</strong><br>' +
+    'Precisão no questionário: <strong>' + acc + '%</strong> (' + Game.quizStats.correct + '/' + Game.quizStats.total + ')<br>' +
+    'Tempo: <strong>' + fmtTime(Game.levelTime) + '</strong>';
+
+  /* Item desbloqueado */
+  const itemBox = document.getElementById('mission-item');
+  itemBox.innerHTML = '';
+  if (item) {
+    if (!Save.hasItem(item.id)) Save.unlockItem(item.id);
+    const icon = document.createElement('div');
+    icon.className = 'reward-icon';
+    const c = document.createElement('canvas');
+    c.width = 48; c.height = 48;
+    drawItemIcon(c.getContext('2d'), item);
+    icon.appendChild(c);
+    const txt = document.createElement('div');
+    txt.innerHTML = '<p class="reward-name">' + item.name + '</p><p class="reward-type">' + item.cat + ' desbloqueado</p>';
+    itemBox.appendChild(icon);
+    itemBox.appendChild(txt);
+    pendingMissionItem = item;
+  }
+  document.getElementById('mission').hidden = false;
+  AudioSys.sfx('unlock');
+}
+
+function hideMission() {
+  document.getElementById('mission').hidden = true;
+  pendingMissionItem = null;
+}
+
+/* Botões da missão concluída */
+function missionDone(equip) {
+  if (equip && pendingMissionItem) {
+    const cat = pendingMissionItem.catName ||
+      CATS.find(c => COSMETICS[c].some(i => i.id === pendingMissionItem.id));
+    if (cat) {
+      Save.data.equipped[cat] = pendingMissionItem.id;
+      Save.save();
+    }
+  }
+  hideMission();
+
+  /* Planeta final: vitória */
+  if (Game.levelIndex === FINAL_INDEX) {
+    completeLevel();
+    return;
+  }
+
+  /* Marca a fase como concluída (bônus de tempo + conquistas) */
+  const idx = Game.levelIndex;
+  const firstTime = !Game.run.completed[idx];
+  if (firstTime) {
+    const timeBonus = Math.max(0, Math.floor(120 - Game.levelTime)) * 5;
+    Game.run.score += 200 + timeBonus;
+    updateHudScore();
+    Game.run.completed[idx] = true;
+    Save.data.completed[idx] = true;
+    unlockAchievement(ACHIEVEMENT_PER_LEVEL[idx], true);
+    if (idx === IONIC_INDEX) unlockAchievement('ionic_expert', true);
+  }
+  if (Game.run.score > Save.data.bestScore) Save.data.bestScore = Game.run.score;
+  Save.save();
+  updateHudProgress();
+
+  startTravel();
+}
+
+/* ---------------- Viagem espacial ---------------- */
+function startTravel() {
+  Game.phase = 'travel';
+  Game.locked = true;
+  Game.travel = {
+    t: 0, dur: TRAVEL_DUR,
+    ship: { x: VIEW_W * 0.18, y: VIEW_H / 2, invuln: 0 },
+    hazards: [], spawnT: 1.2,
+    nextIdx: Math.min(Game.levelIndex + 1, LEVELS.length - 1)
+  };
+  const tw = document.getElementById('travel-wrap');
+  if (tw) tw.hidden = false;
+  updateTravelFill();
+  AudioSys.sfx('travel');
+}
+
+function updateTravel(dt) {
+  const tr = Game.travel;
+  if (!tr) return;
+  tr.t += dt;
+  const p = tr.ship;
+
+  /* Movimento da nave */
+  let mx = 0, my = 0;
+  if (Input.isDown('KeyW') || Input.isDown('ArrowUp')) my -= 1;
+  if (Input.isDown('KeyS') || Input.isDown('ArrowDown')) my += 1;
+  if (Input.isDown('KeyA') || Input.isDown('ArrowLeft')) mx -= 1;
+  if (Input.isDown('KeyD') || Input.isDown('ArrowRight')) mx += 1;
+  p.x = clamp(p.x + mx * 200 * dt, 24, VIEW_W - 24);
+  p.y = clamp(p.y + my * 200 * dt, 30, VIEW_H - 30);
+  if (p.invuln > 0) p.invuln -= dt;
+
+  /* Gera obstáculos */
+  tr.spawnT -= dt;
+  if (tr.spawnT <= 0) {
+    tr.spawnT = Math.max(0.45, 1.1 - tr.t * 0.012);
+    spawnTravelHazard();
+  }
+
+  /* Move obstáculos e checa colisões */
+  for (let i = tr.hazards.length - 1; i >= 0; i--) {
+    const h = tr.hazards[i];
+    h.x += h.vx * dt;
+    h.y += h.vy * dt;
+    h.t += dt;
+    if (h.type === 'blackhole') {
+      const dx = h.x - p.x, dy = h.y - p.y;
+      const d = Math.max(1, dist(p.x, p.y, h.x, h.y));
+      if (d < 130) {
+        p.x += dx / d * 60 * dt;
+        p.y += dy / d * 60 * dt;
+      }
+    }
+    if (h.x < -40 || h.y < -40 || h.y > VIEW_H + 40) {
+      tr.hazards.splice(i, 1);
+      continue;
+    }
+    if (p.invuln <= 0 && dist(p.x, p.y, h.x, h.y) < h.r + 12) {
+      tr.hazards.splice(i, 1);
+      damagePlayer();
+    }
+  }
+
+  updateTravelFill();
+
+  if (tr.t >= tr.dur) {
+    finishTravel();
+  }
+}
+
+function spawnTravelHazard() {
+  const tr = Game.travel;
+  const roll = Math.random();
+  const y = rand(36, VIEW_H - 36);
+  let h;
+  if (roll < 0.3) {
+    h = { type: 'asteroid', r: rand(12, 22), vx: -TRAVEL_SPEED, vy: 0, t: 0, color: '#8a7f74' };
+  } else if (roll < 0.5) {
+    h = { type: 'meteorite', r: rand(14, 20), vx: -TRAVEL_SPEED * 1.4, vy: rand(-20, 20), t: 0, color: '#ff8a5d' };
+  } else if (roll < 0.72) {
+    h = { type: 'satellite', r: 16, vx: -TRAVEL_SPEED * 0.85, vy: 0, t: 0, color: '#9fb0d8' };
+  } else if (roll < 0.9) {
+    h = { type: 'debris', r: rand(6, 10), vx: -TRAVEL_SPEED * rand(1.1, 1.6), vy: rand(-40, 40), t: 0, color: '#5f574e' };
+  } else {
+    h = { type: 'blackhole', r: 18, vx: -TRAVEL_SPEED * 0.4, vy: 0, t: 0, color: '#1a1030' };
+  }
+  h.x = VIEW_W + 30;
+  tr.hazards.push(h);
+}
+
+function drawTravelScene() {
+  const tr = Game.travel;
+  if (!tr) return;
+
+  /* Fundo espacial com estrelas em movimento */
+  const grad = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+  grad.addColorStop(0, '#05070f');
+  grad.addColorStop(1, '#0b1030');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  for (let i = 0; i < 70; i++) {
+    const sx = ((i * 137 + 11) % VIEW_W);
+    const sy = ((i * 89 + 31) % VIEW_H);
+    const px = ((sx - tr.t * (20 + (i % 5) * 15)) % VIEW_W + VIEW_W) % VIEW_W;
+    ctx.fillStyle = i % 7 === 0 ? '#ffd166' : '#ffffff';
+    ctx.globalAlpha = 0.3 + (i % 5) * 0.12;
+    ctx.fillRect(px, sy, i % 4 === 0 ? 2 : 1, i % 4 === 0 ? 2 : 1);
+  }
+  ctx.globalAlpha = 1;
+
+  /* Planeta de destino ao fundo */
+  ctx.globalAlpha = 0.6;
+  const nextLv = LEVELS[tr.nextIdx];
+  ctx.fillStyle = nextLv.planetColor;
+  ctx.beginPath();
+  ctx.arc(VIEW_W - 120, 60, 40, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  /* Obstáculos */
+  for (const h of tr.hazards) {
+    if (h.type === 'blackhole') {
+      ctx.fillStyle = 'rgba(26,16,48,0.95)';
+      ctx.beginPath();
+      ctx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#c77bff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(h.x, h.y, h.r + 6 + Math.sin(h.t * 3) * 3, 0, Math.PI * 2);
+      ctx.stroke();
+      continue;
+    }
+    ctx.save();
+    ctx.translate(h.x, h.y);
+    ctx.rotate(h.t * 2);
+    if (h.type === 'satellite') {
+      const sz = spriteSize(SPRITES.satellite, 2);
+      drawSprite(ctx, SPRITES.satellite, -sz.w / 2, -sz.h / 2, 2, { s: '#9fb0d8', w: '#59d3ff' });
+    } else {
+      ctx.fillStyle = h.color;
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const r = h.r * (0.85 + Math.abs(Math.sin(i * 2.7 + h.t)) * 0.3);
+        const px = Math.cos(a) * r, py = Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      if (h.type === 'meteorite') {
+        ctx.fillStyle = 'rgba(255,138,93,0.6)';
+        ctx.beginPath();
+        ctx.arc(-h.r, 0, 4 + Math.sin(h.t * 10) * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  /* Nave do jogador (cosmético equipado) */
+  const ship = getEquippedItem('ship');
+  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' };
+  const sz = spriteSize(SPRITES.ship, 3);
+  drawSprite(ctx, SPRITES.ship, Math.round(tr.ship.x - sz.w / 2), Math.round(tr.ship.y - sz.h / 2), 3, pal);
+  /* Propulsão */
+  if (chance(0.5)) {
+    emitParticle(tr.ship.x - sz.w / 2, tr.ship.y + rand(-6, 6), -rand(40, 90), rand(-10, 10), '#ff7a3d', 0.4, 3);
+  }
+  drawParticles();
+}
+
+function updateTravelFill() {
+  const tr = Game.travel;
+  const el = document.getElementById('travel-fill');
+  if (tr && el) el.style.width = Math.round(tr.t / tr.dur * 100) + '%';
+}
+
+function finishTravel() {
+  const tr = Game.travel;
+  const tw = document.getElementById('travel-wrap');
+  if (tw) tw.hidden = true;
+  Game.travel = null;
+  AudioSys.sfx('victory');
+  if (tr.nextIdx >= LEVELS.length - 1) {
+    startLevel(LEVELS.length - 1);
+  } else {
+    startLevel(tr.nextIdx);
+  }
+}
+
 
 /* =====================================================================
    13. INTERFACE (MENUS, HUD, OVERLAYS)
@@ -1854,8 +3096,19 @@ function showScreen(name) {
   document.getElementById('feedback').hidden = true;
   document.getElementById('reward').hidden = true;
   document.getElementById('intro-card').hidden = true;
+  hideOverhaulOverlays();
 
   window.scrollTo(0, 0);
+}
+
+/* Esconde os overlays do ciclo novo (diálogo/fusão/quiz/missão/viagem) */
+function hideOverhaulOverlays() {
+  ['dialog', 'fusion', 'quiz', 'mission'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.hidden = true;
+  });
+  const tw = document.getElementById('travel-wrap');
+  if (tw) tw.hidden = true;
 }
 
 function navTo(nav) {
@@ -1878,6 +3131,7 @@ function exitToMenu() {
   document.getElementById('reward').hidden = true;
   document.getElementById('victory').hidden = true;
   document.getElementById('defeat').hidden = true;
+  hideOverhaulOverlays();
   showScreen('menu');
 }
 
@@ -2167,6 +3421,13 @@ function startLevel(idx) {
   Game.completedOnce = false;
   Game.particles = [];
   Game.floaters = [];
+  Game.saber = createSaber();
+  Game.arrival = null;
+  Game.dialog = null;
+  Game.travel = null;
+  Game.quizStats = { correct: 0, total: 0 };
+  Game.phase = 'explore';
+  hideOverhaulOverlays();
 
   if (!Game.run.active) {
     Game.resetRun();
@@ -2206,7 +3467,7 @@ function startLevel(idx) {
 
 function dismissIntro() {
   document.getElementById('intro-card').hidden = true;
-  Game.locked = false;
+  startArrival();
 }
 
 /* --- Conclusão de fase --- */
@@ -2327,6 +3588,7 @@ function togglePause() {
 let lastTime = 0;
 let pendingRewardItem = null;
 let pendingLevelComplete = false;
+let pendingMissionItem = null;
 
 function loop(t) {
   const dt = Math.min(0.05, (t - lastTime) / 1000 || 0);
@@ -2387,9 +3649,38 @@ window.addEventListener('keydown', e => {
     }
     if (Game.buildAnim) return;
 
+    /* Diálogo do cientista */
+    if (Game.phase === 'dialog') {
+      if (e.code === 'Space' || e.code === 'Enter') advanceDialog();
+      return;
+    }
+    /* Questionário: 1-4 respondem, Espaço/Enter avança */
+    if (Game.phase === 'quiz') {
+      const codeToOpt = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3 };
+      if (e.code in codeToOpt && !Quiz.answered) {
+        Quiz.answer(codeToOpt[e.code]);
+      } else if ((e.code === 'Space' || e.code === 'Enter') && !document.getElementById('btn-quiz-next').hidden) {
+        document.getElementById('btn-quiz-next').click();
+      }
+      return;
+    }
+    /* Missão concluída */
+    if (Game.phase === 'mission') {
+      if (e.code === 'Space' || e.code === 'Enter') {
+        document.getElementById('btn-mission-continue').click();
+      }
+      return;
+    }
+
+    /* Ataque com o sabre */
+    if (e.code === 'KeyJ') {
+      saberAttackNearest();
+      return;
+    }
+
     if (e.code === 'Space') {
       const lv = Game.level;
-      if (lv && dist(Game.player.x, Game.player.y, lv.machine.x, lv.machine.y) < 64) {
+      if (lv && Game.phase === 'explore' && dist(Game.player.x, Game.player.y, lv.machine.x, lv.machine.y) < 64) {
         tryInteract();
       }
     }
@@ -2408,6 +3699,8 @@ canvas.addEventListener('pointerdown', e => {
   const wy = (e.clientY - rect.top) / rect.height * VIEW_H + camY;
   if (dist(wx, wy, lv.machine.x, lv.machine.y) < 64) {
     tryInteract();
+  } else {
+    saberAttack(wx, wy);
   }
 });
 
@@ -2431,6 +3724,7 @@ document.querySelectorAll('.touch-controls button').forEach(b => {
       const lv = Game.level;
       if (lv && !Game.locked && dist(Game.player.x, Game.player.y, lv.machine.x, lv.machine.y) < 64) tryInteract();
     }
+    if (t === 'attack' && down) saberAttackNearest();
   };
   b.addEventListener('pointerdown', e => { e.preventDefault(); set(true); });
   b.addEventListener('pointerup', e => set(false));
@@ -2499,6 +3793,14 @@ document.getElementById('feedback').addEventListener('click', () => { if (Game.f
 document.getElementById('intro-card').addEventListener('click', () => {
   if (document.getElementById('intro-card').hidden === false && Game.locked) dismissIntro();
 });
+
+/* Overlays do overhaul: questionário e missão concluída */
+document.getElementById('btn-quiz-next').addEventListener('click', () => {
+  AudioSys.sfx('click');
+  Quiz.next();
+});
+document.getElementById('btn-mission-equip').addEventListener('click', () => missionDone(true));
+document.getElementById('btn-mission-continue').addEventListener('click', () => missionDone(false));
 
 /* Recompensa */
 document.getElementById('btn-equip-now').addEventListener('click', () => {

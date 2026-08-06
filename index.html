@@ -48,24 +48,27 @@
         <h3>🎮 Controles</h3>
         <ul class="rule-list">
           <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ou <kbd>←↑↓→</kbd> — mover</li>
+          <li><kbd>J</kbd> ou clique — atacar com o sabre de luz</li>
           <li><kbd>ESPAÇO</kbd> — interagir com máquinas</li>
+          <li><kbd>ENTER</kbd>/<kbd>ESPAÇO</kbd> — avançar diálogos e questionário</li>
           <li><kbd>ESC</kbd> — pausar</li>
         </ul>
       </article>
       <article class="rule-card">
         <h3>✅ Como vencer</h3>
-        <p>Complete os 3 desafios de cada planeta (monte os compostos) e atravesse o <strong>portal</strong> para avançar. Conclua o Planeta Final para vencer a missão.</p>
+        <p>Em cada planeta: converse com o <strong>cientista</strong>, explore o mapa, derrote os <strong>alienígenas</strong> com seu sabre, monte os compostos na <strong>Máquina de Fusão</strong>, responda ao <strong>questionário</strong> e viaje de nave até o próximo planeta.</p>
       </article>
       <article class="rule-card">
         <h3>❌ Como perder</h3>
-        <p>Você tem <strong>3 vidas</strong>. Atingir asteroides ou armadilhas elétricas custa 1 vida. Sem vidas = missão falhou.</p>
+        <p>Você tem <strong>3 vidas</strong>. Atingir asteroides, armadilhas, alienígenas ou detritos espaciais custa 1 vida. Sem vidas = missão falhou.</p>
       </article>
       <article class="rule-card">
         <h3>⭐ Pontuação</h3>
         <ul class="rule-list">
           <li>Coletar átomo: <strong>+10</strong></li>
-          <li>Composto correto: <strong>+100</strong></li>
-          <li>Resposta certa no portal: <strong>+150</strong></li>
+          <li>Composto correto na fusão: <strong>+100</strong></li>
+          <li>Derrotar alienígena: <strong>+50</strong></li>
+          <li>Resposta certa no questionário: <strong>+150</strong></li>
           <li>Erro: <strong>−20</strong></li>
           <li>Bônus de tempo ao terminar a fase</li>
         </ul>
@@ -158,6 +161,10 @@
         <button class="btn btn-small" id="btn-fullscreen" title="Tela cheia">⛶</button>
         <button class="btn btn-small" id="btn-pause" title="Pausar (ESC)">⏸</button>
       </div>
+      <div id="travel-wrap" class="travel-wrap" hidden>
+        <div class="travel-label">🛸 VIAGEM ESPACIAL</div>
+        <div class="travel-track"><div class="travel-fill" id="travel-fill"></div></div>
+      </div>
     </div>
 
     <div class="canvas-wrap">
@@ -173,7 +180,10 @@
         <button data-t="down" aria-label="Baixo">▼</button>
         <button data-t="right" aria-label="Direita">▶</button>
       </div>
-      <button class="touch-btn" data-t="interact" aria-label="Interagir">A</button>
+      <div class="touch-actions">
+        <button class="touch-btn touch-saber" data-t="attack" aria-label="Sabre de luz">⚔</button>
+        <button class="touch-btn" data-t="interact" aria-label="Interagir">A</button>
+      </div>
     </div>
   </div>
 
@@ -255,6 +265,62 @@
     </div>
   </div>
 
+  <!-- OVERLAY: diálogo do cientista -->
+  <div id="dialog" class="overlay dialog-overlay" hidden>
+    <div class="dialog-box">
+      <div class="dialog-scientist" aria-hidden="true">
+        <canvas id="dialog-scientist-canvas" width="56" height="64"></canvas>
+        <span class="dialog-scientist-name">Prof. Lewis</span>
+      </div>
+      <div class="dialog-main">
+        <p class="dialog-text" id="dialog-text"></p>
+        <p class="dialog-continue" id="dialog-continue">▶ CONTINUAR</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY: Máquina de Fusão (drag & drop) -->
+  <div id="fusion" class="overlay fusion-overlay" hidden>
+    <div class="panel fusion-panel">
+      <h2 class="panel-title fusion-title">🧪 Máquina de Fusão</h2>
+      <p class="fusion-sub" id="fusion-sub">Arraste os elementos para montar o composto.</p>
+      <div class="fusion-slots" id="fusion-slots"></div>
+      <div class="fusion-tray-wrap">
+        <span class="fusion-tray-label">Seus cristais:</span>
+        <div class="fusion-tray" id="fusion-tray"></div>
+      </div>
+      <p class="fusion-error" id="fusion-error" hidden></p>
+      <p class="menu-hint" id="fusion-hint">Arraste um cristal sobre um espaço vazio</p>
+    </div>
+  </div>
+
+  <!-- OVERLAY: questionário -->
+  <div id="quiz" class="overlay quiz-overlay" hidden>
+    <div class="panel quiz-panel">
+      <h2 class="panel-title quiz-title">🧠 Questionário do Cientista</h2>
+      <p class="quiz-progress" id="quiz-progress"></p>
+      <p class="quiz-question" id="quiz-question"></p>
+      <div class="quiz-options" id="quiz-options"></div>
+      <div class="quiz-explain" id="quiz-explain" hidden></div>
+      <button class="btn btn-primary quiz-next" id="btn-quiz-next" hidden>Continuar ▶</button>
+    </div>
+  </div>
+
+  <!-- OVERLAY: missão concluída (recompensa) -->
+  <div id="mission" class="overlay" hidden>
+    <div class="panel mission-panel">
+      <div class="reward-sparkles" aria-hidden="true">✦ ✧ ✦ ✧ ✦</div>
+      <h2 class="panel-title mission-title">✅ MISSÃO CONCLUÍDA</h2>
+      <p class="mission-planet" id="mission-planet"></p>
+      <div class="mission-stats" id="mission-stats"></div>
+      <div class="reward-item" id="mission-item"></div>
+      <div class="reward-buttons">
+        <button class="btn btn-primary" id="btn-mission-equip">Equipar Agora</button>
+        <button class="btn" id="btn-mission-continue">Continuar ▶</button>
+      </div>
+    </div>
+  </div>
+
   <!-- AVISO: orientação do aparelho (retrato) -->
   <div id="rotate-hint" class="rotate-hint" hidden>
     <span class="rotate-icon" aria-hidden="true">📱</span>
@@ -265,6 +331,7 @@
 <!-- Overlay global: notificação de conquista -->
 <div id="toast" class="toast" hidden aria-live="polite"></div>
 
+<script src="questions.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
