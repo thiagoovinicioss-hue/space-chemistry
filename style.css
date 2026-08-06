@@ -893,6 +893,29 @@ kbd {
 }
 .obj-chip .formula { color: var(--accent-3); font-weight: 700; font-family: var(--font-mono); }
 
+/* Introdução do planeta: revelação em etapas (fade + subida) */
+.intro-planet, #intro-title, #intro-text, #intro-chem, #intro-objective {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.intro-planet.intro-show, #intro-title.intro-show, #intro-text.intro-show,
+#intro-chem.intro-show, #intro-objective.intro-show {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.intro-chem {
+  margin: 0 0 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--bg-panel-2);
+  border: 1px dashed var(--accent-2);
+  color: var(--accent-2);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  text-align: center;
+}
+
 .feedback-overlay { background: rgba(3, 5, 15, 0.55); }
 .feedback-box {
   max-width: 520px;
@@ -965,6 +988,51 @@ kbd {
 .ending-panel { max-width: 560px; text-align: center; }
 .ending-title { color: var(--accent-3); text-shadow: 0 0 16px rgba(255,209,102,0.8); }
 .ending-text { color: var(--text-dim); line-height: 1.7; margin: 10px 0; }
+
+/* ---------------- Resultados finais e créditos ---------------- */
+
+.results-overlay { background: rgba(3, 5, 15, 0.82); }
+.results-panel { max-width: 560px; text-align: center; }
+.results-title { color: var(--accent-3); text-shadow: 0 0 14px rgba(255,209,102,0.7); }
+.results-sub { color: var(--text-dim); margin-top: 4px; }
+.results-stats {
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 2;
+  margin: 16px 0 20px;
+  text-align: left;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+.results-stats strong { color: var(--accent-3); font-family: var(--font-mono); }
+
+.credits-overlay { background: rgba(3, 5, 15, 0.85); }
+.credits-panel { max-width: 480px; text-align: center; }
+.credits-title { color: var(--accent-3); }
+.credits-sub { color: var(--text-dim); font-size: 13px; margin-bottom: 12px; }
+.credits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 14px 0;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.credit-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-light);
+}
+.credit-name { font-weight: 800; color: var(--text); }
+.credit-desc { color: var(--text-dim); font-size: 12.5px; }
+#credits-hint { color: var(--text-dim); font-size: 12px; }
 
 /* ---------------- Toast (conquista) ---------------- */
 

@@ -104,6 +104,30 @@ const DIALOGUES = {
 const TRAVEL_DUR = 55;
 const TRAVEL_SPEED = 150;
 
+/* Dicas químicas que alternam no rodapé da viagem */
+const TRAVEL_TIPS = [
+  'Ligação iônica: o metal DOA elétrons para o ametal (NaCl, MgO, KBr).',
+  'Ligação covalente: os ametais COMPARTILHAM elétrons (H₂O, CO₂, NH₃).',
+  'Ligação metálica: os metais têm um "mar de elétrons" livres (Cu, Fe, Au).',
+  'NaCl: o sódio doa 1 elétron e o cloro recebe → formam-se Na⁺ e Cl⁻.',
+  'H₂O: o oxigênio compartilha elétrons com dois hidrogênios.',
+  'O ouro (Au) conduz eletricidade graças ao mar de elétrons.',
+  'Ametal + ametal sempre formam ligações covalentes.',
+  'Metal + ametal formam compostos iônicos, em cristais.',
+  'Nos metais, os elétrons livres se movem e conduzem corrente elétrica.'
+];
+
+/* --- Combate: animações dos alienígenas --- */
+const ENEMY_DEATH_DUR = 0.7;   /* tempo da animação de morte */
+const ENEMY_HURT_DUR = 0.18;   /* piscada ao ser atingido */
+const ENEMY_DETECT_R = 140;    /* raio de percepção (perseguição) */
+
+/* --- Volta para a Terra (batalha espacial pós-vitória) --- */
+const RETURN_ARMOR = 5;              /* blindagem da nave do herói */
+const RETURN_SHIP_SPEED = 210;
+const RETURN_BOLT_SPEED = 380;       /* disparo do herói */
+const RETURN_ENEMY_BOLT_SPEED = 165; /* disparo inimigo (com homing limitado) */
+
 /* =====================================================================
    02. UTILITÁRIOS
 ===================================================================== */
@@ -232,6 +256,14 @@ const AudioSys = {
       case 'switch': this.tone({ freq: 140, type: 'square', dur: 0.12, vol: 0.16 }); this.tone({ freq: 620, type: 'sine', dur: 0.16, vol: 0.12, delay: 0.12 }); break;
       case 'arrival': this.tone({ freq: 160, slideTo: 480, type: 'sine', dur: 0.8, vol: 0.15 }); break;
       case 'travel': this.tone({ freq: 110, slideTo: 220, type: 'sine', dur: 1.2, vol: 0.12 }); break;
+      case 'saberWindup': this.tone({ freq: 90, slideTo: 320, type: 'sawtooth', dur: 0.12, vol: 0.1 }); break;
+      case 'laser': this.tone({ freq: 520, slideTo: 240, type: 'square', dur: 0.1, vol: 0.12 }); break;
+      case 'enemyShot': this.tone({ freq: 180, slideTo: 90, type: 'sawtooth', dur: 0.14, vol: 0.1 }); break;
+      case 'boom': this.noise({ dur: 0.35, vol: 0.3 }); this.tone({ freq: 200, slideTo: 40, type: 'square', dur: 0.3, vol: 0.16 }); break;
+      case 'bigBoom': this.noise({ dur: 0.6, vol: 0.35 }); this.tone({ freq: 140, slideTo: 30, type: 'sawtooth', dur: 0.6, vol: 0.2 }); break;
+      case 'return': [440, 554, 659].forEach((f, i) => this.tone({ freq: f, type: 'triangle', dur: 0.25, vol: 0.18, delay: i * 0.1 })); break;
+      case 'chalk': this.noise({ dur: 0.4, vol: 0.12 }); break;
+      case 'cheer': [523, 659, 784, 1047, 1319].forEach((f, i) => this.tone({ freq: f, type: 'triangle', dur: 0.35, vol: 0.22, delay: i * 0.12 })); break;
     }
   },
 
@@ -823,6 +855,15 @@ const ACHIEVEMENT_PER_LEVEL = {
 
 const ACH_BONUS = { ionic_expert: 200, covalent_expert: 200, metallic_expert: 200, game_complete: 300, collector: 500 };
 
+/* Linha de química apresentada na introdução de cada planeta */
+const INTRO_CHEM = {
+  tutorial: 'Química: como os átomos se ligam e formam moléculas.',
+  ionic: 'Química: ligação IÔNICA — o metal DOA elétrons para o ametal.',
+  covalent: 'Química: ligação COVALENTE — os ametais COMPARTILHAM elétrons.',
+  metallic: 'Química: ligação METÁLICA — os metais têm um "mar de elétrons".',
+  final: 'Química: revisão das ligações iônica, covalente e metálica.'
+};
+
 /* =====================================================================
    06. SISTEMA DE SALVAMENTO (localStorage)
 ===================================================================== */
@@ -902,6 +943,9 @@ const Game = {
   mission: null,         /* tela de missão concluída */
   travel: null,          /* viagem espacial entre planetas */
   saber: null,           /* sabre de luz (combate) */
+  fade: null,            /* transição de fade {a, target, speed, onDone} */
+  classroom: null,       /* cena da sala de aula (volta à Terra) */
+  return: null,          /* batalha espacial de volta para a Terra */
   quizStats: { correct: 0, total: 0 },
 
   /* Estado da campanha (uma tentativa) */
@@ -912,13 +956,14 @@ const Game = {
     wrong: 0,
     deaths: 0,
     time: 0,
+    atoms: 0,
     completed: [false, false, false, false, false]
   },
 
   resetRun() {
     this.run = {
       active: false, score: 0, lives: MAX_LIVES, wrong: 0, deaths: 0, time: 0,
-      completed: [false, false, false, false, false]
+      atoms: 0, completed: [false, false, false, false, false]
     };
   }
 };
@@ -1038,8 +1083,16 @@ function buildLevel(idx) {
       type: e.type, name: type.name, color: type.color, body: type.body,
       hp: type.hp, maxHp: type.hp, speed: type.speed, radius: type.radius,
       x: e.x * TILE + TILE / 2, y: e.y * TILE + TILE / 2,
-      baseX: e.x * TILE + TILE / 2, range: (e.range || 3) * TILE,
+      baseX: e.x * TILE + TILE / 2, baseY: e.y * TILE + TILE / 2,
+      range: (e.range || 3) * TILE,
       dir: 1, t: rand(0, 6.28), hitCd: 0, alive: true, flash: 0, w: 20, h: 22,
+      state: 'patrol',        /* patrol | chase */
+      face: 1,                /* -1 esquerda, 1 direita */
+      animT: rand(0, 6.28),   /* animação idle/walk */
+      patrolT: rand(0.5, 2),  /* tempo até mudar de direção na patrulha */
+      mvx: 0, mvy: 0,         /* direção atual da patrulha */
+      hurtT: 0,               /* piscada de dano */
+      dead: false, deadT: 0, gone: false, lastSwing: -1,
       opens: e.opens ? { x: e.opens[0] * TILE + TILE / 2, y: e.opens[1] * TILE + TILE / 2, tx: e.opens[0], ty: e.opens[1] } : null
     };
   });
@@ -1318,12 +1371,47 @@ let shakeAmt = 0;
 let shakeTime = 0;
 function shake(amt) { shakeAmt = amt; shakeTime = 0.3; }
 
+/* --- Transições de fade (tela escurece/clareia) --- */
+function fadeTo(a, speed, onDone) {
+  Game.fade = { a, target: a, speed, onDone: onDone || null };
+  Game.fade.frozen = false;
+}
+function startFadeOut(dur, onDone) {
+  Game.fade = { a: 0, target: 1, speed: 1 / dur, onDone: onDone || null };
+}
+function startFadeIn(dur, onDone) {
+  Game.fade = { a: 1, target: 0, speed: 1 / dur, onDone: onDone || null };
+}
+function updateFade(dt) {
+  const f = Game.fade;
+  if (!f) return;
+  if (f.a < f.target) f.a = Math.min(f.target, f.a + f.speed * dt);
+  else if (f.a > f.target) f.a = Math.max(f.target, f.a - f.speed * dt);
+  if (f.a === f.target) {
+    if (f.onDone) {
+      const cb = f.onDone;
+      f.onDone = null;
+      cb();
+    }
+    if (f.target === 0) Game.fade = null;
+  }
+}
+function drawFade() {
+  const f = Game.fade;
+  if (!f || f.a <= 0) return;
+  ctx.fillStyle = 'rgba(2,3,10,' + f.a.toFixed(3) + ')';
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+}
+
 function update(dt) {
   const lv = Game.level;
   if (!lv || Game.screen !== 'game') return;
 
   /* Pausa */
   if (pauseShown) return;
+
+  /* Transições de fade sempre avançam */
+  updateFade(dt);
 
   /* Animação de montagem do composto (ensina pela mecânica) */
   if (Game.buildAnim) {
@@ -1337,6 +1425,11 @@ function update(dt) {
     }
     return;
   }
+
+  /* Batalha espacial de volta para a Terra */
+  if (Game.phase === 'return') { updateReturn(dt); updateParticles(dt); return; }
+  /* Sala de aula (diálogo do professor + fim do jogo) */
+  if (Game.phase === 'classroom') { updateClassroom(dt); updateParticles(dt); return; }
 
   /* Fases do overhaul com jogador congelado */
   if (Game.phase === 'arrival') { updateArrival(dt); updateParticles(dt); return; }
@@ -1392,6 +1485,7 @@ function update(dt) {
     if (dist(p.x, p.y, c.x, c.y) < 26) {
       c.taken = true;
       Game.inventory[c.el] = (Game.inventory[c.el] || 0) + 1;
+      Game.run.atoms++;
       if (!Game.replay) {
         Game.run.score += 10;
         spawnFloater(c.x, c.y - 18, '+10 ' + ELEMENTS[c.el].symbol);
@@ -2083,6 +2177,13 @@ function render() {
   const lv = Game.level;
   if (!lv) return;
   if (Game.phase === 'travel') { drawTravelScene(); return; }
+  if (Game.phase === 'return') { drawReturnScene(); return; }
+  if (Game.phase === 'classroom') { drawClassroom(); return; }
+  if (Game.phase === 'results' || Game.phase === 'credits') {
+    /* Mantém a sala de aula visível atrás dos overlays finais */
+    if (Game.classroom) drawClassroom();
+    return;
+  }
   computeCamera();
   ctx.save();
   if (shakeAmt > 0) {
@@ -2154,22 +2255,23 @@ function drawArrival() {
 }
 
 /* ---------------- Cientista e diálogo ---------------- */
-function startDialog() {
+function startDialog(onEnd) {
   const lines = DIALOGUES[Game.levelIndex] || [];
-  if (!lines.length) { beginExploration(); return; }
+  if (!lines.length) { (onEnd || beginExploration)(); return; }
   Game.phase = 'dialog';
   Game.locked = true;
   Game.dialog = {
     lines, index: 0,
-    shown: 0, charT: 0, done: false, mumbleT: 0
+    shown: 0, charT: 0, done: false, mumbleT: 0, cursorT: 0,
+    onEnd: onEnd || beginExploration
   };
-  /* Desenha o cientista no painel */
+  /* Desenha o cientista no painel (retrato grande, estilo PvZ) */
   const c = document.getElementById('dialog-scientist-canvas');
   if (c && c.getContext) {
     const g = c.getContext('2d');
     g.imageSmoothingEnabled = false;
     g.clearRect(0, 0, c.width, c.height);
-    drawSprite(g, SPRITES.scientist, 8, 8, 3, {
+    drawSprite(g, SPRITES.scientist, 28, 28, 4, {
       h: '#7a4a22', G: '#3aa0ff', s: '#ffd9a8', S: '#eef2ff', B: '#2b6f9e', w: '#2b3554'
     });
   }
@@ -2194,7 +2296,11 @@ function updateDialog(dt) {
       AudioSys.sfx('mumble');
     }
   }
-  document.getElementById('dialog-text').textContent = line.slice(0, d.shown) + '▮';
+  /* Typewriter com cursor piscando */
+  d.cursorT -= dt;
+  if (d.cursorT <= 0) d.cursorT = 0.5;
+  const cursor = Math.floor(d.cursorT * 3) % 2 === 0 ? '▮' : ' ';
+  document.getElementById('dialog-text').textContent = line.slice(0, d.shown) + cursor;
   if (d.shown >= line.length) {
     d.done = true;
     document.getElementById('dialog-text').textContent = line;
@@ -2215,8 +2321,9 @@ function advanceDialog() {
   d.index++;
   if (d.index >= d.lines.length) {
     document.getElementById('dialog').hidden = true;
+    const onEnd = d.onEnd;
     Game.dialog = null;
-    beginExploration();
+    if (onEnd) onEnd(); else beginExploration();
     return;
   }
   d.shown = 0; d.charT = 0; d.done = false;
@@ -2491,18 +2598,25 @@ const Quiz = {
 };
 
 /* ---------------- Combate: sabre de luz + alienígenas ---------------- */
+const SABER_WINDUP = 0.12;   /* preparação: a lâmina "acende" antes do golpe */
+const SABER_SWING = 0.24;    /* duração do golpe em arco */
+const SABER_CD = 0.45;       /* cooldown total entre golpes */
+const SABER_LEN = 26;        /* comprimento da lâmina */
+
 function createSaber() {
-  return { cd: 0, swing: 0, ang: 0 };
+  return { cd: 0, phase: 'idle', t: 0, ang: 0, startAng: 0, id: 0 };
 }
 
 function saberAttack(tx, ty) {
   const s = Game.saber;
-  if (!s || s.cd > 0) return;
-  s.cd = 0.45;
-  s.swing = 0.28;
+  if (!s || s.cd > 0 || s.phase !== 'idle') return;
   const p = Game.player;
   s.ang = Math.atan2(ty - p.y, tx - p.x);
-  AudioSys.sfx('saber');
+  s.phase = 'windup';
+  s.t = 0;
+  s.id++;
+  s.cd = SABER_CD;
+  AudioSys.sfx('saberWindup');
 }
 
 /* Ataque via teclado/botão: mira no alien mais próximo (ou na direção do movimento) */
@@ -2521,42 +2635,73 @@ function saberAttackNearest() {
   saberAttack(tx, ty);
 }
 
+/* Ângulo atual da lâmina durante o arco do golpe */
+function saberSwingAngle() {
+  const s = Game.saber;
+  const prog = clamp(s.t / SABER_SWING, 0, 1);
+  return s.startAng + prog * (Math.PI * 1.4);
+}
+
 function updateCombat(dt) {
   const s = Game.saber;
+  const p = Game.player;
   if (s.cd > 0) s.cd -= dt;
-  if (s.swing > 0) {
-    s.swing -= dt;
-    /* Acerta inimigos no alcance durante o golpe */
-    const p = Game.player;
+  if (s.phase === 'idle') return;
+
+  /* Fase de preparação: sem acertos, só o brilho crescendo */
+  if (s.phase === 'windup') {
+    s.t += dt;
+    if (s.t >= SABER_WINDUP) {
+      s.phase = 'swing';
+      s.t = 0;
+      s.startAng = s.ang - Math.PI * 0.7;
+      AudioSys.sfx('saber');
+    }
+    return;
+  }
+
+  /* Golpe: varre o arco e acerta inimigos atingidos */
+  if (s.phase === 'swing') {
+    s.t += dt;
+    const a = saberSwingAngle();
     for (const e of Game.level.enemies) {
-      if (!e.alive) continue;
-      if (dist(p.x, p.y, e.x, e.y) < 40) {
-        /* só acerta se o golpe estiver na direção aproximada */
+      if (!e.alive || e.lastSwing === s.id) continue;
+      if (dist(p.x, p.y, e.x, e.y) < 46) {
         const angTo = Math.atan2(e.y - p.y, e.x - p.x);
-        let diff = Math.abs(angTo - s.ang);
+        let diff = Math.abs(angTo - a);
         if (diff > Math.PI) diff = Math.PI * 2 - diff;
-        if (diff < 1.3) {
+        if (diff < 0.9) {
+          e.lastSwing = s.id;
           hitEnemy(e);
+          burst(e.x, e.y, '#7ff5ff', 6);
+          shake(4);
         }
       }
+    }
+    if (s.t >= SABER_SWING) {
+      s.phase = 'idle';
+      s.t = 0;
     }
   }
 }
 
 function hitEnemy(e) {
-  e.hp--;
-  e.flash = 0.25;
-  e.hitCd = 0.4;
-  /* Empurrão para trás */
   const p = Game.player;
   const dx = e.x - p.x, dy = e.y - p.y;
   const d = Math.max(1, dist(p.x, p.y, e.x, e.y));
-  e.x += dx / d * 14;
-  e.y += dy / d * 14;
+  /* Empurrão para trás */
+  e.x += dx / d * 16;
+  e.y += dy / d * 16;
+  e.hp--;
+  e.hurtT = ENEMY_HURT_DUR;
+  e.hitCd = 0.4;
   AudioSys.sfx('enemyHit');
   burst(e.x, e.y, e.color, 8);
   if (e.hp <= 0) {
+    /* Começa a animação de morte (o sprite só some depois dela) */
     e.alive = false;
+    e.dead = true;
+    e.deadT = 0;
     AudioSys.sfx('enemyDie');
     if (!Game.replay) Game.run.score += 50;
     updateHudScore();
@@ -2577,30 +2722,63 @@ function hitEnemy(e) {
 function updateEnemies(dt) {
   const lv = Game.level;
   const p = Game.player;
-  for (const e of lv.enemies) {
+  for (let i = lv.enemies.length - 1; i >= 0; i--) {
+    const e = lv.enemies[i];
+    if (e.gone) { lv.enemies.splice(i, 1); continue; }
+    if (e.dead) {
+      /* Animação de morte: só remove o sprite depois de terminar */
+      e.deadT += dt;
+      if (e.deadT >= ENEMY_DEATH_DUR) e.gone = true;
+      continue;
+    }
     if (!e.alive) continue;
     e.t += dt;
+    e.animT += dt;
     if (e.hitCd > 0) e.hitCd -= dt;
+    if (e.hurtT > 0) e.hurtT -= dt;
     if (e.flash > 0) e.flash -= dt;
 
-    /* Patrulha em torno da base; persegue o jogador se perto */
     const dTo = dist(p.x, p.y, e.x, e.y);
+
+    /* Percepção por raio: dentro do raio de visão → persegue */
+    if (dTo < ENEMY_DETECT_R) {
+      e.state = 'chase';
+    } else if (e.state === 'chase' && dTo > ENEMY_DETECT_R * 1.7) {
+      e.state = 'patrol';
+    }
+
     let mvx = 0, mvy = 0;
-    if (dTo < 110) {
+    if (e.state === 'chase') {
       const d = Math.max(1, dTo);
       mvx = (p.x - e.x) / d * e.speed;
       mvy = (p.y - e.y) / d * e.speed;
+      e.face = mvx >= 0 ? 1 : -1;
     } else {
-      mvx = e.dir * e.speed * 0.6;
-      if (Math.abs(e.x - e.baseX) > e.range) {
-        e.dir *= -1;
+      /* Patrulha aleatória perto da base */
+      e.patrolT -= dt;
+      if (e.patrolT <= 0) {
+        e.patrolT = rand(0.6, 1.8);
+        const pick = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]][randInt(0, 7)];
+        e.mvx = pick[0]; e.mvy = pick[1];
+        e.face = e.mvx >= 0 ? 1 : -1;
+      }
+      mvx = e.mvx * e.speed * 0.5;
+      mvy = e.mvy * e.speed * 0.5;
+      /* Saiu do alcance: retorna para a base */
+      if (dist(e.x, e.y, e.baseX, e.baseY) > e.range) {
+        const d = Math.max(1, dist(e.x, e.y, e.baseX, e.baseY));
+        mvx = (e.baseX - e.x) / d * e.speed * 0.7;
+        mvy = (e.baseY - e.y) / d * e.speed * 0.7;
+        e.face = mvx >= 0 ? 1 : -1;
       }
     }
-    moveEntity(lv, e, 'x', mvx * dt);
-    moveEntity(lv, e, 'y', mvy * dt);
+
+    if (moveEntity(lv, e, 'x', mvx * dt) || moveEntity(lv, e, 'y', mvy * dt)) {
+      e.patrolT = 0;
+    }
 
     /* Contato com o jogador = dano */
-    if (e.hitCd <= 0 && dTo < e.radius + PLAYER_R && p.invuln <= 0) {
+    if (e.hitCd <= 0 && dist(p.x, p.y, e.x, e.y) < e.radius + PLAYER_R && p.invuln <= 0) {
       e.hitCd = 1.2;
       damagePlayer();
     }
@@ -2611,18 +2789,44 @@ function drawEnemies() {
   const lv = Game.level;
   if (!lv.enemies) return;
   for (const e of lv.enemies) {
+    if (e.gone) continue;
+
+    /* Animação de morte: gira, encolhe e desvanece até sumir */
+    if (e.dead) {
+      const pr = clamp(e.deadT / ENEMY_DEATH_DUR, 0, 1);
+      const sc = 2 * (1 - pr * 0.5);
+      ctx.save();
+      ctx.globalAlpha = 1 - pr;
+      ctx.translate(e.x - camX, e.y - camY);
+      ctx.rotate(pr * Math.PI * 0.5);
+      const sz = spriteSize(SPRITES.alien, sc);
+      drawSprite(ctx, SPRITES.alien, -sz.w / 2, -sz.h / 2, sc, {
+        E: e.body, W: '#ffffff', D: '#0c1226'
+      });
+      ctx.restore();
+      continue;
+    }
+
     if (!e.alive) continue;
-    const bob = Math.sin(e.t * 3) * 2;
+
+    /* Idle/walk: balanço vertical + squash & stretch */
+    const moving = e.state === 'chase' || Math.abs(e.mvx) + Math.abs(e.mvy) > 0;
+    const ph = e.animT * (moving ? 9 : 4);
+    const bob = Math.sin(ph) * (moving ? 2.5 : 1.5);
+    const squash = 1 + Math.sin(ph) * (moving ? 0.08 : 0.05);
     const dx = Math.round(e.x - camX);
     const dy = Math.round(e.y - camY + bob);
-    const sc = 2;
+    const sc = 2 * squash;
     const sz = spriteSize(SPRITES.alien, sc);
+
     ctx.save();
-    if (e.flash > 0) {
-      ctx.globalAlpha = 0.5;
-    }
-    drawSprite(ctx, SPRITES.alien, dx - sz.w / 2, dy - sz.h / 2, sc, {
-      E: e.flash > 0 ? '#ffffff' : e.body, W: '#ffffff', D: '#0c1226'
+    ctx.translate(dx, dy);
+    ctx.scale(e.face, 1);
+    if (e.hurtT > 0) ctx.globalAlpha = 0.45;
+    else if (e.flash > 0) ctx.globalAlpha = 0.6;
+    drawSprite(ctx, SPRITES.alien, -sz.w / 2, -sz.h / 2, sc, {
+      E: (e.hurtT > 0 || e.flash > 0) ? '#ffffff' : e.body,
+      W: '#ffffff', D: '#0c1226'
     });
     ctx.restore();
 
@@ -2675,29 +2879,67 @@ function updateOrbs() {
 
 function drawSaber() {
   const s = Game.saber;
-  if (!s || s.swing <= 0) return;
+  if (!s || s.phase === 'idle') return;
   const p = Game.player;
-  const prog = 1 - s.swing / 0.28;
-  const a = s.ang + Math.sin(prog * Math.PI) * 1.6;
-  const len = 26;
-  const x1 = p.x - camX, y1 = p.y - camY - 4;
-  const x2 = x1 + Math.cos(a) * len;
-  const y2 = y1 + Math.sin(a) * len;
+  const hx = p.x - camX, hy = p.y - camY - 4;
+  const len = SABER_LEN;
+
+  /* Fase de preparação: o punho brilha e a lâmina "acende" tremulando */
+  if (s.phase === 'windup') {
+    const pr = clamp(s.t / SABER_WINDUP, 0, 1);
+    const a = s.ang + Math.sin(s.t * 60) * 0.05;
+    ctx.save();
+    ctx.shadowColor = '#7ff5ff';
+    ctx.shadowBlur = 8 + pr * 14;
+    ctx.fillStyle = '#bffaff';
+    ctx.beginPath();
+    ctx.arc(hx, hy, 3, 0, Math.PI * 2);
+    ctx.fill();
+    const blade = 6 + pr * 8 + Math.random() * 2;
+    ctx.strokeStyle = '#7ff5ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(hx, hy);
+    ctx.lineTo(hx + Math.cos(a) * blade, hy + Math.sin(a) * blade);
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
+  /* Golpe em arco: rastro de segmentos + lâmina brilhante no topo */
+  const prog = clamp(s.t / SABER_SWING, 0, 1);
+  const a = saberSwingAngle();
   ctx.save();
+  const SEGS = 10;
+  for (let i = SEGS - 1; i >= 0; i--) {
+    const tp = clamp(prog - i * 0.045, 0, 1);
+    if (tp <= 0) continue;
+    const aa = s.startAng + tp * (Math.PI * 1.4);
+    const tx = hx + Math.cos(aa) * len;
+    const ty = hy + Math.sin(aa) * len;
+    ctx.globalAlpha = (1 - i / SEGS) * 0.7;
+    ctx.strokeStyle = i % 2 === 0 ? '#7ff5ff' : '#bffaff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(hx, hy);
+    ctx.lineTo(tx, ty);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
   ctx.shadowColor = '#7ff5ff';
-  ctx.shadowBlur = 10;
-  ctx.strokeStyle = '#7ff5ff';
+  ctx.shadowBlur = 12;
+  ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
+  ctx.moveTo(hx, hy);
+  ctx.lineTo(hx + Math.cos(a) * len, hy + Math.sin(a) * len);
   ctx.stroke();
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = '#7ff5ff';
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
+  ctx.moveTo(hx, hy);
+  ctx.lineTo(hx + Math.cos(a) * len, hy + Math.sin(a) * len);
   ctx.stroke();
   ctx.restore();
 }
@@ -2881,19 +3123,27 @@ function missionDone(equip) {
 }
 
 /* ---------------- Viagem espacial ---------------- */
+/* Planeta de destino da viagem (colisão dispara a aterrissagem) */
+const TR_DEST = { x: VIEW_W - 120, y: 64, r: 46 };
+const TR_ARRIVE_DUR = 1.1;
+
 function startTravel() {
   Game.phase = 'travel';
   Game.locked = true;
   Game.travel = {
     t: 0, dur: TRAVEL_DUR,
-    ship: { x: VIEW_W * 0.18, y: VIEW_H / 2, invuln: 0 },
+    ship: { x: VIEW_W * 0.18, y: VIEW_H / 2, invuln: 0.5 },
     hazards: [], spawnT: 1.2,
+    arriving: null,
+    tipIdx: randInt(0, TRAVEL_TIPS.length - 1), tipT: 0,
     nextIdx: Math.min(Game.levelIndex + 1, LEVELS.length - 1)
   };
+  camX = 0; camY = 0;
   const tw = document.getElementById('travel-wrap');
   if (tw) tw.hidden = false;
   updateTravelFill();
   AudioSys.sfx('travel');
+  startFadeIn(0.5);
 }
 
 function updateTravel(dt) {
@@ -2901,6 +3151,16 @@ function updateTravel(dt) {
   if (!tr) return;
   tr.t += dt;
   const p = tr.ship;
+
+  /* Chegou: nave congela, efeito de aterrissagem + fade → próximo planeta */
+  if (tr.arriving) {
+    tr.arriving.t += dt;
+    if (chance(0.4)) {
+      emitParticle(p.x + rand(-16, 16), p.y + rand(-10, 10), rand(-20, 20), rand(-40, -10), '#59d3ff', 0.4, 3);
+    }
+    updateTravelFill();
+    return;
+  }
 
   /* Movimento da nave */
   let mx = 0, my = 0;
@@ -2933,21 +3193,40 @@ function updateTravel(dt) {
         p.y += dy / d * 60 * dt;
       }
     }
-    if (h.x < -40 || h.y < -40 || h.y > VIEW_H + 40) {
+    if (h.x < -40 || h.y < -40 || h.y > VIEW_H + 40 || h.x > VIEW_W + 40) {
       tr.hazards.splice(i, 1);
       continue;
     }
     if (p.invuln <= 0 && dist(p.x, p.y, h.x, h.y) < h.r + 12) {
       tr.hazards.splice(i, 1);
+      AudioSys.sfx('boom');
+      shake(6);
+      burst(p.x + rand(-6, 6), p.y + rand(-6, 6), '#ff8a5d', 12);
       damagePlayer();
     }
   }
 
   updateTravelFill();
 
+  /* Chegada por contato com o planeta de destino (com animação + fade) */
+  if (dist(p.x, p.y, TR_DEST.x, TR_DEST.y) < TR_DEST.r + 18) {
+    startTravelArrive();
+    return;
+  }
+
+  /* Tempo esgotado = fallback: conclui a viagem */
   if (tr.t >= tr.dur) {
     finishTravel();
   }
+}
+
+/* Colisão nave ↔ planeta: aterrissagem com fade */
+function startTravelArrive() {
+  const tr = Game.travel;
+  if (tr.arriving) return;
+  tr.arriving = { t: 0, dur: TR_ARRIVE_DUR };
+  AudioSys.sfx('arrival');
+  startFadeOut(0.8, () => finishTravel());
 }
 
 function spawnTravelHazard() {
@@ -2955,11 +3234,13 @@ function spawnTravelHazard() {
   const roll = Math.random();
   const y = rand(36, VIEW_H - 36);
   let h;
-  if (roll < 0.3) {
+  if (roll < 0.26) {
     h = { type: 'asteroid', r: rand(12, 22), vx: -TRAVEL_SPEED, vy: 0, t: 0, color: '#8a7f74' };
-  } else if (roll < 0.5) {
+  } else if (roll < 0.44) {
     h = { type: 'meteorite', r: rand(14, 20), vx: -TRAVEL_SPEED * 1.4, vy: rand(-20, 20), t: 0, color: '#ff8a5d' };
-  } else if (roll < 0.72) {
+  } else if (roll < 0.58) {
+    h = { type: 'comet', r: rand(9, 13), vx: -TRAVEL_SPEED * 1.9, vy: rand(-30, 30), t: 0, color: '#8fd9ff' };
+  } else if (roll < 0.74) {
     h = { type: 'satellite', r: 16, vx: -TRAVEL_SPEED * 0.85, vy: 0, t: 0, color: '#9fb0d8' };
   } else if (roll < 0.9) {
     h = { type: 'debris', r: rand(6, 10), vx: -TRAVEL_SPEED * rand(1.1, 1.6), vy: rand(-40, 40), t: 0, color: '#5f574e' };
@@ -2990,14 +3271,28 @@ function drawTravelScene() {
   }
   ctx.globalAlpha = 1;
 
-  /* Planeta de destino ao fundo */
-  ctx.globalAlpha = 0.6;
+  /* Planeta de destino: atmosfera pulsante + anel de aproximação */
   const nextLv = LEVELS[tr.nextIdx];
+  const pulse = 1 + Math.sin(tr.t * 2) * 0.05;
+  ctx.save();
+  ctx.shadowColor = nextLv.planetColor;
+  ctx.shadowBlur = 24;
   ctx.fillStyle = nextLv.planetColor;
   ctx.beginPath();
-  ctx.arc(VIEW_W - 120, 60, 40, 0, Math.PI * 2);
+  ctx.arc(TR_DEST.x, TR_DEST.y, TR_DEST.r * pulse, 0, Math.PI * 2);
   ctx.fill();
-  ctx.globalAlpha = 1;
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 6]);
+  ctx.beginPath();
+  ctx.arc(TR_DEST.x, TR_DEST.y, TR_DEST.r + 12 + Math.sin(tr.t * 3) * 3, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = 'bold 11px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(nextLv.name.toUpperCase(), TR_DEST.x, TR_DEST.y + TR_DEST.r + 26);
 
   /* Obstáculos */
   for (const h of tr.hazards) {
@@ -3019,6 +3314,28 @@ function drawTravelScene() {
     if (h.type === 'satellite') {
       const sz = spriteSize(SPRITES.satellite, 2);
       drawSprite(ctx, SPRITES.satellite, -sz.w / 2, -sz.h / 2, 2, { s: '#9fb0d8', w: '#59d3ff' });
+    } else if (h.type === 'comet') {
+      /* Cometa: núcleo + cauda */
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = h.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, h.r * 1.6, h.r * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, h.r * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      const trailGrad = ctx.createLinearGradient(0, 0, h.r * 4, 0);
+      trailGrad.addColorStop(0, 'rgba(143,217,255,0)');
+      trailGrad.addColorStop(1, 'rgba(143,217,255,0.7)');
+      ctx.fillStyle = trailGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, -h.r * 0.4);
+      ctx.lineTo(h.r * 4, 0);
+      ctx.lineTo(0, h.r * 0.4);
+      ctx.closePath();
+      ctx.fill();
     } else {
       ctx.fillStyle = h.color;
       ctx.beginPath();
@@ -3044,18 +3361,48 @@ function drawTravelScene() {
   const ship = getEquippedItem('ship');
   const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' };
   const sz = spriteSize(SPRITES.ship, 3);
-  drawSprite(ctx, SPRITES.ship, Math.round(tr.ship.x - sz.w / 2), Math.round(tr.ship.y - sz.h / 2), 3, pal);
+  const bob = Math.sin(tr.t * 3) * 2;
+  drawSprite(ctx, SPRITES.ship, Math.round(tr.ship.x - sz.w / 2), Math.round(tr.ship.y - sz.h / 2 + bob), 3, pal);
   /* Propulsão */
   if (chance(0.5)) {
     emitParticle(tr.ship.x - sz.w / 2, tr.ship.y + rand(-6, 6), -rand(40, 90), rand(-10, 10), '#ff7a3d', 0.4, 3);
   }
   drawParticles();
+
+  /* Barra de dicas químicas (alterna sozinha no rodapé) */
+  drawTravelTip();
+
+  drawFade();
+}
+
+/* Dica química alternando no rodapé da viagem */
+function drawTravelTip() {
+  const tr = Game.travel;
+  if (!tr) return;
+  const tip = TRAVEL_TIPS[tr.tipIdx];
+  const w = 480, h = 26;
+  const x = (VIEW_W - w) / 2, y = VIEW_H - h - 8;
+  ctx.save();
+  ctx.fillStyle = 'rgba(4,8,20,0.78)';
+  ctx.strokeStyle = 'rgba(89,211,255,0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, 6); else ctx.rect(x, y, w, h);
+  ctx.fill();
+  ctx.stroke();
+  ctx.font = '11px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#59d3ff';
+  ctx.fillText('💡 ' + tip, x + w / 2, y + h / 2);
+  ctx.restore();
 }
 
 function updateTravelFill() {
   const tr = Game.travel;
   const el = document.getElementById('travel-fill');
-  if (tr && el) el.style.width = Math.round(tr.t / tr.dur * 100) + '%';
+  const prog = tr ? clamp(tr.t / tr.dur, 0, 1) : 0;
+  if (el) el.style.width = Math.round(prog * 100) + '%';
 }
 
 function finishTravel() {
@@ -3069,6 +3416,522 @@ function finishTravel() {
   } else {
     startLevel(tr.nextIdx);
   }
+  startFadeIn(0.5);
+}
+
+/* =====================================================================
+   12.6 PÓS-VITÓRIA — VOLTA PARA A TERRA
+   Missão final: batalha espacial contra naves que atiram, aterrissagem
+   na sala de aula, resultados, créditos automáticos e volta ao menu.
+===================================================================== */
+
+/* Diálogo do professor na sala de aula */
+const CLASSROOM_DIALOGUE = [
+  'Bem-vindo de volta, recruta! A galáxia inteira vibra com a sua vitória.',
+  'Vocês restauraram os 5 planetas: iônica, covalente e metálica voltaram a funcionar.',
+  'Cada composto montado devolveu energia química para o universo.',
+  'Vamos rever os resultados da missão... e depois aplaudir a equipe!'
+];
+
+/* Créditos (turma de Ciências) */
+const CREDITS = [
+  ['SPACE CHEMISTRY', 'MISSION BONDS'],
+  ['Trabalho de Ciências', 'Ligações Químicas'],
+  ['Sofia', 'Nº 29'],
+  ['Sophia', 'Nº 30'],
+  ['Thiago', 'Nº 31'],
+  ['William', 'Nº 32'],
+  ['Yuri', 'Nº 33'],
+  ['Agradecimento especial', 'ao Professor pela orientação!'],
+  ['FIM', 'Obrigado por salvar a galáxia!']
+];
+
+/* --- Batalha espacial de volta para a Terra --- */
+function startReturn() {
+  Game.phase = 'return';
+  Game.locked = true;
+  const tw = document.getElementById('travel-wrap');
+  if (tw) tw.hidden = true;
+  Game.return = {
+    t: 0,
+    ship: { x: VIEW_W * 0.82, y: VIEW_H / 2, invuln: 1 },
+    enemies: [], enemyShots: [], shots: [],
+    spawnT: 0.8, shotCd: 0, armor: RETURN_ARMOR, earthReach: false
+  };
+  camX = 0; camY = 0;
+  Game.fade = null;
+  startFadeIn(0.8);
+  AudioSys.sfx('return');
+}
+
+function updateReturn(dt) {
+  const r = Game.return;
+  if (!r) return;
+  r.t += dt;
+  const p = r.ship;
+  if (p.invuln > 0) p.invuln -= dt;
+  if (r.shotCd > 0) r.shotCd -= dt;
+
+  /* Movimento da nave */
+  let mx = 0, my = 0;
+  if (Input.isDown('KeyW') || Input.isDown('ArrowUp')) my -= 1;
+  if (Input.isDown('KeyS') || Input.isDown('ArrowDown')) my += 1;
+  if (Input.isDown('KeyA') || Input.isDown('ArrowLeft')) mx -= 1;
+  if (Input.isDown('KeyD') || Input.isDown('ArrowRight')) mx += 1;
+  p.x = clamp(p.x + mx * RETURN_SHIP_SPEED * dt, 20, VIEW_W - 20);
+  p.y = clamp(p.y + my * RETURN_SHIP_SPEED * dt, 26, VIEW_H - 26);
+
+  /* Spawna ondas de naves inimigas */
+  r.spawnT -= dt;
+  if (r.spawnT <= 0 && r.enemies.length < 5) {
+    r.spawnT = rand(1.6, 2.6);
+    spawnReturnEnemy();
+  }
+
+  /* Disparos do herói */
+  for (let i = r.shots.length - 1; i >= 0; i--) {
+    const b = r.shots[i];
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    if (b.x > VIEW_W + 20) { r.shots.splice(i, 1); continue; }
+    let hit = false;
+    for (const e of r.enemies) {
+      if (e.dead || e.hp <= 0) continue;
+      if (dist(b.x, b.y, e.x, e.y) < e.r + 6) {
+        e.hp--;
+        hit = true;
+        burst(b.x, b.y, '#7ff5ff', 8);
+        AudioSys.sfx('enemyHit');
+        if (e.hp <= 0) {
+          e.dead = true;
+          e.deadT = 0;
+          AudioSys.sfx('boom');
+          burst(e.x, e.y, e.color, 24);
+          if (!Game.replay) Game.run.score += 100;
+          updateHudScore();
+        }
+        break;
+      }
+    }
+    if (hit) r.shots.splice(i, 1);
+  }
+
+  /* Naves inimigas: avançam e atiram tiros com homing limitado */
+  for (const e of r.enemies) {
+    if (e.dead) { e.deadT += dt; continue; }
+    e.t += dt;
+    const d = Math.max(1, dist(p.x, p.y, e.x, e.y));
+    e.x += (p.x - e.x) / d * e.speed * dt;
+    e.y += (p.y - e.y) / d * e.speed * dt + Math.sin(e.t * 3) * 30 * dt;
+    e.x = clamp(e.x, -30, VIEW_W + 30);
+    e.y = clamp(e.y, 20, VIEW_H - 20);
+    e.shotCd -= dt;
+    if (e.shotCd <= 0 && e.x > -30 && e.x < VIEW_W + 10) {
+      e.shotCd = rand(1.4, 2.4);
+      const ang = Math.atan2(p.y - e.y, p.x - e.x);
+      r.enemyShots.push({ x: e.x, y: e.y, vx: Math.cos(ang) * RETURN_ENEMY_BOLT_SPEED, vy: Math.sin(ang) * RETURN_ENEMY_BOLT_SPEED, t: 0 });
+      AudioSys.sfx('enemyShot');
+    }
+  }
+
+  /* Tiros inimigos: giram suavemente em direção ao herói (homing limitado) */
+  for (let i = r.enemyShots.length - 1; i >= 0; i--) {
+    const b = r.enemyShots[i];
+    const curAng = Math.atan2(b.vy, b.vx);
+    const want = Math.atan2(p.y - b.y, p.x - b.x);
+    let diff = want - curAng;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    const na = curAng + clamp(diff, -1.2 * dt, 1.2 * dt);
+    const spd = Math.hypot(b.vx, b.vy);
+    b.vx = Math.cos(na) * spd;
+    b.vy = Math.sin(na) * spd;
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    b.t += dt;
+    if (b.x < -30 || b.y < -30 || b.y > VIEW_H + 30 || b.x > VIEW_W + 30) {
+      r.enemyShots.splice(i, 1);
+      continue;
+    }
+    if (p.invuln <= 0 && dist(b.x, b.y, p.x, p.y) < 13) {
+      r.enemyShots.splice(i, 1);
+      hitReturnShip();
+    }
+  }
+
+  /* Colisão direta com naves inimigas */
+  for (const e of r.enemies) {
+    if (e.dead || e.hp <= 0) continue;
+    if (p.invuln <= 0 && dist(p.x, p.y, e.x, e.y) < e.r + 13) {
+      e.dead = true;
+      e.deadT = 0;
+      burst(e.x, e.y, e.color, 18);
+      hitReturnShip();
+    }
+  }
+
+  /* Limpa naves destruídas depois da explosão */
+  r.enemies = r.enemies.filter(e => !e.dead || e.deadT < 0.6);
+
+  /* Chegou à Terra: aterrissagem com fade */
+  if (!r.earthReach && p.x < 120) {
+    r.earthReach = true;
+    startFadeOut(1.0, () => startClassroom());
+  }
+
+  /* Propulsão */
+  if (chance(0.5)) {
+    emitParticle(p.x - 16, p.y + rand(-6, 6), -rand(40, 80), rand(-10, 10), '#ff7a3d', 0.4, 3);
+  }
+}
+
+function hitReturnShip() {
+  const r = Game.return;
+  if (!r) return;
+  r.armor--;
+  shake(12);
+  AudioSys.sfx('hurt');
+  burst(r.ship.x, r.ship.y, '#ff5d6c', 14);
+  if (r.armor <= 0) {
+    /* Blindagem rompida: penalidade de pontos e recarga (não falha o jogo) */
+    AudioSys.sfx('bigBoom');
+    burst(r.ship.x, r.ship.y, '#ff5d6c', 30);
+    r.armor = RETURN_ARMOR;
+    r.ship.invuln = 3;
+    if (!Game.replay) Game.run.score = Math.max(0, Game.run.score - 200);
+    updateHudScore();
+    showToast('Escudo reconstruído!', 'A torre de carga reativou a blindagem (−200 pontos).');
+    return;
+  }
+  r.ship.invuln = 1.5;
+}
+
+function spawnReturnEnemy() {
+  const r = Game.return;
+  const big = chance(0.3);
+  r.enemies.push({
+    x: VIEW_W + 30, y: rand(50, VIEW_H - 50),
+    r: big ? 22 : 15, hp: big ? 3 : 1, speed: big ? 40 : 70,
+    t: 0, shotCd: rand(0.5, 1.5), dead: false, deadT: 0,
+    color: big ? '#ff5d6c' : '#ff9df2'
+  });
+}
+
+function returnShoot() {
+  const r = Game.return;
+  if (!r || r.earthReach) return;
+  if (r.shotCd > 0) return;
+  r.shotCd = 0.28;
+  r.shots.push({ x: r.ship.x + 16, y: r.ship.y, vx: RETURN_BOLT_SPEED, vy: 0 });
+  AudioSys.sfx('laser');
+}
+
+function drawReturnScene() {
+  const r = Game.return;
+  if (!r) return;
+
+  /* Fundo espacial */
+  const grad = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+  grad.addColorStop(0, '#05070f');
+  grad.addColorStop(1, '#0b1030');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  for (let i = 0; i < 60; i++) {
+    const px = ((i * 173 + 7) % VIEW_W);
+    const py = ((i * 97 + 23) % VIEW_H);
+    ctx.fillStyle = i % 9 === 0 ? '#ffd166' : '#ffffff';
+    ctx.globalAlpha = 0.3 + (i % 5) * 0.1;
+    ctx.fillRect(px, py, i % 4 === 0 ? 2 : 1, i % 4 === 0 ? 2 : 1);
+  }
+  ctx.globalAlpha = 1;
+
+  /* Planeta Terra à esquerda */
+  ctx.save();
+  ctx.shadowColor = '#59b4ff';
+  ctx.shadowBlur = 26;
+  ctx.fillStyle = '#1f6fd0';
+  ctx.beginPath();
+  ctx.arc(70, VIEW_H / 2, 52, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = '#3ddc7a';
+  ctx.fillRect(55, VIEW_H / 2 - 18, 14, 10);
+  ctx.fillRect(78, VIEW_H / 2 + 6, 10, 8);
+  ctx.fillRect(64, VIEW_H / 2 + 18, 8, 8);
+  ctx.strokeStyle = 'rgba(89,180,255,0.5)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.arc(70, VIEW_H / 2, 60 + Math.sin(r.t * 2) * 3, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#8fd9ff';
+  ctx.font = 'bold 12px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('TERRA', 70, VIEW_H / 2 + 86);
+
+  /* Banner da missão de volta */
+  ctx.fillStyle = 'rgba(4,8,20,0.7)';
+  ctx.fillRect(0, 0, VIEW_W, 26);
+  ctx.fillStyle = '#ffd166';
+  ctx.font = 'bold 11px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('🛸 VOLTA PARA A TERRA — ESQUIVE E ATIRE (ESPAÇO/J)', VIEW_W / 2, 17);
+
+  /* Blindagem (escudo) */
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#9fb0d8';
+  ctx.fillText('ESCUDO', 8, 44);
+  for (let i = 0; i < RETURN_ARMOR; i++) {
+    ctx.fillStyle = i < r.armor ? '#7ff5ff' : 'rgba(127,245,255,0.2)';
+    ctx.beginPath();
+    ctx.arc(74 + i * 16, 40, 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /* Disparos do herói */
+  for (const b of r.shots) {
+    ctx.save();
+    ctx.shadowColor = '#7ff5ff';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#bffaff';
+    ctx.fillRect(b.x - 8, b.y - 2, 14, 4);
+    ctx.restore();
+  }
+
+  /* Tiros inimigos */
+  for (const b of r.enemyShots) {
+    ctx.save();
+    ctx.shadowColor = '#ff5d6c';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#ff9d8a';
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /* Naves inimigas */
+  for (const e of r.enemies) {
+    if (e.dead) {
+      continue;
+    }
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    ctx.rotate(Math.sin(e.t * 4) * 0.2);
+    ctx.scale(-1, 1);
+    const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', F: '#ff5d6c' };
+    const sz = spriteSize(SPRITES.ship, e.r > 20 ? 3 : 2);
+    drawSprite(ctx, SPRITES.ship, -sz.w / 2, -sz.h / 2, e.r > 20 ? 3 : 2, pal);
+    ctx.restore();
+  }
+
+  /* Nave do herói */
+  const ship = getEquippedItem('ship');
+  const sz = spriteSize(SPRITES.ship, 3);
+  ctx.save();
+  if (r.ship.invuln > 0 && Math.floor(r.t * 10) % 2 === 0) ctx.globalAlpha = 0.5;
+  drawSprite(ctx, SPRITES.ship, Math.round(r.ship.x - sz.w / 2), Math.round(r.ship.y - sz.h / 2), 3,
+    { G: ship.main, V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' });
+  ctx.restore();
+
+  drawParticles();
+  drawFade();
+}
+
+/* --- Sala de aula (chegada à Terra) --- */
+function startClassroom() {
+  Game.phase = 'classroom';
+  Game.locked = true;
+  const tw = document.getElementById('travel-wrap');
+  if (tw) tw.hidden = true;
+  Game.classroom = { t: 0, fadeIn: 1.4, dialogStarted: false };
+  camX = 0; camY = 0;
+  Game.fade = null;
+  startFadeIn(0.8);
+  AudioSys.sfx('chalk');
+}
+
+function updateClassroom(dt) {
+  const c = Game.classroom;
+  if (!c) return;
+  c.t += dt;
+  if (!c.dialogStarted && c.t >= c.fadeIn) {
+    c.dialogStarted = true;
+    startClassroomDialog();
+  }
+  if (c.dialogStarted && Game.dialog) {
+    updateDialog(dt);
+  }
+}
+
+function startClassroomDialog() {
+  Game.dialog = {
+    lines: CLASSROOM_DIALOGUE, index: 0, shown: 0, charT: 0, done: false, mumbleT: 0, cursorT: 0,
+    onEnd: showResults
+  };
+  const c = document.getElementById('dialog-scientist-canvas');
+  if (c && c.getContext) {
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.clearRect(0, 0, c.width, c.height);
+    drawSprite(g, SPRITES.scientist, 28, 28, 4, {
+      h: '#7a4a22', G: '#3aa0ff', s: '#ffd9a8', S: '#eef2ff', B: '#2b6f9e', w: '#2b3554'
+    });
+  }
+  document.getElementById('dialog').hidden = false;
+  document.getElementById('dialog-text').textContent = '';
+  document.getElementById('dialog-continue').hidden = true;
+  AudioSys.sfx('mumble');
+}
+
+/* Sala de aula pixel-art: lousa, mesas, alunos e o professor */
+function drawClassroom() {
+  const c = Game.classroom;
+  if (!c) return;
+
+  /* Paredes e piso */
+  const grad = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+  grad.addColorStop(0, '#243a5e');
+  grad.addColorStop(0.55, '#2c4a74');
+  grad.addColorStop(0.56, '#6b4a2f');
+  grad.addColorStop(1, '#4a3320');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+  /* Janela com estrelas */
+  ctx.fillStyle = '#0c1226';
+  ctx.fillRect(420, 26, 150, 90);
+  ctx.strokeStyle = '#8a6a4a';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(420, 26, 150, 90);
+  ctx.strokeRect(495, 26, 1, 90);
+  ctx.fillStyle = '#ffffff';
+  ctx.globalAlpha = 0.8;
+  ctx.fillRect(432, 40, 2, 2);
+  ctx.fillRect(460, 62, 2, 2);
+  ctx.fillRect(540, 44, 2, 2);
+  ctx.fillRect(516, 84, 2, 2);
+  ctx.fillStyle = '#ffd166';
+  ctx.fillRect(556, 30, 3, 3);
+  ctx.globalAlpha = 1;
+
+  /* Lousa */
+  ctx.fillStyle = '#1d4a3a';
+  ctx.fillRect(140, 22, 240, 108);
+  ctx.strokeStyle = '#c9b18a';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(140, 22, 240, 108);
+  ctx.fillStyle = '#eef6ef';
+  ctx.font = 'bold 20px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('LIGAÇÕES QUÍMICAS', 260, 58);
+  ctx.font = '13px "Courier New", monospace';
+  ctx.fillStyle = '#bfe3d0';
+  ctx.fillText('IÔNICA · COVALENTE · METÁLICA', 260, 84);
+  ctx.fillStyle = '#ffd166';
+  ctx.fillText('GALÁXIA RESTAURADA!', 260, 110);
+
+  /* Carteiras dos alunos */
+  const rows = [
+    { x: 20, y: 150 }, { x: 96, y: 150 }, { x: 172, y: 150 },
+    { x: 40, y: 210 }, { x: 116, y: 210 }, { x: 192, y: 210 },
+    { x: 268, y: 210 }
+  ];
+  for (const d of rows) {
+    drawDesk(d.x, d.y);
+  }
+  /* Alunos (silhuetas) */
+  for (const d of rows) {
+    drawStudent(d.x + 6, d.y + 26, d.x % 2 === 0);
+  }
+
+  /* Mesa do professor */
+  ctx.fillStyle = '#7a4a22';
+  ctx.fillRect(330, 250, 90, 34);
+  ctx.fillStyle = '#5a3a1a';
+  ctx.fillRect(330, 250, 90, 8);
+  /* Professor perto da mesa */
+  const pal = { h: '#7a4a22', G: '#3aa0ff', s: '#ffd9a8', S: '#eef2ff', B: '#2b6f9e', w: '#2b3554' };
+  const bob = Math.sin(c.t * 2) * 1.5;
+  const sc = 4;
+  const sz = spriteSize(SPRITES.scientist, sc);
+  drawSprite(ctx, SPRITES.scientist, 372 - sz.w / 2, 232 - sz.h / 2 + bob, sc, pal);
+
+  drawFade();
+}
+
+function drawDesk(x, y) {
+  ctx.fillStyle = '#8a5a2b';
+  ctx.fillRect(x, y, 60, 22);
+  ctx.fillStyle = '#6b4a20';
+  ctx.fillRect(x, y, 60, 5);
+  ctx.fillStyle = '#4a3320';
+  ctx.fillRect(x + 6, y + 22, 5, 22);
+  ctx.fillRect(x + 49, y + 22, 5, 22);
+}
+
+function drawStudent(x, y, two) {
+  ctx.fillStyle = two ? '#3aa0ff' : '#ff9df2';
+  ctx.beginPath();
+  ctx.arc(x, y - 6, 7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(x - 9, y - 2, 18, 20);
+  ctx.fillStyle = '#0c1226';
+  ctx.fillRect(x - 5, y - 8, 4, 4);
+  ctx.fillRect(x + 1, y - 8, 4, 4);
+}
+
+/* --- Resultados e créditos --- */
+function showResults() {
+  document.getElementById('dialog').hidden = true;
+  Game.dialog = null;
+  Game.locked = true;
+  Game.phase = 'results';
+
+  const acc = Game.quizStats.total > 0
+    ? Math.round(Game.quizStats.correct / Game.quizStats.total * 100) : 100;
+  const planets = Game.run.completed.filter(Boolean).length;
+  const items = Save.data.unlocks.length - 4;
+  document.getElementById('results-stats').innerHTML =
+    'Pontuação final: <strong>' + Game.run.score + '</strong><br>' +
+    'Tempo total: <strong>' + fmtTime(Game.run.time) + '</strong><br>' +
+    'Precisão no questionário: <strong>' + acc + '%</strong> (' +
+    Game.quizStats.correct + ' acertos / ' + Game.quizStats.total + ' questões)<br>' +
+    'Erros: <strong>' + Game.run.wrong + '</strong> · Vidas perdidas: <strong>' + Game.run.deaths + '</strong><br>' +
+    'Planetas restaurados: <strong>' + planets + ' de 5</strong><br>' +
+    'Átomos coletados: <strong>' + Game.run.atoms + '</strong> · Itens desbloqueados: <strong>' + items + '</strong>';
+  document.getElementById('results').hidden = false;
+  AudioSys.sfx('cheer');
+}
+
+function showCredits() {
+  document.getElementById('results').hidden = true;
+  Game.phase = 'credits';
+  const list = document.getElementById('credits-list');
+  list.innerHTML = '';
+  CREDITS.forEach(pair => {
+    const row = document.createElement('div');
+    row.className = 'credit-row';
+    const name = document.createElement('div');
+    name.className = 'credit-name';
+    name.textContent = pair[0];
+    const desc = document.createElement('div');
+    desc.className = 'credit-desc';
+    desc.textContent = pair[1];
+    row.appendChild(name);
+    row.appendChild(desc);
+    list.appendChild(row);
+  });
+  document.getElementById('credits').hidden = false;
+  AudioSys.sfx('victory');
+  /* Retorno automático ao menu depois dos créditos */
+  if (creditsTimer) clearTimeout(creditsTimer);
+  creditsTimer = setTimeout(backToMenu, 16000);
+}
+
+function backToMenu() {
+  exitToMenu();
 }
 
 
@@ -3103,7 +3966,7 @@ function showScreen(name) {
 
 /* Esconde os overlays do ciclo novo (diálogo/fusão/quiz/missão/viagem) */
 function hideOverhaulOverlays() {
-  ['dialog', 'fusion', 'quiz', 'mission'].forEach(id => {
+  ['dialog', 'fusion', 'quiz', 'mission', 'results', 'credits'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.hidden = true;
   });
@@ -3121,9 +3984,13 @@ function navTo(nav) {
 }
 
 function exitToMenu() {
+  if (creditsTimer) { clearTimeout(creditsTimer); creditsTimer = null; }
   Game.level = null;
   Game.buildAnim = null;
   Game.feedback = null;
+  Game.return = null;
+  Game.classroom = null;
+  Game.fade = null;
   Game.locked = false;
   pauseShown = false;
   document.getElementById('pause').hidden = true;
@@ -3131,6 +3998,7 @@ function exitToMenu() {
   document.getElementById('reward').hidden = true;
   document.getElementById('victory').hidden = true;
   document.getElementById('defeat').hidden = true;
+  document.getElementById('intro-card').hidden = true;
   hideOverhaulOverlays();
   showScreen('menu');
 }
@@ -3441,13 +4309,14 @@ function startLevel(idx) {
   updateHudProgress();
   updateObjectiveHud();
 
-  /* Cartão de introdução */
+  /* Cartão de introdução em etapas (fade → planeta → missão → química → objetivo) */
   const lv = Game.level;
   document.getElementById('intro-title').textContent = lv.lv.name;
-  document.getElementById('intro-text').textContent = lv.lv.intro;
-  document.getElementById('intro-hint').innerHTML = IS_TOUCH ? 'Toque para começar' : 'Aperte <kbd>ESPAÇO</kbd> para começar';
   document.getElementById('intro-planet').style.background =
     'radial-gradient(circle at 35% 35%, ' + lv.lv.planetColor + ', #1a1030)';
+  document.getElementById('intro-text').textContent = lv.lv.intro;
+  document.getElementById('intro-chem').textContent = INTRO_CHEM[lv.lv.id] || '';
+  document.getElementById('intro-hint').innerHTML = IS_TOUCH ? 'Toque para começar' : 'Aperte <kbd>ESPAÇO</kbd> para começar';
   const obj = document.getElementById('intro-objective');
   obj.innerHTML = '';
   lv.lv.recipes.forEach(rid => {
@@ -3462,6 +4331,7 @@ function startLevel(idx) {
     chip.textContent = 'Classificar ' + lv.lv.gateSequence.length + ' ligações';
     obj.appendChild(chip);
   }
+  introResetStages();
   document.getElementById('intro-card').hidden = false;
 }
 
@@ -3493,7 +4363,9 @@ function completeLevel() {
   updateHudProgress();
 
   if (idx === FINAL_INDEX) {
-    finishGame();
+    /* Fim do jogo: recompensas + volta para a Terra (batalha, sala, resultados, créditos) */
+    applyFinalRewards();
+    startReturn();
     return;
   }
 
@@ -3511,11 +4383,17 @@ function completeLevel() {
   }
 }
 
-/* --- Fim do jogo (vitória) --- */
-function finishGame() {
-  AudioSys.sfx('victory');
-
-  /* Conquistas finais */
+/* Recompensas finais: conquistas, capacete dourado e recorde */
+function applyFinalRewards() {
+  const idx = Game.levelIndex;
+  if (!Game.run.completed[idx]) {
+    const timeBonus = Math.max(0, Math.floor(120 - Game.levelTime)) * 5;
+    Game.run.score += 200 + timeBonus;
+    updateHudScore();
+    Game.run.completed[idx] = true;
+    Save.data.completed[idx] = true;
+    unlockAchievement(ACHIEVEMENT_PER_LEVEL[idx], true);
+  }
   if (Game.run.deaths === 0) unlockAchievement('flawless', true);
   if (Game.run.wrong === 0) unlockAchievement('perfect', true);
   if (Game.run.time < 15 * 60) unlockAchievement('speedrun', true);
@@ -3529,6 +4407,13 @@ function finishGame() {
 
   Save.data.bestScore = Math.max(Save.data.bestScore, Game.run.score);
   Save.save();
+  updateHudProgress();
+}
+
+/* --- Fim do jogo (vitória) --- */
+function finishGame() {
+  applyFinalRewards();
+  AudioSys.sfx('victory');
 
   const title = document.getElementById('victory-title');
   title.textContent = '🌌 Galáxia Restaurada!';
@@ -3589,6 +4474,25 @@ let lastTime = 0;
 let pendingRewardItem = null;
 let pendingLevelComplete = false;
 let pendingMissionItem = null;
+let creditsTimer = null;
+let introStageTimers = [];
+const INTRO_STAGES = ['intro-planet', 'intro-title', 'intro-text', 'intro-chem', 'intro-objective'];
+
+/* Revela o cartão de introdução do planeta em etapas (fade + sequência) */
+function introResetStages() {
+  introStageTimers.forEach(t => clearTimeout(t));
+  introStageTimers = [];
+  INTRO_STAGES.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('intro-show');
+  });
+  INTRO_STAGES.forEach((id, i) => {
+    introStageTimers.push(setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('intro-show');
+    }, 250 + i * 500));
+  });
+}
 
 function loop(t) {
   const dt = Math.min(0.05, (t - lastTime) / 1000 || 0);
@@ -3649,6 +4553,33 @@ window.addEventListener('keydown', e => {
     }
     if (Game.buildAnim) return;
 
+    /* Batalha de volta para a Terra: ESPAÇO/J atiram */
+    if (Game.phase === 'return') {
+      if (e.code === 'Space' || e.code === 'KeyJ') returnShoot();
+      return;
+    }
+    /* Sala de aula: avança o diálogo do professor */
+    if (Game.phase === 'classroom') {
+      if ((e.code === 'Space' || e.code === 'Enter') && Game.dialog) advanceDialog();
+      return;
+    }
+    /* Resultados finais */
+    if (Game.phase === 'results') {
+      if (e.code === 'Space' || e.code === 'Enter') {
+        const b = document.getElementById('btn-results-credits');
+        if (b && !b.hidden) b.click();
+      }
+      return;
+    }
+    /* Créditos (retorno automático ao menu) */
+    if (Game.phase === 'credits') {
+      if (e.code === 'Space' || e.code === 'Enter') {
+        const b = document.getElementById('btn-credits-menu');
+        if (b && !b.hidden) b.click();
+      }
+      return;
+    }
+
     /* Diálogo do cientista */
     if (Game.phase === 'dialog') {
       if (e.code === 'Space' || e.code === 'Enter') advanceDialog();
@@ -3694,6 +4625,7 @@ canvas.addEventListener('pointerdown', e => {
   AudioSys.unlock();
   const lv = Game.level;
   if (!lv || Game.locked || Game.buildAnim || Game.feedback || Game.screen !== 'game') return;
+  if (Game.phase === 'return') { returnShoot(); return; }
   const rect = canvas.getBoundingClientRect();
   const wx = (e.clientX - rect.left) / rect.width * VIEW_W + camX;
   const wy = (e.clientY - rect.top) / rect.height * VIEW_H + camY;
@@ -3724,7 +4656,10 @@ document.querySelectorAll('.touch-controls button').forEach(b => {
       const lv = Game.level;
       if (lv && !Game.locked && dist(Game.player.x, Game.player.y, lv.machine.x, lv.machine.y) < 64) tryInteract();
     }
-    if (t === 'attack' && down) saberAttackNearest();
+    if (t === 'attack' && down) {
+      if (Game.phase === 'return') returnShoot();
+      else saberAttackNearest();
+    }
   };
   b.addEventListener('pointerdown', e => { e.preventDefault(); set(true); });
   b.addEventListener('pointerup', e => set(false));
@@ -3801,6 +4736,16 @@ document.getElementById('btn-quiz-next').addEventListener('click', () => {
 });
 document.getElementById('btn-mission-equip').addEventListener('click', () => missionDone(true));
 document.getElementById('btn-mission-continue').addEventListener('click', () => missionDone(false));
+
+/* Resultados finais e créditos */
+document.getElementById('btn-results-credits').addEventListener('click', () => {
+  AudioSys.sfx('click');
+  showCredits();
+});
+document.getElementById('btn-credits-menu').addEventListener('click', () => {
+  AudioSys.sfx('click');
+  backToMenu();
+});
 
 /* Recompensa */
 document.getElementById('btn-equip-now').addEventListener('click', () => {

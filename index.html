@@ -193,6 +193,7 @@
       <div class="intro-planet" id="intro-planet" aria-hidden="true"></div>
       <h2 class="panel-title" id="intro-title"></h2>
       <p class="intro-text" id="intro-text"></p>
+      <p class="intro-chem" id="intro-chem"></p>
       <div class="intro-objective" id="intro-objective"></div>
       <p class="menu-hint" id="intro-hint">Aperte <kbd>ESPAÇO</kbd> para começar</p>
     </div>
@@ -317,6 +318,32 @@
       <div class="reward-buttons">
         <button class="btn btn-primary" id="btn-mission-equip">Equipar Agora</button>
         <button class="btn" id="btn-mission-continue">Continuar ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY: resultados finais (pós-sala de aula) -->
+  <div id="results" class="overlay results-overlay" hidden>
+    <div class="panel results-panel">
+      <div class="reward-sparkles" aria-hidden="true">✦ ✧ ✦ ✧ ✦</div>
+      <h2 class="panel-title results-title">🏁 GALÁXIA RESTAURADA!</h2>
+      <p class="results-sub">Parabéns, jovem cientista! A missão foi concluída com sucesso.</p>
+      <div class="results-stats" id="results-stats"></div>
+      <div class="reward-buttons">
+        <button class="btn btn-primary" id="btn-results-credits">Ver Créditos ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY: créditos finais -->
+  <div id="credits" class="overlay credits-overlay" hidden>
+    <div class="panel credits-panel">
+      <h2 class="panel-title credits-title">👩‍🚀 CRÉDITOS</h2>
+      <p class="credits-sub">Space Chemistry: Mission Bonds</p>
+      <div class="credits-list" id="credits-list"></div>
+      <p class="menu-hint" id="credits-hint">O jogo voltará ao menu automaticamente…</p>
+      <div class="reward-buttons">
+        <button class="btn btn-primary" id="btn-credits-menu">Menu Principal</button>
       </div>
     </div>
   </div>
