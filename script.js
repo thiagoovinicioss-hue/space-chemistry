@@ -47,10 +47,10 @@ const BOND_NAME = { ionic: 'Iônica', covalent: 'Covalente', metallic: 'Metálic
 
 /* --- Tipos de alienígenas (combate) --- */
 const ENEMY_TYPES = {
-  green:    { name: 'Alien Verde',      color: '#5dffa6', body: '#2f7a4a', hp: 3, speed: 34, radius: 16 },
-  purple:   { name: 'Alien Roxo',       color: '#c77bff', body: '#5a2a8a', hp: 4, speed: 28, radius: 16 },
-  robot:    { name: 'Alien Robô',       color: '#b0b6c4', body: '#3a4a5e', hp: 5, speed: 22, radius: 17 },
-  crystal:  { name: 'Alien Cristalino', color: '#7ff5ff', body: '#1e7a8a', hp: 6, speed: 20, radius: 18 }
+  green:   { name: 'Alien Verde',      color: '#5dffa6', body: '#2f7a4a', hp: 3, speed: 40, radius: 15, sil: 'blob',    atkRange: 26 },
+  purple:  { name: 'Alien Roxo',       color: '#c77bff', body: '#5a2a8a', hp: 4, speed: 34, radius: 15, sil: 'blob',    atkRange: 28 },
+  robot:   { name: 'Alien Robô',       color: '#b0b6c4', body: '#3a4a5e', hp: 5, speed: 30, radius: 16, sil: 'mech',    atkRange: 30 },
+  crystal: { name: 'Alien Cristalino', color: '#7ff5ff', body: '#1e7a8a', hp: 6, speed: 26, radius: 17, sil: 'crystal', atkRange: 32 }
 };
 
 /* Tempo das animações de chegada */
@@ -119,9 +119,16 @@ const TRAVEL_TIPS = [
 ];
 
 /* --- Combate: animações dos alienígenas --- */
-const ENEMY_DEATH_DUR = 0.7;   /* tempo da animação de morte */
-const ENEMY_HURT_DUR = 0.18;   /* piscada ao ser atingido */
-const ENEMY_DETECT_R = 140;    /* raio de percepção (perseguição) */
+const ENEMY_DEATH_DUR = 0.8;    /* tempo da animação de morte (explosão) */
+const ENEMY_HURT_DUR = 0.16;    /* piscada ao ser atingido */
+const ENEMY_DETECT_R = 150;     /* raio de percepção (perseguição) */
+const ENEMY_ATTACK_WINDUP = 0.38;  /* telegrafia do golpe (treme e brilha) */
+const ENEMY_ATTACK_STRIKE = 0.14;  /* investida rápida que causa dano */
+const ENEMY_ATTACK_RECOVER = 0.55; /* pausa após o golpe */
+const ENEMY_ATTACK_CD = 1.0;       /* intervalo mínimo entre golpes */
+const ENEMY_LUNGE = 26;            /* quanto o inimigo avança na investida */
+const ENEMY_WANDER_T = 1.6;        /* tempo andando na patrulha */
+const ENEMY_IDLE_T = 0.9;          /* tempo parado entre trechos de patrulha */
 
 /* --- Volta para a Terra (batalha espacial pós-vitória) --- */
 const RETURN_ARMOR = 5;              /* blindagem da nave do herói */
@@ -247,6 +254,8 @@ const AudioSys = {
       case 'gate': this.tone({ freq: 880, slideTo: 1320, type: 'triangle', dur: 0.2, vol: 0.18 }); break;
       case 'damage': this.tone({ freq: 400, slideTo: 200, type: 'square', dur: 0.2, vol: 0.15 }); break;
       case 'saber': this.tone({ freq: 200, slideTo: 900, type: 'sawtooth', dur: 0.18, vol: 0.12 }); break;
+      case 'saberHit': this.tone({ freq: 1200, slideTo: 300, type: 'square', dur: 0.1, vol: 0.14 }); break;
+      case 'growl': this.tone({ freq: 90, slideTo: 60, type: 'square', dur: 0.3, vol: 0.1 }); break;
       case 'enemyHit': this.tone({ freq: 500, slideTo: 250, type: 'square', dur: 0.12, vol: 0.14 }); break;
       case 'enemyDie': this.tone({ freq: 400, slideTo: 60, type: 'sawtooth', dur: 0.4, vol: 0.18 }); break;
       case 'mumble': this.tone({ freq: 118, slideTo: 84, type: 'square', dur: 0.09, vol: 0.06 }); break;
@@ -392,7 +401,7 @@ const SPRITES = {
     ]
   },
 
-  /* Alienígena (12 x 10 px) — a mesma arte recebe cores por tipo */
+  /* Alienígena (12 x 10 px) — retrato de diálogo / porta-retratos */
   alien: {
     grid: [
       '.....EE.....',
@@ -405,6 +414,337 @@ const SPRITES = {
       '...EEEEEE...',
       '...EE..EE...',
       '...EE..EE...'
+    ]
+  },
+
+  /* ---- Frames de COMBATE dos alienígenas ----
+     Personagens animados por estado (idle/walk/attack/hurt), nunca rotacionados.
+     Cores por paleta: E corpo, W branco, D escuro, V visor/núcleo, H placa, O contorno. */
+
+  alienIdleA: {
+    grid: [
+      '.....EE.....',
+      '.....EE.....',
+      '....EEEE....',
+      '...EEEEEE...',
+      '..EEWWWWEE..',
+      '..EEWWWWEE..',
+      '..EEWDDWEE..',
+      '..EEWWWWEE..',
+      '...EEEEEE...',
+      '...EE..EE...',
+      '...EE..EE...'
+    ]
+  },
+  alienIdleB: {
+    grid: [
+      '.....EE.....',
+      '.....EE.....',
+      '....EEEE....',
+      '...EEEEEE...',
+      '..EEWWWWEE..',
+      '..EEWWWWEE..',
+      '..EEWDDWEE..',
+      '..EEWWWWEE..',
+      '...EEEEEE...',
+      '....EEEE....',
+      '.....EE.....'
+    ]
+  },
+  alienWalkA: {
+    grid: [
+      '.....EE.....',
+      '.....EE.....',
+      '....EEEE....',
+      '...EEEEEE...',
+      '..EEWWWWEE..',
+      '..EEWWWWEE..',
+      '..EEWDDWEE..',
+      '..EEWWWWEE..',
+      '...EEEEEE...',
+      '....EE.EE...',
+      '....EE..EE..'
+    ]
+  },
+  alienWalkB: {
+    grid: [
+      '.....EE.....',
+      '.....EE.....',
+      '....EEEE....',
+      '...EEEEEE...',
+      '..EEWWWWEE..',
+      '..EEWWWWEE..',
+      '..EEWDDWEE..',
+      '..EEWWWWEE..',
+      '...EEEEEE...',
+      '..EE.EE.....',
+      '..EE..EE....'
+    ]
+  },
+  alienAtkA: {
+    grid: [
+      '.....EE.....',
+      '.....EE.....',
+      '....EEEE....',
+      '...EEEEEE...',
+      '..EEWWWWEE..',
+      '..EEWWWWEE..',
+      '..EEWDDWEE..',
+      '..EEWWWWEE..',
+      '.EEEEEEEEEE.',
+      '..EEEEEEEE..',
+      '...EE..EE...'
+    ]
+  },
+  alienAtkB: {
+    grid: [
+      '.....EE.....',
+      '.....EE.....',
+      '....EEEE....',
+      '...EEEEEE...',
+      '..EEWWWWEE..',
+      '..EEWWWWEE..',
+      '..EEWDDWEE..',
+      '..EEWWWWEE..',
+      '...EEEEEE...',
+      '.EEEE..EEEE.',
+      '...EE..EE...'
+    ]
+  },
+  alienHurt: {
+    grid: [
+      '.....EE.....',
+      '.....EE.....',
+      '....EEEE....',
+      '...EEEEEE...',
+      '..EEWWWWEE..',
+      '..EWWWWWWE..',
+      '..EWDDDDWE..',
+      '..EWWWWWWE..',
+      '...EEEEEE...',
+      '...EE..EE...',
+      '...EE..EE...'
+    ]
+  },
+
+  /* Robô guardião (12 x 12 px) — chassi angular, visor de energia */
+  mechIdleA: {
+    grid: [
+      '...HHHHHH...',
+      '...HHHHHH...',
+      '..HHVVVVHH..',
+      '..HHVVVVHH..',
+      '..HHHHHHHH..',
+      '..HEEEEEEEH.',
+      '..HEEWWWEEH.',
+      '..HEEEEEEEH.',
+      '...HHHHHH...',
+      '..HH....HH..',
+      '..HH....HH..',
+      '..EE....EE..'
+    ]
+  },
+  mechIdleB: {
+    grid: [
+      '...HHHHHH...',
+      '...HHHHHH...',
+      '..HHDDDDHH..',
+      '..HHDDDDHH..',
+      '..HHHHHHHH..',
+      '..HEEEEEEEH.',
+      '..HEEWWWEEH.',
+      '..HEEEEEEEH.',
+      '...HHHHHH...',
+      '..HH....HH..',
+      '..HH....HH..',
+      '..EE....EE..'
+    ]
+  },
+  mechWalkA: {
+    grid: [
+      '...HHHHHH...',
+      '...HHHHHH...',
+      '..HHVVVVHH..',
+      '..HHVVVVHH..',
+      '..HHHHHHHH..',
+      '..HEEEEEEEH.',
+      '..HEEWWWEEH.',
+      '..HEEEEEEEH.',
+      '...HHHHHH...',
+      '...HH..HH...',
+      '...HH..HH...',
+      '...EE..EE...'
+    ]
+  },
+  mechWalkB: {
+    grid: [
+      '...HHHHHH...',
+      '...HHHHHH...',
+      '..HHVVVVHH..',
+      '..HHVVVVHH..',
+      '..HHHHHHHH..',
+      '..HEEEEEEEH.',
+      '..HEEWWWEEH.',
+      '..HEEEEEEEH.',
+      '...HHHHHH...',
+      '..HHH..HHH..',
+      '..EE....EE..',
+      '..EE....EE..'
+    ]
+  },
+  mechAtkA: {
+    grid: [
+      '...HHHHHH...',
+      '...HHHHHH...',
+      '..HHVVVVHH..',
+      '..HHVVVVHH..',
+      '..HHHHHHHH..',
+      '..HEEEEEEEH.',
+      '..HEEWWWEEH.',
+      '..HEEEEEEEH.',
+      '...HHHHHH...',
+      '...HHHH.HH..',
+      '...HH....EE.',
+      '..........EE'
+    ]
+  },
+  mechAtkB: {
+    grid: [
+      '...HHHHHH...',
+      '...HHHHHH...',
+      '..HHVVVVHH..',
+      '..HHVVVVHH..',
+      '..HHHHHHHH..',
+      '..HEEEEEEEH.',
+      '..HEEWWWEEH.',
+      '..HEEEEEEEH.',
+      '...HHHHHH...',
+      '..HH..HHH...',
+      '..EE..HH....',
+      '..EE..EE....'
+    ]
+  },
+  mechHurt: {
+    grid: [
+      '...HHHHHH...',
+      '...HHHHHH...',
+      '..HHWWWWHH..',
+      '..HHWWWWHH..',
+      '..HHHHHHHH..',
+      '..HEEDDDEEH.',
+      '..HEEDDDEEH.',
+      '..HEEDDDEEH.',
+      '...HHHHHH...',
+      '..HH....HH..',
+      '..HH....HH..',
+      '..EE....EE..'
+    ]
+  },
+
+  /* Cristalino (12 x 11 px) — estilhaço flutuante com núcleo de energia */
+  crysIdleA: {
+    grid: [
+      '.....OO.....',
+      '....OEEO....',
+      '...OEEEEO...',
+      '..OEEVVEEO..',
+      '..OEEVVEEO..',
+      '..OEEWWEEO..',
+      '..OEEWWEEO..',
+      '..OEEEEEEO..',
+      '...OEEEEO...',
+      '....OEEO....',
+      '.....OO.....'
+    ]
+  },
+  crysIdleB: {
+    grid: [
+      '.....OO.....',
+      '....OEEO....',
+      '...OEEEEO...',
+      '..OEEVVEEO..',
+      '..OEEVVEEO..',
+      '..OEEWWEEO..',
+      '..OEEWWEEO..',
+      '..OEEEEEEO..',
+      '...OEEEEO...',
+      '....OEEO....',
+      '.....OO.....'
+    ]
+  },
+  crysWalkA: {
+    grid: [
+      '.....OO.....',
+      '....OEEO....',
+      '...OEEEEO...',
+      '..OEEVVEEO..',
+      '..OEEVVEEO..',
+      '..OEEWWEEO..',
+      '..OEEWWEEO..',
+      '..OEEEEEEO..',
+      '...OEEEEO...',
+      '..OEEEEO....',
+      '..OO..OO....'
+    ]
+  },
+  crysWalkB: {
+    grid: [
+      '.....OO.....',
+      '....OEEO....',
+      '...OEEEEO...',
+      '..OEEVVEEO..',
+      '..OEEVVEEO..',
+      '..OEEWWEEO..',
+      '..OEEWWEEO..',
+      '..OEEEEEEO..',
+      '...OEEEEO...',
+      '....OEEEEO..',
+      '....OO..OO..'
+    ]
+  },
+  crysAtkA: {
+    grid: [
+      '.....OO.....',
+      '....OEEO....',
+      '...OEEEEO...',
+      '..OEEVVEEO..',
+      '..OEEVVEEO..',
+      '..OEEWWEEO..',
+      '..OEEWWEEO..',
+      '..OEEEEEEO..',
+      '...OEEEEO...',
+      '....OEEO....',
+      '.....OO.....'
+    ]
+  },
+  crysAtkB: {
+    grid: [
+      '....OO......',
+      '...OEEO.....',
+      '..OEEEEO....',
+      '.OEEVVEEO...',
+      '.OEEVVEEO...',
+      '.OEEWWEEO...',
+      '.OEEWWEEO...',
+      '.OEEEEEEO...',
+      '.OOEEEEO....',
+      '..OOEEO.....',
+      '...OOO......'
+    ]
+  },
+  crysHurt: {
+    grid: [
+      '.....OO.....',
+      '....OEEO....',
+      '...OEEEEO...',
+      '..OEEWWEEO..',
+      '..OEEWWEEO..',
+      '..OEWWWWEO..',
+      '..OEWWWWEO..',
+      '..OEEWWEEO..',
+      '...OEEEEO...',
+      '....OEEO....',
+      '.....OO.....'
     ]
   },
 
@@ -507,6 +847,31 @@ function astronautPalette(helmet, suit) {
     W: '#ffffff'
   };
 }
+
+/* Arte animada de combate por silhueta (frames por estado, paleta por tipo) */
+const ENEMY_ART = {
+  blob: {
+    idle: [SPRITES.alienIdleA, SPRITES.alienIdleB],
+    walk: [SPRITES.alienWalkA, SPRITES.alienWalkB],
+    attack: [SPRITES.alienAtkA, SPRITES.alienAtkB],
+    hurt: SPRITES.alienHurt,
+    pal: type => ({ E: type.body, W: '#ffffff', D: '#0c1226' })
+  },
+  mech: {
+    idle: [SPRITES.mechIdleA, SPRITES.mechIdleB],
+    walk: [SPRITES.mechWalkA, SPRITES.mechWalkB],
+    attack: [SPRITES.mechAtkA, SPRITES.mechAtkB],
+    hurt: SPRITES.mechHurt,
+    pal: type => ({ E: '#8a94a8', W: '#ffffff', D: '#1a2230', V: type.color, H: type.body })
+  },
+  crystal: {
+    idle: [SPRITES.crysIdleA, SPRITES.crysIdleB],
+    walk: [SPRITES.crysWalkA, SPRITES.crysWalkB],
+    attack: [SPRITES.crysAtkA, SPRITES.crysAtkB],
+    hurt: SPRITES.crysHurt,
+    pal: type => ({ E: type.body, O: '#0c1226', V: type.color, W: '#ffffff' })
+  }
+};
 
 /* Desenha uma matriz pixel-art */
 function drawSprite(ctx, sprite, x, y, scale, palette) {
@@ -1217,20 +1582,27 @@ function buildLevel(idx) {
   /* Alienígenas (combate) */
   const enemies = (lv.enemies || []).map(e => {
     const type = ENEMY_TYPES[e.type] || ENEMY_TYPES.green;
+    const sil = ENEMY_ART[type.sil] || ENEMY_ART.blob;
     return {
       type: e.type, name: type.name, color: type.color, body: type.body,
       hp: type.hp, maxHp: type.hp, speed: type.speed, radius: type.radius,
       x: e.x * TILE + TILE / 2, y: e.y * TILE + TILE / 2,
       baseX: e.x * TILE + TILE / 2, baseY: e.y * TILE + TILE / 2,
       range: (e.range || 4) * TILE,
-      dir: 1, t: rand(0, 6.28), hitCd: 0, alive: true, flash: 0, w: 20, h: 22,
-      state: 'patrol',        /* patrol | chase */
+      dir: 1, t: rand(0, 6.28), hitCd: 0, alive: true, flash: 0, w: 22, h: 24,
+      state: 'patrol',        /* patrol | chase | attack */
       face: 1,                /* -1 esquerda, 1 direita */
       animT: rand(0, 6.28),   /* animação idle/walk */
-      patrolT: rand(0.5, 2),  /* tempo até mudar de direção na patrulha */
+      frame: 0, frameT: 0,    /* frame atual da animação e temporizador */
+      patrolT: rand(0.3, 1),  /* tempo até decidir na patrulha */
+      patrolMove: true,       /* patrulha anda ou fica parado (idle) */
       mvx: 0, mvy: 0,         /* direção atual da patrulha */
+      attackT: 0, attackCd: 0,/* temporizadores do golpe */
+      lx: 0, ly: 0,           /* investida da luta (deslocamento do corpo) */
       hurtT: 0,               /* piscada de dano */
       dead: false, deadT: 0, gone: false, lastSwing: -1,
+      art: sil,
+      pal: sil.pal(type),
       opens: e.opens ? { x: e.opens[0] * TILE + TILE / 2, y: e.opens[1] * TILE + TILE / 2, tx: e.opens[0], ty: e.opens[1] } : null
     };
   });
@@ -3108,20 +3480,32 @@ const Quiz = {
 };
 
 /* ---------------- Combate: sabre de luz + alienígenas ---------------- */
-const SABER_WINDUP = 0.12;   /* preparação: a lâmina "acende" antes do golpe */
-const SABER_SWING = 0.24;    /* duração do golpe em arco */
-const SABER_CD = 0.45;       /* cooldown total entre golpes */
-const SABER_LEN = 26;        /* comprimento da lâmina */
+const SABER_WINDUP = 0.1;     /* preparação: puxa a lâmina para trás e carrega */
+const SABER_SWING = 0.22;     /* duração do golpe em arco (lateral ou diagonal) */
+const SABER_RECOVER = 0.13;   /* volta da lâmina à posição de descanso */
+const SABER_CD = 0.46;        /* cooldown total entre golpes */
+const SABER_LEN = 42;         /* comprimento da lâmina (era 26 → +60% de alcance) */
+const SABER_REACH = 60;       /* raio de acerto do golpe (lâmina + corpo do alvo) */
+const SABER_GREP = 13;        /* raio do punho (onde as mãos seguram) em volta do jogador */
+const SABER_ARC = 2.3;        /* arco varrido no golpe lateral */
+const SABER_ARC_HALF = 0.95;  /* metade da janela angular de acerto */
+const SABER_LUNGE = 16;       /* impulso do corpo durante o golpe */
 
 function createSaber() {
-  return { cd: 0, phase: 'idle', t: 0, ang: 0, startAng: 0, id: 0 };
+  return {
+    cd: 0, phase: 'idle', t: 0, ang: 0, startAng: 0, endAng: 0, id: 0,
+    variant: 'side', /* 'side' = golpe lateral, 'diag' = golpe diagonal (X) */
+    lungeT: 0
+  };
 }
 
-function saberAttack(tx, ty) {
+/* Inicia um golpe mirando (tx, ty). variant: 'side' (lateral) ou 'diag' (diagonal) */
+function saberAttack(tx, ty, variant) {
   const s = Game.saber;
   if (!s || s.cd > 0 || s.phase !== 'idle') return;
   const p = Game.player;
   s.ang = Math.atan2(ty - p.y, tx - p.x);
+  s.variant = variant || 'side';
   s.phase = 'windup';
   s.t = 0;
   s.id++;
@@ -3134,7 +3518,7 @@ function saberAttackNearest() {
   const lv = Game.level;
   if (!lv || !lv.enemies || Game.phase !== 'explore' || Game.locked || !Game.saber) return;
   const p = Game.player;
-  let best = null, bd = 180;
+  let best = null, bd = 200;
   for (const e of lv.enemies) {
     if (!e.alive) continue;
     const d = dist(p.x, p.y, e.x, e.y);
@@ -3142,14 +3526,21 @@ function saberAttackNearest() {
   }
   const tx = best ? best.x : p.x + (p.moveX || 1) * 40;
   const ty = best ? best.y : p.y + (p.moveY || 0) * 40;
-  saberAttack(tx, ty);
+  saberAttack(tx, ty, 'side');
 }
 
-/* Ângulo atual da lâmina durante o arco do golpe */
+/* Ângulo atual da lâmina durante o arco do golpe.
+   Lateral: varre um arco largo no plano horizontal.
+   Diagonal: dois semi-arcos que se cruzam (formando um X). */
 function saberSwingAngle() {
   const s = Game.saber;
   const prog = clamp(s.t / SABER_SWING, 0, 1);
-  return s.startAng + prog * (Math.PI * 1.4);
+  if (s.variant === 'diag') {
+    const half = 1.05;
+    if (prog < 0.5) return s.startAng + easeInOut(prog / 0.5) * half;
+    return s.startAng + half - easeInOut((prog - 0.5) / 0.5) * half;
+  }
+  return s.startAng + prog * SABER_ARC;
 }
 
 function updateCombat(dt) {
@@ -3158,47 +3549,85 @@ function updateCombat(dt) {
   if (s.cd > 0) s.cd -= dt;
   if (s.phase === 'idle') return;
 
-  /* Fase de preparação: sem acertos, só o brilho crescendo */
+  /* Preparação: puxa a lâmina para trás, carrega o brilho */
   if (s.phase === 'windup') {
     s.t += dt;
     if (s.t >= SABER_WINDUP) {
       s.phase = 'swing';
       s.t = 0;
-      s.startAng = s.ang - Math.PI * 0.7;
+      s.startAng = s.ang - (s.variant === 'diag' ? 1.05 : SABER_ARC / 2);
+      s.lungeT = 0;
       AudioSys.sfx('saber');
+      shake(2);
     }
     return;
   }
 
-  /* Golpe: varre o arco e acerta inimigos atingidos */
+  /* Golpe: investe, varre o arco, deixa rastro e acerta */
   if (s.phase === 'swing') {
     s.t += dt;
+    const prog = clamp(s.t / SABER_SWING, 0, 1);
     const a = saberSwingAngle();
+
+    /* Investida do corpo na direção do golpe (com colisão) */
+    s.lungeT += dt;
+    const lungeSpeed = (SABER_LUNGE / SABER_SWING) * (1 - prog * 0.55);
+    moveEntity(Game.level, p, 'x', Math.cos(s.ang) * lungeSpeed * dt);
+    moveEntity(Game.level, p, 'y', Math.sin(s.ang) * lungeSpeed * dt);
+
+    /* Chispas saindo da ponta da lâmina */
+    const gx = p.x + Math.cos(a) * SABER_GREP;
+    const gy = p.y + Math.sin(a) * SABER_GREP;
+    const tipX = gx + Math.cos(a) * SABER_LEN;
+    const tipY = gy + Math.sin(a) * SABER_LEN;
+    if (Math.random() < 0.75) {
+      emitParticle(
+        tipX + rand(-3, 3), tipY + rand(-3, 3),
+        Math.cos(a) * rand(-30, 60) + rand(-20, 20), Math.sin(a) * rand(-30, 60) + rand(-20, 20),
+        Math.random() < 0.5 ? '#7ff5ff' : '#ffffff', rand(0.2, 0.42), rand(1, 2.2)
+      );
+    }
+
+    /* Acerto nos inimigos dentro do arco */
     for (const e of Game.level.enemies) {
       if (!e.alive || e.lastSwing === s.id) continue;
-      if (dist(p.x, p.y, e.x, e.y) < 46) {
+      const d = dist(p.x, p.y, e.x, e.y);
+      if (d < SABER_REACH) {
         const angTo = Math.atan2(e.y - p.y, e.x - p.x);
         let diff = Math.abs(angTo - a);
         if (diff > Math.PI) diff = Math.PI * 2 - diff;
-        if (diff < 0.9) {
+        if (diff < SABER_ARC_HALF) {
           e.lastSwing = s.id;
           hitEnemy(e);
-          burst(e.x, e.y, '#7ff5ff', 6);
-          shake(4);
+          burst(e.x, e.y, '#7ff5ff', 8);
+          burst(e.x, e.y, e.color, 6);
+          shake(6);
         }
       }
     }
     /* Quebráveis também são destruídos pelo golpe do sabre */
     for (const b of Game.level.breakables) {
       if (b.hit) continue;
-      if (dist(p.x, p.y, b.x, b.y) < 46) {
+      if (dist(p.x, p.y, b.x, b.y) < SABER_REACH) {
         const angTo = Math.atan2(b.y - p.y, b.x - p.x);
         let diff = Math.abs(angTo - a);
         if (diff > Math.PI) diff = Math.PI * 2 - diff;
-        if (diff < 0.9) destroyBreakable(Game.level, b);
+        if (diff < SABER_ARC_HALF) destroyBreakable(Game.level, b);
       }
     }
     if (s.t >= SABER_SWING) {
+      s.endAng = saberSwingAngle();
+      s.phase = 'recover';
+      s.t = 0;
+    }
+    return;
+  }
+
+  /* Recuperação: a lâmina volta à posição de descanso */
+  if (s.phase === 'recover') {
+    s.t += dt;
+    const pr = clamp(s.t / SABER_RECOVER, 0, 1);
+    if (pr >= 1) {
       s.phase = 'idle';
       s.t = 0;
     }
@@ -3209,23 +3638,37 @@ function hitEnemy(e) {
   const p = Game.player;
   const dx = e.x - p.x, dy = e.y - p.y;
   const d = Math.max(1, dist(p.x, p.y, e.x, e.y));
-  /* Empurrão para trás */
-  e.x += dx / d * 16;
-  e.y += dy / d * 16;
+  /* Empurrão para trás (impacto) */
+  e.x += dx / d * 20;
+  e.y += dy / d * 20;
   e.hp--;
   e.hurtT = ENEMY_HURT_DUR;
+  e.flash = 0.14;
   e.hitCd = 0.4;
+  /* Interrompe o golpe do inimigo se ele estava atacando */
+  if (e.state === 'attack') {
+    e.attackT = 0;
+    e.bx = e.x; e.by = e.y;
+    e.hitPlayer = false;
+  }
+  e.attackCd = Math.max(e.attackCd, 0.45);
   AudioSys.sfx('enemyHit');
-  burst(e.x, e.y, e.color, 8);
+  shake(5);
+  burst(e.x, e.y, e.color, 10);
+  burst(e.x, e.y, '#ffffff', 4);
+  spawnFloater(e.x, e.y - 16, '1');
   if (e.hp <= 0) {
-    /* Começa a animação de morte (o sprite só some depois dela) */
+    /* Começa a animação de morte (explosão; o sprite só some depois dela) */
     e.alive = false;
     e.dead = true;
     e.deadT = 0;
+    e.x = Math.round(e.x / TILE) * TILE + TILE / 2;
+    e.y = Math.round(e.y / TILE) * TILE + TILE / 2;
     AudioSys.sfx('enemyDie');
     if (!Game.replay) Game.run.score += 50;
     updateHudScore();
-    burst(e.x, e.y, e.color, 20);
+    burst(e.x, e.y, e.color, 24);
+    burst(e.x, e.y, '#ffffff', 10);
     spawnFloater(e.x, e.y - 14, '+50');
     /* Drop de energia */
     Game.level.orbs.push({ x: e.x, y: e.y, taken: false });
@@ -3255,16 +3698,37 @@ function updateEnemies(dt) {
     e.t += dt;
     e.animT += dt;
     if (e.hitCd > 0) e.hitCd -= dt;
+    if (e.attackCd > 0) e.attackCd -= dt;
     if (e.hurtT > 0) e.hurtT -= dt;
     if (e.flash > 0) e.flash -= dt;
 
     const dTo = dist(p.x, p.y, e.x, e.y);
+    const type = ENEMY_TYPES[e.type] || ENEMY_TYPES.green;
 
     /* Percepção por raio: dentro do raio de visão → persegue */
     if (dTo < ENEMY_DETECT_R) {
-      e.state = 'chase';
+      if (e.state !== 'attack') e.state = 'chase';
     } else if (e.state === 'chase' && dTo > ENEMY_DETECT_R * 1.7) {
       e.state = 'patrol';
+    }
+
+    /* Dentro do alcance de luta → telegrafa e golpeia */
+    if (e.state === 'chase' && dTo < type.atkRange + e.radius && e.attackCd <= 0) {
+      e.state = 'attack';
+      e.attackT = 0;
+      e.bx = e.x; e.by = e.y;
+      e.hitPlayer = false;
+      e.lx = (p.x - e.x) / Math.max(1, dTo);
+      e.ly = (p.y - e.y) / Math.max(1, dTo);
+      e.face = p.x >= e.x ? 1 : -1;
+      AudioSys.sfx('growl');
+      continue;
+    }
+
+    /* Enquanto ataca, o inimigo não anda (a investida é animada) */
+    if (e.state === 'attack') {
+      updateEnemyAttack(e, dt);
+      continue;
     }
 
     let mvx = 0, mvy = 0;
@@ -3274,92 +3738,193 @@ function updateEnemies(dt) {
       mvy = (p.y - e.y) / d * e.speed;
       e.face = mvx >= 0 ? 1 : -1;
     } else {
-      /* Patrulha aleatória perto da base */
+      /* Patrulha: alterna trechos andando com pausas (mostra a animação idle) */
       e.patrolT -= dt;
       if (e.patrolT <= 0) {
-        e.patrolT = rand(0.6, 1.8);
-        const pick = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]][randInt(0, 7)];
-        e.mvx = pick[0]; e.mvy = pick[1];
-        e.face = e.mvx >= 0 ? 1 : -1;
+        e.patrolMove = !e.patrolMove;
+        e.patrolT = e.patrolMove ? ENEMY_WANDER_T : ENEMY_IDLE_T;
+        if (e.patrolMove) {
+          const pick = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]][randInt(0, 7)];
+          e.mvx = pick[0]; e.mvy = pick[1];
+          e.face = e.mvx >= 0 ? 1 : -1;
+        } else {
+          e.mvx = 0; e.mvy = 0;
+        }
       }
-      mvx = e.mvx * e.speed * 0.5;
-      mvy = e.mvy * e.speed * 0.5;
-      /* Saiu do alcance: retorna para a base */
-      if (dist(e.x, e.y, e.baseX, e.baseY) > e.range) {
-        const d = Math.max(1, dist(e.x, e.y, e.baseX, e.baseY));
-        mvx = (e.baseX - e.x) / d * e.speed * 0.7;
-        mvy = (e.baseY - e.y) / d * e.speed * 0.7;
-        e.face = mvx >= 0 ? 1 : -1;
+      if (e.patrolMove) {
+        mvx = e.mvx * e.speed * 0.45;
+        mvy = e.mvy * e.speed * 0.45;
+        /* Saiu do alcance: retorna para a base */
+        if (dist(e.x, e.y, e.baseX, e.baseY) > e.range) {
+          const d = Math.max(1, dist(e.x, e.y, e.baseX, e.baseY));
+          mvx = (e.baseX - e.x) / d * e.speed * 0.6;
+          mvy = (e.baseY - e.y) / d * e.speed * 0.6;
+          e.face = mvx >= 0 ? 1 : -1;
+        }
       }
     }
 
     if (moveEntity(lv, e, 'x', mvx * dt) || moveEntity(lv, e, 'y', mvy * dt)) {
       e.patrolT = 0;
     }
+  }
+}
 
-    /* Contato com o jogador = dano */
-    if (e.hitCd <= 0 && dist(p.x, p.y, e.x, e.y) < e.radius + PLAYER_R && p.invuln <= 0) {
-      e.hitCd = 1.2;
-      damagePlayer();
+/* Máquina de estados de ataque do inimigo: telegrafa → investe → recupera */
+function updateEnemyAttack(e, dt) {
+  const p = Game.player;
+  const lv = Game.level;
+  e.attackT += dt;
+  const atk = e.attackT;
+
+  if (atk < ENEMY_ATTACK_WINDUP) {
+    /* Telegrafia: congela no lugar, treme e mostra "!" (o tremor é no desenho) */
+    e.face = p.x >= e.x ? 1 : -1;
+    return;
+  }
+
+  if (atk < ENEMY_ATTACK_WINDUP + ENEMY_ATTACK_STRIKE) {
+    /* Investida: avança com easing na direção salva, com colisão */
+    const t0 = (atk - ENEMY_ATTACK_WINDUP) / ENEMY_ATTACK_STRIKE;
+    const tt = 1 - Math.pow(1 - t0, 2);
+    const wantX = e.bx + e.lx * ENEMY_LUNGE * tt;
+    const wantY = e.by + e.ly * ENEMY_LUNGE * tt;
+    moveEntity(lv, e, 'x', wantX - e.x);
+    moveEntity(lv, e, 'y', wantY - e.y);
+    e.face = p.x >= e.x ? 1 : -1;
+    /* Dano no momento do golpe */
+    if (!e.hitPlayer && t0 < 0.5 && dist(p.x, p.y, e.x, e.y) < e.radius + PLAYER_R + 6) {
+      if (p.invuln <= 0) {
+        e.hitPlayer = true;
+        damagePlayer();
+      }
     }
+    return;
+  }
+
+  /* Recuperação: pausa antes de decidir de novo */
+  if (atk >= ENEMY_ATTACK_WINDUP + ENEMY_ATTACK_STRIKE + ENEMY_ATTACK_RECOVER) {
+    e.state = 'chase';
+    e.attackCd = ENEMY_ATTACK_CD;
+    e.hitPlayer = false;
+  } else {
+    e.face = p.x >= e.x ? 1 : -1;
   }
 }
 
 function drawEnemies() {
   const lv = Game.level;
   if (!lv.enemies) return;
+  const t = performance.now() / 1000;
   for (const e of lv.enemies) {
     if (e.gone) continue;
 
-    /* Animação de morte: gira, encolhe e desvanece até sumir */
+    /* Morte: explosão com "poof" (sem rotação) */
     if (e.dead) {
-      const pr = clamp(e.deadT / ENEMY_DEATH_DUR, 0, 1);
-      const sc = 2 * (1 - pr * 0.5);
-      ctx.save();
-      ctx.globalAlpha = 1 - pr;
-      ctx.translate(e.x - camX, e.y - camY);
-      ctx.rotate(pr * Math.PI * 0.5);
-      const sz = spriteSize(SPRITES.alien, sc);
-      drawSprite(ctx, SPRITES.alien, -sz.w / 2, -sz.h / 2, sc, {
-        E: e.body, W: '#ffffff', D: '#0c1226'
-      });
-      ctx.restore();
+      drawEnemyDeath(e, t);
       continue;
     }
 
     if (!e.alive) continue;
 
-    /* Idle/walk: balanço vertical + squash & stretch */
-    const moving = e.state === 'chase' || Math.abs(e.mvx) + Math.abs(e.mvy) > 0;
-    const ph = e.animT * (moving ? 9 : 4);
-    const bob = Math.sin(ph) * (moving ? 2.5 : 1.5);
-    const squash = 1 + Math.sin(ph) * (moving ? 0.08 : 0.05);
+    const attacking = e.state === 'attack';
+    const moving = e.state === 'chase' || (e.state === 'patrol' && e.patrolMove);
+    const frame = enemyFrame(e, attacking, moving);
+
+    let bob = 0, squash = 1;
+    if (attacking) {
+      if (e.attackT < ENEMY_ATTACK_WINDUP) {
+        bob = Math.sin(t * 46) * 1.8;
+        squash = 1 + Math.sin(t * 52) * 0.07;
+      } else {
+        squash = 1 + Math.sin(t * 30) * 0.05;
+      }
+    } else if (moving) {
+      bob = Math.sin(e.animT * 11) * 2.2;
+      squash = 1 + Math.sin(e.animT * 11) * 0.07;
+    } else {
+      bob = Math.sin(e.animT * 3.2) * 1.4;
+      squash = 1 + Math.sin(e.animT * 3.2) * 0.04;
+    }
+
     const dx = Math.round(e.x - camX);
     const dy = Math.round(e.y - camY + bob);
-    const sc = 2 * squash;
-    const sz = spriteSize(SPRITES.alien, sc);
+    const sz = spriteSize(frame, 2);
+
+    /* Sombra no chão */
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(dx, dy + sz.h / 2 - 2, 11, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.save();
     ctx.translate(dx, dy);
     ctx.scale(e.face, 1);
-    if (e.hurtT > 0) ctx.globalAlpha = 0.45;
-    else if (e.flash > 0) ctx.globalAlpha = 0.6;
-    drawSprite(ctx, SPRITES.alien, -sz.w / 2, -sz.h / 2, sc, {
-      E: (e.hurtT > 0 || e.flash > 0) ? '#ffffff' : e.body,
-      W: '#ffffff', D: '#0c1226'
-    });
+    ctx.scale(squash, 2 - squash);
+    drawSprite(ctx, frame, -sz.w / 2, -sz.h / 2, 2, e.pal);
+    /* Flash de dano: sprite de ferimento com paleta branca */
+    if (e.hurtT > 0 || e.flash > 0) {
+      drawSprite(ctx, e.art.hurt, -sz.w / 2, -sz.h / 2, 2, flashPal(e));
+    }
     ctx.restore();
 
+    /* Telegrafia do golpe: "!" piscando acima da cabeça */
+    if (attacking && e.attackT < ENEMY_ATTACK_WINDUP) {
+      ctx.save();
+      ctx.globalAlpha = 0.7 + Math.sin(t * 20) * 0.3;
+      ctx.fillStyle = '#ff5d6c';
+      ctx.font = 'bold 14px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('!', dx, dy - sz.h / 2 - 10);
+      ctx.restore();
+    }
+
     /* Barra de vida */
-    const bw = 22, bh = 3;
-    const bx = dx - bw / 2, by = dy - sz.h / 2 - 8;
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    const bw = 26, bh = 4;
+    const bx = dx - bw / 2, by = dy - sz.h / 2 - 12;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
-    ctx.fillStyle = '#ff5d6c';
+    ctx.fillStyle = '#3a1d24';
     ctx.fillRect(bx, by, bw, bh);
     ctx.fillStyle = e.color;
-    ctx.fillRect(bx, by, bw * (e.hp / e.maxHp), bh);
+    ctx.fillRect(bx, by, bw * clamp(e.hp / e.maxHp, 0, 1), bh);
   }
+}
+
+/* Escolhe o frame da animação conforme o estado do inimigo */
+function enemyFrame(e, attacking, moving) {
+  const art = e.art;
+  const seq = attacking ? art.attack : (moving ? art.walk : art.idle);
+  const rate = attacking ? 16 : (moving ? 11 : 4);
+  return seq[Math.floor(e.animT * rate) % seq.length];
+}
+
+/* Paleta para o flash branco de dano (cacheada por inimigo) */
+function flashPal(e) {
+  if (!e._flashPal) {
+    e._flashPal = {};
+    for (const k in e.pal) e._flashPal[k] = '#ffffff';
+    e._flashPal.D = '#ff5d6c';
+    e._flashPal.W = '#ffffff';
+  }
+  return e._flashPal;
+}
+
+/* Animação de morte: encolhe com tremor e desintegra em partículas (sem rotação) */
+function drawEnemyDeath(e, t) {
+  const pr = clamp(e.deadT / ENEMY_DEATH_DUR, 0, 1);
+  const frame = e.deadT < 0.18 ? e.art.hurt : e.art.idle[0];
+  const sc = 2 * (1 - pr * 0.6);
+  const jx = (Math.random() - 0.5) * 2.5;
+  const jy = (Math.random() - 0.5) * 2.5;
+  const sz = spriteSize(frame, sc);
+  ctx.save();
+  ctx.globalAlpha = 1 - pr;
+  ctx.translate(Math.round(e.x - camX + jx), Math.round(e.y - camY + jy));
+  drawSprite(ctx, frame, -sz.w / 2, -sz.h / 2, sc, pr > 0.5 ? flashPal(e) : e.pal);
+  ctx.restore();
+  /* Partículas de desintegração contínuas */
+  if (Math.random() < 0.6) burst(e.x, e.y, e.color, 2);
 }
 
 /* Orbes de energia deixados pelos alienígenas */
@@ -3399,69 +3964,132 @@ function updateOrbs() {
 
 function drawSaber() {
   const s = Game.saber;
-  if (!s || s.phase === 'idle') return;
+  if (!s) return;
   const p = Game.player;
-  const hx = p.x - camX, hy = p.y - camY - 4;
-  const len = SABER_LEN;
+  const hx = p.x - camX, hy = p.y - camY;
+  const t = performance.now() / 1000;
+  const REST = -0.9;
 
-  /* Fase de preparação: o punho brilha e a lâmina "acende" tremulando */
+  /* Descanso: sabre segurado com as duas mãos ao lado do corpo */
+  if (s.phase === 'idle') {
+    const a = REST;
+    const gx = hx + Math.cos(a) * SABER_GREP, gy = hy + Math.sin(a) * SABER_GREP + 2;
+    drawSaberLine(gx, gy, a, SABER_LEN * 0.8, 0.32, t);
+    drawHands(gx, gy, a, 0.32);
+    return;
+  }
+
+  /* Preparação: puxa a lâmina para trás e carrega o brilho */
   if (s.phase === 'windup') {
     const pr = clamp(s.t / SABER_WINDUP, 0, 1);
-    const a = s.ang + Math.sin(s.t * 60) * 0.05;
+    const a = s.ang + Math.PI - 0.35 + Math.sin(s.t * 55) * 0.06;
+    const gx = hx + Math.cos(a) * SABER_GREP, gy = hy + Math.sin(a) * SABER_GREP;
     ctx.save();
     ctx.shadowColor = '#7ff5ff';
-    ctx.shadowBlur = 8 + pr * 14;
-    ctx.fillStyle = '#bffaff';
-    ctx.beginPath();
-    ctx.arc(hx, hy, 3, 0, Math.PI * 2);
-    ctx.fill();
-    const blade = 6 + pr * 8 + Math.random() * 2;
-    ctx.strokeStyle = '#7ff5ff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(hx, hy);
-    ctx.lineTo(hx + Math.cos(a) * blade, hy + Math.sin(a) * blade);
-    ctx.stroke();
+    ctx.shadowBlur = 6 + pr * 16;
+    drawSaberLine(gx, gy, a, 8 + pr * SABER_LEN * 0.55, 0.85, t);
+    drawHands(gx, gy, a, 1);
     ctx.restore();
     return;
   }
 
-  /* Golpe em arco: rastro de segmentos + lâmina brilhante no topo */
-  const prog = clamp(s.t / SABER_SWING, 0, 1);
-  const a = saberSwingAngle();
-  ctx.save();
-  const SEGS = 10;
-  for (let i = SEGS - 1; i >= 0; i--) {
-    const tp = clamp(prog - i * 0.045, 0, 1);
-    if (tp <= 0) continue;
-    const aa = s.startAng + tp * (Math.PI * 1.4);
-    const tx = hx + Math.cos(aa) * len;
-    const ty = hy + Math.sin(aa) * len;
-    ctx.globalAlpha = (1 - i / SEGS) * 0.7;
-    ctx.strokeStyle = i % 2 === 0 ? '#7ff5ff' : '#bffaff';
-    ctx.lineWidth = 2;
+  /* Golpe: arco luminoso varrido + lâmina + ponta brilhante */
+  if (s.phase === 'swing') {
+    const prog = clamp(s.t / SABER_SWING, 0, 1);
+    const a = saberSwingAngle();
+    const gx = hx + Math.cos(a) * SABER_GREP, gy = hy + Math.sin(a) * SABER_GREP;
+    const tipX = gx + Math.cos(a) * SABER_LEN, tipY = gy + Math.sin(a) * SABER_LEN;
+
+    drawArcTrail(s, hx, hy);
+    drawSaberLine(gx, gy, a, SABER_LEN, 1, t);
+    drawHands(gx, gy, a, 1);
+
+    ctx.save();
+    ctx.shadowColor = '#7ff5ff';
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.moveTo(hx, hy);
-    ctx.lineTo(tx, ty);
-    ctx.stroke();
+    ctx.arc(tipX, tipY, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return;
   }
-  ctx.globalAlpha = 1;
-  ctx.shadowColor = '#7ff5ff';
-  ctx.shadowBlur = 12;
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 3;
+
+  /* Recuperação: a lâmina volta à posição de descanso */
+  if (s.phase === 'recover') {
+    const pr = clamp(s.t / SABER_RECOVER, 0, 1);
+    const a = s.endAng + (REST - s.endAng) * easeInOut(pr);
+    const gx = hx + Math.cos(a) * SABER_GREP, gy = hy + Math.sin(a) * SABER_GREP;
+    drawSaberLine(gx, gy, a, SABER_LEN * (1 - pr * 0.25), 0.7, t);
+    drawHands(gx, gy, a, 0.85);
+  }
+}
+
+/* Desenha o cabo + lâmina com brilho */
+function drawSaberLine(gx, gy, a, len, alpha, t) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.lineCap = 'round';
+  const flick = 1 + Math.sin(t * 70) * 0.03;
+  const ex = gx + Math.cos(a) * len * flick, ey = gy + Math.sin(a) * len * flick;
+  /* cabo */
+  ctx.strokeStyle = '#2a3a5a';
+  ctx.lineWidth = 4.5;
   ctx.beginPath();
-  ctx.moveTo(hx, hy);
-  ctx.lineTo(hx + Math.cos(a) * len, hy + Math.sin(a) * len);
+  ctx.moveTo(gx - Math.cos(a) * 5, gy - Math.sin(a) * 5);
+  ctx.lineTo(gx + Math.cos(a) * 2, gy + Math.sin(a) * 2);
   ctx.stroke();
+  /* lâmina com brilho */
+  ctx.shadowColor = '#7ff5ff';
+  ctx.shadowBlur = 13;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 3.2;
+  ctx.beginPath();
+  ctx.moveTo(gx, gy);
+  ctx.lineTo(ex, ey);
+  ctx.stroke();
+  /* núcleo da lâmina */
   ctx.shadowBlur = 0;
   ctx.strokeStyle = '#7ff5ff';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1.7;
   ctx.beginPath();
-  ctx.moveTo(hx, hy);
-  ctx.lineTo(hx + Math.cos(a) * len, hy + Math.sin(a) * len);
+  ctx.moveTo(gx, gy);
+  ctx.lineTo(ex, ey);
   ctx.stroke();
   ctx.restore();
+}
+
+/* Duas mãos (luvas) segurando o cabo */
+function drawHands(gx, gy, a, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const px = -Math.sin(a), py = Math.cos(a);
+  ctx.fillStyle = '#e8ecff';
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.arc(gx + px * 3 * side, gy + py * 3 * side, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* Rastro luminoso: arco varrido pela ponta da lâmina */
+function drawArcTrail(s, hx, hy) {
+  const prog = clamp(s.t / SABER_SWING, 0, 1);
+  const cur = saberSwingAngle();
+  const a0 = Math.min(s.startAng, cur), a1 = Math.max(s.startAng, cur);
+  const R = SABER_GREP + SABER_LEN;
+  for (let pass = 3; pass >= 1; pass--) {
+    ctx.save();
+    ctx.globalAlpha = (0.22 * pass) * (1 - prog);
+    ctx.strokeStyle = pass % 2 === 0 ? '#7ff5ff' : '#bffaff';
+    ctx.lineWidth = pass * 3 + 1;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(hx, hy, R, a0, a1);
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 /* ---------------- Decor funcional: baús e interruptores ---------------- */
@@ -5270,7 +5898,7 @@ canvas.addEventListener('pointerdown', e => {
   if (nearNpc || nearBr || nearMachine) {
     tryInteract();
   } else {
-    saberAttack(wx, wy);
+    saberAttack(wx, wy, 'diag');
   }
 });
 
