@@ -22,11 +22,11 @@
       <p class="game-subtitle">MISSION BONDS</p>
     </div>
     <nav class="menu-buttons" aria-label="Menu">
-      <button class="btn btn-primary" data-nav="galaxy">▶ Iniciar Missão</button>
-      <button class="btn" data-nav="rules">📜 Regras</button>
-      <button class="btn" data-nav="wardrobe">🚀 Vestiário</button>
-      <button class="btn" data-nav="achievements">🏆 Conquistas</button>
-      <button class="btn" id="btn-sound">🔊 Som: Ligado</button>
+      <button class="btn btn-primary" data-nav="galaxy"><img class="pix-icon" data-icon="arrowR" data-scale="2" alt=""> Iniciar Missão</button>
+      <button class="btn" data-nav="rules"><img class="pix-icon" data-icon="scroll" data-scale="1" alt=""> Regras</button>
+      <button class="btn" data-nav="wardrobe"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> Vestiário</button>
+      <button class="btn" data-nav="achievements"><img class="pix-icon" data-icon="trophy" data-scale="1" alt=""> Conquistas</button>
+      <button class="btn" id="btn-sound"><img class="pix-icon" data-icon="soundOn" data-scale="1" alt=""> Som: Ligado</button>
     </nav>
     <p class="menu-hint">Use as setas ou WASD e ENTER para navegar · ESC volta</p>
   </div>
@@ -38,14 +38,14 @@
 <section id="screen-rules" class="screen" role="dialog" aria-label="Regras do jogo">
   <div class="starfield" aria-hidden="true"></div>
   <div class="panel rules-panel">
-    <h2 class="panel-title">📜 Como Jogar</h2>
+    <h2 class="panel-title"><img class="pix-icon" data-icon="scroll" data-scale="2" alt=""> Como Jogar</h2>
     <div class="rules-grid">
       <article class="rule-card">
-        <h3>🎯 Objetivo</h3>
+        <h3><img class="pix-icon" data-icon="target" data-scale="1" alt=""> Objetivo</h3>
         <p>Explore a galáxia e restaure os 5 planetas aprendendo os <strong>3 tipos de ligações químicas</strong>: iônica, covalente e metálica.</p>
       </article>
       <article class="rule-card">
-        <h3>🎮 Controles</h3>
+        <h3><img class="pix-icon" data-icon="gamepad" data-scale="1" alt=""> Controles</h3>
         <ul class="rule-list">
           <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ou <kbd>←↑↓→</kbd> — mover</li>
           <li><kbd>J</kbd> ou clique — atacar com o sabre de luz</li>
@@ -55,15 +55,15 @@
         </ul>
       </article>
       <article class="rule-card">
-        <h3>✅ Como vencer</h3>
+        <h3><img class="pix-icon" data-icon="check" data-scale="1" alt=""> Como vencer</h3>
         <p>Em cada planeta: converse com o <strong>cientista</strong>, explore o mapa, derrote os <strong>alienígenas</strong> com seu sabre, monte os compostos na <strong>Máquina de Fusão</strong>, responda ao <strong>questionário</strong> e viaje de nave até o próximo planeta.</p>
       </article>
       <article class="rule-card">
-        <h3>❌ Como perder</h3>
+        <h3><img class="pix-icon" data-icon="cross" data-scale="1" alt=""> Como perder</h3>
         <p>Você tem <strong>3 vidas</strong>. Atingir asteroides, armadilhas, alienígenas ou detritos espaciais custa 1 vida. Sem vidas = missão falhou.</p>
       </article>
       <article class="rule-card">
-        <h3>⭐ Pontuação</h3>
+        <h3><img class="pix-icon" data-icon="star" data-scale="1" alt=""> Pontuação</h3>
         <ul class="rule-list">
           <li>Coletar átomo: <strong>+10</strong></li>
           <li>Composto correto na fusão: <strong>+100</strong></li>
@@ -74,7 +74,7 @@
         </ul>
       </article>
       <article class="rule-card">
-        <h3>🎁 Desbloqueios</h3>
+        <h3><img class="pix-icon" data-icon="gift" data-scale="1" alt=""> Desbloqueios</h3>
         <p>Ao concluir cada planeta você desbloqueia <strong>itens cosméticos</strong> (capacetes, trajes, naves e rastros). Troque-os no <strong>Vestiário</strong>. São apenas visuais — nunca vantagens!</p>
       </article>
     </div>
@@ -88,7 +88,7 @@
 <section id="screen-galaxy" class="screen" role="dialog" aria-label="Mapa da galáxia">
   <div class="starfield" aria-hidden="true"></div>
   <div class="panel">
-    <h2 class="panel-title">🌌 Mapa da Galáxia</h2>
+    <h2 class="panel-title"><img class="pix-icon" data-icon="galaxy" data-scale="2" alt=""> Mapa da Galáxia</h2>
     <p class="galaxy-sub">Complete os planetas para restaurar a galáxia.</p>
 
     <div class="galaxy-track" id="galaxy-track" role="listbox" aria-label="Planetas"></div>
@@ -98,7 +98,7 @@
         <canvas id="ship-preview-canvas" width="120" height="90"></canvas>
         <span>Minha nave</span>
       </div>
-      <button class="btn btn-primary" id="btn-start-level">🚀 Lançar Missão</button>
+      <button class="btn btn-primary" id="btn-start-level"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> Lançar Missão</button>
     </div>
     <button class="btn btn-back" data-nav="menu">← Menu</button>
   </div>
@@ -110,7 +110,7 @@
 <section id="screen-wardrobe" class="screen" role="dialog" aria-label="Vestiário">
   <div class="starfield" aria-hidden="true"></div>
   <div class="panel">
-    <h2 class="panel-title">🚀 Vestiário</h2>
+    <h2 class="panel-title"><img class="pix-icon" data-icon="rocket" data-scale="2" alt=""> Vestiário</h2>
     <div class="wardrobe-preview" id="wardrobe-preview" aria-hidden="true">
       <canvas id="wardrobe-canvas" width="96" height="112"></canvas>
       <div class="preview-info" id="wardrobe-info"></div>
@@ -134,7 +134,7 @@
 <section id="screen-achievements" class="screen" role="dialog" aria-label="Conquistas">
   <div class="starfield" aria-hidden="true"></div>
   <div class="panel">
-    <h2 class="panel-title">🏆 Conquistas</h2>
+    <h2 class="panel-title"><img class="pix-icon" data-icon="trophy" data-scale="2" alt=""> Conquistas</h2>
     <p class="galaxy-sub" id="achievement-count"></p>
     <div class="achieve-grid" id="achieve-grid"></div>
     <button class="btn btn-back" data-nav="menu">← Menu</button>
@@ -162,7 +162,7 @@
         <button class="btn btn-small" id="btn-pause" title="Pausar (ESC)">⏸</button>
       </div>
       <div id="travel-wrap" class="travel-wrap" hidden>
-        <div class="travel-label">🛸 VIAGEM ESPACIAL</div>
+        <div class="travel-label"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> VIAGEM ESPACIAL</div>
         <div class="travel-track"><div class="travel-fill" id="travel-fill"></div></div>
       </div>
     </div>
@@ -175,7 +175,7 @@
         <div id="joy-base" class="joy-base" hidden><div id="joy-knob" class="joy-knob"></div></div>
         <div class="m-actions">
           <button id="mbtn-interact" class="mbtn mbtn-interact" aria-label="Interagir">A</button>
-          <button id="mbtn-attack" class="mbtn mbtn-attack" aria-label="Atacar">⚔</button>
+          <button id="mbtn-attack" class="mbtn mbtn-attack" aria-label="Atacar"><img class="pix-icon" data-icon="sword" data-scale="2" alt=""></button>
         </div>
       </div>
     </div>
@@ -208,9 +208,9 @@
       <h2 class="panel-title">⏸ Pausa</h2>
       <div class="pause-stats" id="pause-stats"></div>
       <div class="pause-buttons">
-        <button class="btn btn-primary" id="btn-resume">▶ Continuar</button>
+        <button class="btn btn-primary" id="btn-resume"><img class="pix-icon" data-icon="arrowR" data-scale="2" alt=""> Continuar</button>
         <button class="btn" id="btn-restart">↻ Recomeçar Fase</button>
-        <button class="btn" data-nav="menu" id="btn-exit-level">🚪 Sair</button>
+        <button class="btn" data-nav="menu" id="btn-exit-level"><img class="pix-icon" data-icon="door" data-scale="1" alt=""> Sair</button>
       </div>
     </div>
   </div>
@@ -218,7 +218,13 @@
   <!-- OVERLAY: recompensa (item desbloqueado) -->
   <div id="reward" class="overlay" hidden>
     <div class="panel reward-panel">
-      <div class="reward-sparkles" aria-hidden="true">✦ ✧ ✦ ✧ ✦</div>
+      <div class="reward-sparkles" aria-hidden="true">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+      </div>
       <h2 class="panel-title reward-title" id="reward-title">Item Desbloqueado!</h2>
       <div class="reward-item" id="reward-item">
         <div class="reward-icon" id="reward-icon"></div>
@@ -250,7 +256,7 @@
   <!-- OVERLAY: derrota -->
   <div id="defeat" class="overlay" hidden>
     <div class="panel defeat-panel">
-      <h2 class="panel-title defeat-title">💥 Missão Falhou!</h2>
+      <h2 class="panel-title defeat-title"><img class="pix-icon" data-icon="explosion" data-scale="2" alt=""> Missão Falhou!</h2>
       <p class="defeat-text">Suas 3 vidas acabaram.</p>
       <div class="defeat-stats" id="defeat-stats"></div>
       <div class="reward-buttons">
@@ -272,7 +278,7 @@
           <span class="dialog-name" id="dialog-name">Prof. Lewis</span>
         </div>
         <p class="dialog-text" id="dialog-text"></p>
-        <p class="dialog-continue" id="dialog-continue">▶ CONTINUAR</p>
+        <p class="dialog-continue" id="dialog-continue"><img class="pix-icon" data-icon="arrowR" data-scale="1" alt=""> CONTINUAR</p>
       </div>
     </div>
   </div>
@@ -280,7 +286,7 @@
   <!-- OVERLAY: Máquina de Fusão (drag & drop) -->
   <div id="fusion" class="overlay fusion-overlay" hidden>
     <div class="panel fusion-panel">
-      <h2 class="panel-title fusion-title">🧪 Máquina de Fusão</h2>
+      <h2 class="panel-title fusion-title"><img class="pix-icon" data-icon="flask" data-scale="2" alt=""> Máquina de Fusão</h2>
       <p class="fusion-sub" id="fusion-sub">Arraste os elementos para montar o composto.</p>
       <div class="fusion-slots" id="fusion-slots"></div>
       <div class="fusion-tray-wrap">
@@ -295,26 +301,32 @@
   <!-- OVERLAY: questionário -->
   <div id="quiz" class="overlay quiz-overlay" hidden>
     <div class="panel quiz-panel">
-      <h2 class="panel-title quiz-title">🧠 Questionário do Cientista</h2>
+      <h2 class="panel-title quiz-title"><img class="pix-icon" data-icon="brain" data-scale="2" alt=""> Questionário do Cientista</h2>
       <p class="quiz-progress" id="quiz-progress"></p>
       <p class="quiz-question" id="quiz-question"></p>
       <div class="quiz-options" id="quiz-options"></div>
       <div class="quiz-explain" id="quiz-explain" hidden></div>
-      <button class="btn btn-primary quiz-next" id="btn-quiz-next" hidden>Continuar ▶</button>
+      <button class="btn btn-primary quiz-next" id="btn-quiz-next" hidden>Continuar <img class="pix-icon" data-icon="arrowR" data-scale="2" alt=""></button>
     </div>
   </div>
 
   <!-- OVERLAY: missão concluída (recompensa) -->
   <div id="mission" class="overlay" hidden>
     <div class="panel mission-panel">
-      <div class="reward-sparkles" aria-hidden="true">✦ ✧ ✦ ✧ ✦</div>
-      <h2 class="panel-title mission-title">✅ MISSÃO CONCLUÍDA</h2>
+      <div class="reward-sparkles" aria-hidden="true">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+      </div>
+      <h2 class="panel-title mission-title"><img class="pix-icon" data-icon="check" data-scale="2" alt=""> MISSÃO CONCLUÍDA</h2>
       <p class="mission-planet" id="mission-planet"></p>
       <div class="mission-stats" id="mission-stats"></div>
       <div class="reward-item" id="mission-item"></div>
       <div class="reward-buttons">
         <button class="btn btn-primary" id="btn-mission-equip">Equipar Agora</button>
-        <button class="btn" id="btn-mission-continue">Continuar ▶</button>
+        <button class="btn" id="btn-mission-continue">Continuar <img class="pix-icon" data-icon="arrowR" data-scale="2" alt=""></button>
       </div>
     </div>
   </div>
@@ -322,12 +334,18 @@
   <!-- OVERLAY: resultados finais (pós-sala de aula) -->
   <div id="results" class="overlay results-overlay" hidden>
     <div class="panel results-panel">
-      <div class="reward-sparkles" aria-hidden="true">✦ ✧ ✦ ✧ ✦</div>
-      <h2 class="panel-title results-title">🏁 GALÁXIA RESTAURADA!</h2>
+      <div class="reward-sparkles" aria-hidden="true">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+        <img class="pix-icon" data-icon="star" data-scale="2" alt="">
+      </div>
+      <h2 class="panel-title results-title"><img class="pix-icon" data-icon="flag" data-scale="2" alt=""> GALÁXIA RESTAURADA!</h2>
       <p class="results-sub">Parabéns, jovem cientista! A missão foi concluída com sucesso.</p>
       <div class="results-stats" id="results-stats"></div>
       <div class="reward-buttons">
-        <button class="btn btn-primary" id="btn-results-credits">Ver Créditos ▶</button>
+        <button class="btn btn-primary" id="btn-results-credits">Ver Créditos <img class="pix-icon" data-icon="arrowR" data-scale="2" alt=""></button>
       </div>
     </div>
   </div>
@@ -335,7 +353,7 @@
   <!-- OVERLAY: créditos finais -->
   <div id="credits" class="overlay credits-overlay" hidden>
     <div class="panel credits-panel">
-      <h2 class="panel-title credits-title">👩‍🚀 CRÉDITOS</h2>
+      <h2 class="panel-title credits-title"><img class="pix-icon" data-icon="astronaut" data-scale="2" alt=""> CRÉDITOS</h2>
       <p class="credits-sub">Space Chemistry: Mission Bonds</p>
       <div class="credits-list" id="credits-list"></div>
       <p class="menu-hint" id="credits-hint">O jogo voltará ao menu automaticamente…</p>
@@ -347,7 +365,7 @@
 
   <!-- AVISO: orientação do aparelho (retrato) -->
   <div id="rotate-hint" class="rotate-hint" hidden>
-    <span class="rotate-icon" aria-hidden="true">📱</span>
+    <span class="rotate-icon" aria-hidden="true"><img class="pix-icon" data-icon="phone" data-scale="2" alt=""></span>
     <span id="rotate-msg">Gire o celular para o melhor modo de jogo</span>
   </div>
 </section>

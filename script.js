@@ -360,40 +360,193 @@ function midi(n) { return 440 * Math.pow(2, (n - 69) / 12); }
 const SPRITES = {
 
   /* Astronauta de cima (12 x 16 px) */
+  /* Astronauta frontal (10 x 14 px) — capacete H, visor V, macacão S,
+     peito branco W e detalhes escuros D. 'astronaut' é o frame de parado;
+     os demais são os frames animados do jogador. */
   astronaut: {
     grid: [
-      '....HHHH....',
-      '...HHHHHH...',
-      '..HHDDDDHH..',
-      '..HDVVVVDH..',
-      '..HDVVVVDH..',
-      '..HHDDDDHH..',
-      '...HHHHHH...',
-      '....HHHH....',
-      '....SSSS....',
-      '...SSSSSS...',
-      '..SSSSSSSS..',
-      '..SSWSSWSS..',
-      '...SSSSSS...',
-      '....SSSS....',
-      '...DD..DD...',
-      '...DD..DD...'
+      '..HHHHHH..',
+      '.HHHHHHHH.',
+      '.HVVVVVHH.',
+      '.HHHVVVHH.',
+      '..HHHHHH..',
+      '..SSSSSS..',
+      '.SSSSSSSS.',
+      '.SSWWWWSS.',
+      '.SSWWWWSS.',
+      '..SSSSSS..',
+      '..SWSWSW..',
+      '..SS..SS..',
+      '..SS..SS..',
+      '..DD..DD..'
+    ]
+  },
+  astronautIdleB: {
+    grid: [
+      '..HHHHHH..',
+      '.HHHHHHHH.',
+      '.HVVVVVHH.',
+      '.HHHVVVHH.',
+      '..HHHHHH..',
+      '..SSSSSS..',
+      '.SSSSSSSS.',
+      '.SSWWWWSS.',
+      '.SSWWWWSS.',
+      '..SSSSSS..',
+      '..SWSWSW..',
+      '..SS..SS..',
+      '.SSS..SSS.',
+      '.DDD..DDD.'
+    ]
+  },
+  astronautWalkA: {
+    grid: [
+      '..HHHHHH..',
+      '.HHHHHHHH.',
+      '.HVVVVVHH.',
+      '.HHHVVVHH.',
+      '..HHHHHH..',
+      '..SSSSSS..',
+      '.SSSSSSSS.',
+      '.SSWWWWSS.',
+      '.SSWWWWSS.',
+      '..SSSSSS..',
+      '..SWSWSW..',
+      '.SS...SS..',
+      '.DD....DD.',
+      '..........'
+    ]
+  },
+  astronautWalkB: {
+    grid: [
+      '..HHHHHH..',
+      '.HHHHHHHH.',
+      '.HVVVVVHH.',
+      '.HHHVVVHH.',
+      '..HHHHHH..',
+      '..SSSSSS..',
+      '.SSSSSSSS.',
+      '.SSWWWWSS.',
+      '.SSWWWWSS.',
+      '..SSSSSS..',
+      '..SWSWSW..',
+      '..SS...SS.',
+      '..DD....DD',
+      '..........'
+    ]
+  },
+  astronautAtkA: {
+    grid: [
+      '..HHHHHH..',
+      '.HHHHHHHH.',
+      '.HVVVVVVH.',
+      '.HHHVVVVH.',
+      '..HHHVVH..',
+      '..SSVSSS..',
+      '.SSVSSSSS.',
+      '.SVWWWWSS.',
+      '.VSWWWWSS.',
+      '..SSSSSS..',
+      '..SWSWSW..',
+      '..SS..SS..',
+      '..SS..SS..',
+      '..DD..DD..'
+    ]
+  },
+  astronautAtkB: {
+    grid: [
+      '..HHHHHH..',
+      '.HHHHHHHH.',
+      '.HVVVVVHH.',
+      '.HHHVVVHH.',
+      '..HHHVVH..',
+      '..SSSVSS..',
+      '.SSSSSVSS.',
+      '.SSWWWWSV.',
+      '.SSWWWWSS.',
+      '..SSSSSS..',
+      '..SWSWSW..',
+      '.SS...SS..',
+      '.DD....DD.',
+      '..........'
+    ]
+  },
+  astronautHurt: {
+    grid: [
+      '..HHHHHH..',
+      '.HHHHHHHH.',
+      '.HDDDDDHH.',
+      '.HHDDDDHH.',
+      '..HHHHHH..',
+      '..SSSSSS..',
+      '.SSSSSSSS.',
+      '.SSWWWWSS.',
+      '.SSWWWWSS.',
+      '..SSSSSS..',
+      '..SWSWSW..',
+      '..SS..SS..',
+      '..SS..SS..',
+      '..DD..DD..'
+    ]
+  },
+  astronautDeath: {
+    grid: [
+      '....DD....',
+      '...DDDD...',
+      '..HHHHHH..',
+      '..HVVVVHH.',
+      '..HHHHHH..',
+      '...SSSS...',
+      '..SSSSSS..',
+      '.SSWWWWSS.',
+      '.SSWWWWSS.',
+      '..SSSSSS..',
+      '...SSSS...',
+      '...DD..DD.',
+      '...DD..DD.',
+      '..........'
+    ]
+  },
+  astronautVictory: {
+    grid: [
+      '..HHHHHH..',
+      '.HHHHHHHH.',
+      '.HVVVVVHH.',
+      '.HHHVVVHH.',
+      '..HHHHHH..',
+      '.SSSSSSSS.',
+      '.SWWWWWWS.',
+      '.SSWWWWSS.',
+      '.SSWWWWSS.',
+      '..SSSSSS..',
+      '..SWSWSW..',
+      '..SS..SS..',
+      '..SS..SS..',
+      '..DD..DD..'
     ]
   },
 
-  /* Nave espacial (14 x 10 px) */
+  /* Nave espacial estilo foguete (14 x 15 px) — baseada na referência
+     enviada: cone escuro, casco azul, sombra clara no topo, janela ciano
+     e chama laranja. Cores por paleta: G casco, V janela/glow, W contorno,
+     D azul-escuro (fins/cone), L sombra clara, F chama. */
   ship: {
     grid: [
-      '.....GGGGG.....',
-      '....GGVVVGG....',
-      '....GVVVVVG....',
-      '...GGVVVVVGG...',
-      '.GGGGGGGGGGGG..',
-      '.WWWWWGGWWWWW..',
-      '.WWWGGGGGGWWW..',
-      '..WWGGGGGGWW...',
-      '...WWWGGWWW....',
-      '.....FFFFF.....'
+      '......DDD......',
+      '.....DGGGD.....',
+      '....DGGLLGD....',
+      '...DGGLLLGD....',
+      '..DGGLLVVGD....',
+      '.DGGLLVVVGD....',
+      'DGGGGGGGGGDD...',
+      'DGGGGGGGGGD....',
+      '.DGGGGGGGGD....',
+      '..DGGGGGGD.....',
+      '...DDGGGDD.....',
+      '.....DGGD......',
+      '.....DFF.......',
+      '....DFFFD......',
+      '......DD.......'
     ]
   },
 
@@ -904,6 +1057,165 @@ function drawSprite(ctx, sprite, x, y, scale, palette) {
 
 function spriteSize(sprite, scale) {
   return { w: sprite.grid[0].length * scale, h: sprite.grid.length * scale };
+}
+
+/* ---- Ícones pixel-art (8 x 8) — substituem emojis no HUD e menus ---- */
+const ICONS = {
+  star:      { pal: { M: '#ffd166', D: '#8a6a20' }, grid: [
+    '...MM...', '..MMMM..', '..MMMM..', '.MMMMMM.',
+    'MMMMMMM.', '.MM..MM.', '..M..M..', '........'
+  ] },
+  check:     { pal: { M: '#5dffa6', D: '#1e7a4a' }, grid: [
+    '......M.', '......MM', '.M....MM', '.MM..MM.',
+    '.MMMMM..', '..MMM...', '...M....', '........'
+  ] },
+  cross:     { pal: { M: '#ff5d6c', D: '#8a1e2a' }, grid: [
+    'MM....MM', '.MM..MM.', '..MMMM..', '...MM...',
+    '..MMMM..', '.MM..MM.', 'MM....MM', '........'
+  ] },
+  heart:     { pal: { M: '#ff5d6c', D: '#8a1e2a' }, grid: [
+    '.MM..MM.', 'MMMMMMM.', 'MMMMMMM.', '.MMMMM..',
+    '..MMM...', '...M....', '........', '........'
+  ] },
+  lock:      { pal: { M: '#ffd166', D: '#8a6a20' }, grid: [
+    '..MMMM..', '.MM..MM.', '.MM..MM.', 'MMMMMMMM',
+    'MMMMMMM.', '.MM..MM.', '.MMMMMM.', '........'
+  ] },
+  soundOn:   { pal: { M: '#59d3ff', D: '#1a5a7a' }, grid: [
+    '..MM..M.', '.MMM.MM.', 'MMMMMMM.', 'MMMMMMM.',
+    'MMMMMMM.', '.MMM.MM.', '..MM..M.', '........'
+  ] },
+  soundOff:  { pal: { M: '#9fb0d8', D: '#4a5578' }, grid: [
+    '..MM.MM.', '.MMM.MM.', 'MMMMMMM.', 'MMM.MMM.',
+    'MMM.MMM.', 'MMMMMMM.', '.MMM.MM.', '..MM.MM.'
+  ] },
+  bulb:      { pal: { M: '#ffd166', D: '#8a6a20' }, grid: [
+    '..MMMM..', '.MMMMMM.', '.MMMMMM.', '.MM..MM.',
+    '.MMMMMM.', '..MMMM..', '...MM...', '..MMMM..'
+  ] },
+  planet:    { pal: { M: '#59d3ff', D: '#1a5a7a' }, grid: [
+    '..MMMM..', '.A.MMMM.', 'MMMMMMM.', 'MMMMMM..',
+    '.MMMMM..', '.MMMMM..', '..MMM...', '........'
+  ] },
+  galaxy:    { pal: { M: '#ff9df2', D: '#7a2a7a' }, grid: [
+    '...M....', '..MMMM..', '.MMMMMM.', '.MMMMMM.',
+    'MMMMMMM.', '...MMMM.', '..M..M..', '........'
+  ] },
+  rocket:    { pal: { M: '#3e6df4', D: '#1a2a8a' }, grid: [
+    '..MMM...', '..MMM...', '.MMMMM..', '.MMMMM..',
+    'MMMMMMM.', 'MMMMMMM.', '.MMMMM..', '..M.M...'
+  ] },
+  trophy:    { pal: { M: '#ffd166', D: '#8a6a20' }, grid: [
+    'MMMMMMM.', 'M.MMM.M.', 'MMMMMMM.', '.MMMMM..',
+    '.MMMMM..', '.MMMMM..', '..MMM...', '..M.M...'
+  ] },
+  target:    { pal: { M: '#ff5d6c', D: '#8a1e2a' }, grid: [
+    '..MMMM..', '.MMMMMM.', '.MM..MM.', 'MMMMMMM.',
+    '.MM..MM.', '.MMMMMM.', '..MMMM..', '........'
+  ] },
+  gamepad:   { pal: { M: '#ff9df2', D: '#7a2a7a' }, grid: [
+    '.MMMMMM.', 'MMMMMMM.', 'M..M..M.', 'MMM..MMM',
+    'MMM..MMM', 'M..M..M.', 'MMMMMMM.', '........'
+  ] },
+  scroll:    { pal: { M: '#9fb0d8', D: '#4a5578' }, grid: [
+    '.MMMMM..', '.M...M..', '.MMMMM..', '.M...M..',
+    '.MMMMM..', '.M...M..', '.MMMMM..', '........'
+  ] },
+  gift:      { pal: { M: '#ff9df2', D: '#7a2a7a' }, grid: [
+    '.MMMMMM.', 'M.MMMM.M', 'MMMMMMM.', 'MMMMMMM.',
+    '.MMMMM..', '.MMMMM..', '.MMMMM..', '........'
+  ] },
+  door:      { pal: { M: '#8a6a33', D: '#4a3320' }, grid: [
+    '.MMMMM..', '.M...M..', '.M...M..', '.M.MMM..',
+    '.M.M....', '.M.M....', '.M.M....', '.MMMMM..'
+  ] },
+  explosion: { pal: { M: '#ff8a5d', D: '#8a331a' }, grid: [
+    '..M..M..', '.M.M.MM.', '..MMMMM.', '.MMMMMM.',
+    '.MMMMMM.', '.MMMMMM.', '.MM..MM.', '..M..M..'
+  ] },
+  flask:     { pal: { M: '#7ff5ff', D: '#1a5a7a' }, grid: [
+    '.MMMMMM.', '.MMMMMM.', '..MMM...', '..MMM...',
+    '..MMM...', '.MMMMM..', '.MMMMM..', '.MMMMM..'
+  ] },
+  brain:     { pal: { M: '#ff9df2', D: '#7a2a7a' }, grid: [
+    '.MMMMM..', 'MM...MM.', 'MMMMMMM.', '.MMMMM..',
+    '.MMMMM..', 'MMMMMMM.', '.MMMMM..', '........'
+  ] },
+  flag:      { pal: { M: '#ffd166', D: '#8a6a20' }, grid: [
+    'MMMMM..M', 'MM.MM..M', 'MMMMM..M', 'MM.MM..M',
+    'MMMMM..M', 'MM.MM..M', '......MM', '......MM'
+  ] },
+  astronaut: { pal: { M: '#3aa0ff', D: '#1a4a7a' }, grid: [
+    '..MMMM..', '.MMMMMM.', '.M.MMMM.', '.MMMMMM.',
+    '..MMMM..', '.MMMMM..', '.M.M.M..', '........'
+  ] },
+  phone:     { pal: { M: '#59d3ff', D: '#1a5a7a' }, grid: [
+    '.MMMMM..', '.MMMMM..', '.MMMMM..', '.MMMMM..',
+    '.MMMMM..', '.MMMMM..', '.MMMMM..', '.MMMMM..'
+  ] },
+  sword:     { pal: { M: '#7ff5ff', D: '#1a5a7a' }, grid: [
+    '.....MM.', '....MMM.', '...MMM..', '..MMM...',
+    '.MMM....', 'MMM.....', '.MM.....', '........'
+  ] },
+  arrowR:    { pal: { M: '#59d3ff', D: '#1a5a7a' }, grid: [
+    '....MMM.', '...MMMM.', '..MMMMM.', 'MMMMMMMM',
+    'MMMMMMMM', '..MMMMM.', '...MMMM.', '....MMM.'
+  ] }
+};
+
+function iconSrc(id, scale) {
+  const spr = ICONS[id];
+  const s = scale || 2;
+  if (!spr) return '';
+  const g = spr.grid, w = g[0].length, h = g.length;
+  let rects = '';
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const ch = g[y][x];
+      if (ch === '.' || !spr.pal[ch]) continue;
+      rects += '<rect x="' + (x * s) + '" y="' + (y * s) + '" width="' + s + '" height="' + s + '" fill="' + spr.pal[ch] + '"/>';
+    }
+  }
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" width="' + (w * s) + '" height="' + (h * s) + '">' + rects + '</svg>';
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+/* Ícone para usar em innerHTML */
+function pixIcon(id, scale) {
+  const spr = ICONS[id];
+  const s = scale || 2;
+  if (!spr) return '';
+  const w = spr.grid[0].length * s, h = spr.grid.length * s;
+  return '<img class="pix-icon" width="' + w + '" height="' + h + '" alt="" src="' + iconSrc(id, s) + '">';
+}
+
+/* Desenha um ícone direto no canvas (HUD) */
+function drawIconOnCanvas(ctx, id, x, y, scale) {
+  const spr = ICONS[id];
+  if (!spr) return;
+  drawSprite(ctx, spr, x, y, scale || 2, spr.pal);
+}
+
+/* Texto com ícone à esquerda, centralizado como um grupo (x = centro) */
+function drawIconLabel(ctx, id, text, x, y, scale) {
+  const s = scale || 2;
+  const iw = 8 * s;
+  const tw = ctx.measureText(text).width;
+  ctx.fillText(text, x - (iw + 3) / 2, y);
+  drawIconOnCanvas(ctx, id, Math.round(x - (iw + 3 + tw) / 2), Math.round(y - iw / 2), s);
+}
+
+/* Preenche <img data-icon="..."> estáticos do index.html no boot */
+function bakeIcons() {
+  document.querySelectorAll('img.pix-icon[data-icon]').forEach(img => {
+    const id = img.getAttribute('data-icon');
+    const spr = ICONS[id];
+    if (!spr) return;
+    const s = img.getAttribute('data-scale') ? +img.getAttribute('data-scale') : 2;
+    img.width = spr.grid[0].length * s;
+    img.height = spr.grid.length * s;
+    img.src = iconSrc(id, s);
+  });
 }
 
 /* =====================================================================
@@ -1677,7 +1989,10 @@ function createPlayer(x, y) {
     speed: 150,
     invuln: 0,
     moveX: 0, moveY: 0,
-    trailT: 0
+    trailT: 0,
+    facing: 1,
+    hurtT: 0,
+    deadT: 0
   };
 }
 
@@ -2096,6 +2411,7 @@ function update(dt) {
     const len = Math.hypot(mx, my);
     p.moveX = mx / len;
     p.moveY = my / len;
+    if (mx !== 0) p.facing = mx > 0 ? 1 : -1;
   } else {
     p.moveX = p.moveY = 0;
   }
@@ -2106,6 +2422,7 @@ function update(dt) {
 
   /* --- Invulnerabilidade --- */
   if (p.invuln > 0) p.invuln -= dt;
+  if (p.hurtT > 0) p.hurtT -= dt;
 
   /* --- Rastro cosmético --- */
   p.trailT += dt;
@@ -2222,6 +2539,7 @@ function damagePlayer() {
   Game.run.lives--;
   Game.run.deaths++;
   p.invuln = 2.5;
+  p.hurtT = 0.5;
   AudioSys.sfx('hurt');
   shake(12);
   burst(p.x, p.y, '#ff5d6c');
@@ -2480,7 +2798,7 @@ function drawElementOrb(el, x, y, t, alpha) {
 
   /* Símbolo */
   ctx.fillStyle = '#0c1226';
-  ctx.font = 'bold 9px "Courier New", monospace';
+  ctx.font = 'bold 9px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(e.symbol, x, y + 0.5);
@@ -2632,16 +2950,16 @@ function drawMachines() {
   ctx.lineWidth = 2;
   ctx.strokeRect(-38, 30, 76, 24);
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 14px "Courier New", monospace';
+  ctx.font = 'bold 14px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   if (recipe) {
     ctx.fillText(recipe.formula, 0, 38);
     ctx.fillStyle = '#9fb0d8';
-    ctx.font = '9px "Courier New", monospace';
+    ctx.font = '9px "Press Start 2P", monospace';
     ctx.fillText('montar', 0, 49);
   } else {
-    ctx.fillText('✓ CONCLUÍDO', 0, 42);
+    drawIconLabel(ctx, 'check', 'CONCLUÍDO', 0, 42, 1);
   }
   ctx.restore();
 
@@ -2691,12 +3009,12 @@ function drawGates() {
     /* Rótulo */
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 10px "Courier New", monospace';
+    ctx.font = 'bold 10px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(BOND_NAME[g.type], dx + g.w / 2, dy + 8);
     ctx.fillStyle = '#9fb0d8';
-    ctx.font = '9px "Courier New", monospace';
+    ctx.font = '9px "Press Start 2P", monospace';
     ctx.fillText('Ligação', dx + g.w / 2, dy + 19);
   }
   ctx.globalAlpha = 1;
@@ -2737,10 +3055,10 @@ function drawPortal() {
     ctx.fillStyle = '#2d3a75';
     ctx.fillRect(dx - 18, dy - 18, 36, 36);
     ctx.fillStyle = '#1a2248';
-    ctx.font = 'bold 12px "Courier New", monospace';
+    ctx.font = 'bold 12px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('🔒', dx, dy + 1);
+    drawIconOnCanvas(ctx, 'lock', dx - 8, dy - 8, 2);
   }
 }
 
@@ -2750,13 +3068,34 @@ function drawPlayer() {
   const eqS = getEquippedItem('suit');
   const pal = astronautPalette(eqH, eqS);
   const sc = 2;
-  const sz = spriteSize(SPRITES.astronaut, sc);
+
+  /* Escolha do frame conforme o estado atual */
+  const s = Game.saber;
+  const now = performance.now();
+  let grid = SPRITES.astronaut;
+  if (p.deadT > 0) {
+    grid = SPRITES.astronautDeath;
+  } else if (p.hurtT > 0) {
+    grid = (Math.floor(now / 110) % 2 === 0) ? SPRITES.astronautHurt : SPRITES.astronaut;
+  } else if (Game.buildAnim) {
+    grid = (Math.floor(now / 180) % 2 === 0) ? SPRITES.astronautVictory : SPRITES.astronaut;
+  } else if (s && s.phase !== 'idle') {
+    grid = (s.phase === 'windup') ? SPRITES.astronautAtkA : SPRITES.astronautAtkB;
+  } else if (p.moveX !== 0 || p.moveY !== 0) {
+    grid = (Math.floor(now / 140) % 2 === 0) ? SPRITES.astronautWalkA : SPRITES.astronautWalkB;
+  } else {
+    grid = (Math.floor(now / 600) % 2 === 0) ? SPRITES.astronaut : SPRITES.astronautIdleB;
+  }
+
+  const sz = spriteSize(grid, sc);
 
   ctx.save();
-  if (p.invuln > 0 && Math.floor(performance.now() / 100) % 2 === 0) {
+  ctx.translate(Math.round(p.x - camX), Math.round(p.y - camY) + 2);
+  if (p.facing < 0) ctx.scale(-1, 1);
+  if (p.invuln > 0 && Math.floor(now / 100) % 2 === 0) {
     ctx.globalAlpha = 0.4;
   }
-  drawSprite(ctx, SPRITES.astronaut, Math.round(p.x - camX) - sz.w / 2, Math.round(p.y - camY) - sz.h / 2 + 2, sc, pal);
+  drawSprite(ctx, grid, -Math.round(sz.w / 2), -Math.round(sz.h / 2), sc, pal);
   ctx.restore();
 }
 
@@ -2770,7 +3109,7 @@ function drawParticles() {
 }
 
 function drawFloaters() {
-  ctx.font = 'bold 12px "Courier New", monospace';
+  ctx.font = 'bold 12px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (const f of Game.floaters) {
@@ -2835,7 +3174,7 @@ function drawBuildAnim() {
     /* Íons e retículo */
     if (prog > 0.7) {
       ctx.fillStyle = '#ff5d6c';
-      ctx.font = 'bold 13px "Courier New", monospace';
+      ctx.font = 'bold 13px "Press Start 2P", monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(ELEMENTS[metal].ion, mX - 16, cy - 16);
@@ -2902,11 +3241,11 @@ function drawBuildAnim() {
   }
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 20px "Courier New", monospace';
+  ctx.font = 'bold 20px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(chem(r.formula), cx, cy - 66);
-  ctx.font = '12px "Courier New", monospace';
+  ctx.font = '12px "Press Start 2P", monospace';
   ctx.fillStyle = '#9fb0d8';
   ctx.fillText('Montando ' + r.name + '...', cx, cy + 70);
 }
@@ -2925,7 +3264,7 @@ function drawCrystal(dx, dy, formula) {
   ctx.strokeRect(-10, -10, 20, 20);
   ctx.restore();
   ctx.fillStyle = '#0c1226';
-  ctx.font = 'bold 10px "Courier New", monospace';
+  ctx.font = 'bold 10px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(chem(formula), dx, dy + 1);
@@ -3003,7 +3342,7 @@ function drawArrival() {
   if (!a) return;
   const prog = clamp(a.t / a.dur, 0, 1);
   const ship = getEquippedItem('ship');
-  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' };
+  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' };
   const sp = SPRITES.ship;
   const scale = 3;
   const w = sp.grid[0].length * scale, h = sp.grid.length * scale;
@@ -3466,13 +3805,13 @@ const Quiz = {
       if (!Game.replay) Game.run.score += 150;
       updateHudScore();
       explain.className = 'quiz-explain good';
-      explain.textContent = '✅ Correto! ' + q.why;
+      explain.innerHTML = pixIcon('check', 1) + ' Correto! ' + q.why;
     } else {
       Game.run.wrong++;
       AudioSys.sfx('quizWrong');
       shake(8);
       explain.className = 'quiz-explain bad';
-      explain.textContent = '❌ Errado! ' + q.why;
+      explain.innerHTML = pixIcon('cross', 1) + ' Errado! ' + q.why;
     }
     explain.hidden = false;
     document.getElementById('btn-quiz-next').hidden = false;
@@ -3889,7 +4228,7 @@ function drawEnemies() {
       ctx.save();
       ctx.globalAlpha = 0.7 + Math.sin(t * 20) * 0.3;
       ctx.fillStyle = '#ff5d6c';
-      ctx.font = 'bold 14px "Courier New", monospace';
+      ctx.font = 'bold 14px "Press Start 2P", monospace';
       ctx.textAlign = 'center';
       ctx.fillText('!', dx, dy - sz.h / 2 - 10);
       ctx.restore();
@@ -4289,7 +4628,7 @@ function drawNpcs() {
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fillRect(dx - 40, dy - sz.h - 16, 80, 12);
     ctx.fillStyle = '#ffffff';
-    ctx.font = '9px "Courier New", monospace';
+    ctx.font = '9px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(n.name, dx, dy - sz.h - 10);
@@ -4298,7 +4637,7 @@ function drawNpcs() {
     if (!n.talked && dist(p.x, p.y, n.x, n.y) < 52) {
       const hb = Math.abs(Math.sin(t * 4)) * 4;
       ctx.fillStyle = '#ffd166';
-      ctx.font = 'bold 10px "Courier New", monospace';
+      ctx.font = 'bold 10px "Press Start 2P", monospace';
       ctx.fillText('FALE [ESPAÇO]', dx, dy - sz.h - 22 + hb);
     }
   }
@@ -4338,7 +4677,7 @@ function showMission() {
   const lv = LEVELS[idx];
   const item = getItemById(LEVEL_REWARDS[idx]);
 
-  document.getElementById('mission-planet').textContent = '🌍 ' + lv.name + ' restaurado!';
+  document.getElementById('mission-planet').innerHTML = pixIcon('planet', 2) + ' ' + lv.name + ' restaurado!';
   const acc = Game.quizStats.total > 0
     ? Math.round(Game.quizStats.correct / Game.quizStats.total * 100) : 100;
   document.getElementById('mission-stats').innerHTML =
@@ -4671,7 +5010,7 @@ function drawTravelPlanet(tr) {
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.font = 'bold 11px "Courier New", monospace';
+  ctx.font = 'bold 11px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   ctx.fillText(nextLv.name.toUpperCase(), TR_DEST.x, TR_DEST.y + TR_DEST.r + 26);
   /* Seta guia apontando para o destino */
@@ -4822,7 +5161,7 @@ function drawTravelHazards(tr) {
 function drawTravelShip(tr) {
   const p = tr.ship;
   const ship = getEquippedItem('ship');
-  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' };
+  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' };
   const sz = spriteSize(SPRITES.ship, 3);
   const bob = Math.sin(tr.t * 4) * 1.5;
 
@@ -4878,7 +5217,7 @@ function drawTravelHud(tr) {
   if (ctx.roundRect) ctx.roundRect(8, 8, 130, 26, 6); else ctx.rect(8, 8, 130, 26);
   ctx.fill();
   ctx.stroke();
-  ctx.font = 'bold 10px "Courier New", monospace';
+  ctx.font = 'bold 10px "Press Start 2P", monospace';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#59d3ff';
@@ -4891,7 +5230,7 @@ function drawTravelHud(tr) {
 
   /* Alvo: próximo planeta */
   ctx.fillStyle = 'rgba(255,255,255,0.8)';
-  ctx.font = 'bold 10px "Courier New", monospace';
+  ctx.font = 'bold 10px "Press Start 2P", monospace';
   ctx.textAlign = 'right';
   ctx.fillText('ALVO: ' + LEVELS[tr.nextIdx].name.toUpperCase(), VIEW_W - 12, 21);
   ctx.restore();
@@ -4899,7 +5238,7 @@ function drawTravelHud(tr) {
   /* Controles (só no começo) */
   if (tr.t < 4) {
     ctx.fillStyle = 'rgba(255,255,255,' + (tr.t < 3.2 ? 0.55 : (4 - tr.t) * 0.7).toFixed(2) + ')';
-    ctx.font = '10px "Courier New", monospace';
+    ctx.font = '10px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('WASD / setas para pilotar · toque no planeta para pousar', VIEW_W / 2, VIEW_H - 44);
   }
@@ -4907,7 +5246,7 @@ function drawTravelHud(tr) {
 
 /* Mini-nave usada como ícone de vida no HUD */
 function drawShipPip(cx, cy) {
-  const pal = { G: '#2b6f9e', V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' };
+  const pal = { G: '#2b6f9e', V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' };
   const sz = spriteSize(SPRITES.ship, 1);
   drawSprite(ctx, SPRITES.ship, Math.round(cx - sz.w / 2), Math.round(cy - sz.h / 2), 1, pal);
 }
@@ -4927,11 +5266,11 @@ function drawTravelTip() {
   if (ctx.roundRect) ctx.roundRect(x, y, w, h, 6); else ctx.rect(x, y, w, h);
   ctx.fill();
   ctx.stroke();
-  ctx.font = '11px "Courier New", monospace';
+  ctx.font = '11px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#59d3ff';
-  ctx.fillText('💡 ' + tip, x + w / 2, y + h / 2);
+  drawIconLabel(ctx, 'bulb', tip, x + w / 2, y + h / 2, 1);
   ctx.restore();
 }
 
@@ -5280,21 +5619,21 @@ function drawReturnScene() {
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = '#8fd9ff';
-  ctx.font = 'bold 12px "Courier New", monospace';
+  ctx.font = 'bold 12px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   ctx.fillText('TERRA', 70, VIEW_H / 2 + 86);
 
   /* Banner da missão final */
   ctx.fillStyle = 'rgba(4,8,20,0.7)';
   ctx.fillRect(0, 0, VIEW_W, 26);
-  ctx.font = 'bold 11px "Courier New", monospace';
+  ctx.font = 'bold 11px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   if (r.cleared) {
     ctx.fillStyle = '#5dffa6';
-    ctx.fillText('✔ CAMINHO LIBERADO — VÁ PARA A TERRA!', VIEW_W / 2, 17);
+    drawIconLabel(ctx, 'check', 'CAMINHO LIBERADO — VÁ PARA A TERRA!', VIEW_W / 2, 17, 1);
   } else {
     ctx.fillStyle = '#ffd166';
-    ctx.fillText('🛸 MISSÃO FINAL — DESTRUA ' + r.killed + '/' + r.fleet + ' NAVES (ESPAÇO/J)', VIEW_W / 2, 17);
+    drawIconLabel(ctx, 'rocket', 'MISSÃO FINAL — DESTRUA ' + r.killed + '/' + r.fleet + ' NAVES (ESPAÇO/J)', VIEW_W / 2, 17, 1);
   }
 
   /* Barreira alienígena: bloqueia a Terra enquanto a frota estiver de pé */
@@ -5312,7 +5651,7 @@ function drawReturnScene() {
     }
     ctx.stroke();
     ctx.fillStyle = '#ff5d6c';
-    ctx.font = 'bold 9px "Courier New", monospace';
+    ctx.font = 'bold 9px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('BLOQUEIO', bx + 3, 40);
     ctx.restore();
@@ -5369,7 +5708,7 @@ function drawReturnScene() {
     ctx.translate(e.x, e.y);
     ctx.rotate(Math.sin(e.t * 4) * 0.25 + (e.dodgeT > 0 ? Math.sin(e.t * 40) * 0.25 : 0));
     ctx.scale(-1, 1);
-    const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', F: '#ff5d6c' };
+    const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff5d6c' };
     const sz = spriteSize(SPRITES.ship, e.big ? 3 : 2);
     drawSprite(ctx, SPRITES.ship, -sz.w / 2, -sz.h / 2, e.big ? 3 : 2, pal);
     /* Motor tremeluzente */
@@ -5420,7 +5759,7 @@ function drawReturnScene() {
   ctx.save();
   if (r.ship.invuln > 0 && Math.floor(r.t * 10) % 2 === 0) ctx.globalAlpha = 0.5;
   drawSprite(ctx, SPRITES.ship, Math.round(r.ship.x - sz.w / 2), Math.round(r.ship.y - sz.h / 2), 3,
-    { G: ship.main, V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' });
+    { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' });
   ctx.restore();
 
   drawParticles();
@@ -5434,7 +5773,7 @@ function drawReturnEnemyDeath(e) {
   const sc = e.big ? 3 : 2;
   ctx.save();
   ctx.globalAlpha = 1 - pr;
-  const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', F: '#ff5d6c' };
+  const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff5d6c' };
   const sz = spriteSize(SPRITES.ship, sc);
   drawSprite(ctx, SPRITES.ship, Math.round(e.x - sz.w / 2 + rand(-3, 3)), Math.round(e.y - sz.h / 2 + rand(-3, 3)), sc, pal);
   ctx.restore();
@@ -5521,10 +5860,10 @@ function drawClassroom() {
   ctx.lineWidth = 4;
   ctx.strokeRect(140, 22, 240, 108);
   ctx.fillStyle = '#eef6ef';
-  ctx.font = 'bold 20px "Courier New", monospace';
+  ctx.font = 'bold 20px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   ctx.fillText('LIGAÇÕES QUÍMICAS', 260, 58);
-  ctx.font = '13px "Courier New", monospace';
+  ctx.font = '13px "Press Start 2P", monospace';
   ctx.fillStyle = '#bfe3d0';
   ctx.fillText('IÔNICA · COVALENTE · METÁLICA', 260, 84);
   ctx.fillStyle = '#ffd166';
@@ -5775,7 +6114,7 @@ function updateHudLives() {
   el.innerHTML = '';
   for (let i = 0; i < MAX_LIVES; i++) {
     const s = document.createElement('span');
-    s.textContent = '❤';
+    s.innerHTML = pixIcon('heart', 2);
     if (i >= Game.run.lives) s.className = 'life-off';
     el.appendChild(s);
   }
@@ -5796,7 +6135,7 @@ function updateObjectiveHud() {
   let html = '';
   recipes.forEach((rid, i) => {
     const ok = i < Game.recipeIndex;
-    html += '<span class="' + (ok ? 'ok' : 'todo') + '">' + (ok ? '✓ ' : '') + chem(RECIPES[rid].formula) + '</span> ';
+    html += '<span class="' + (ok ? 'ok' : 'todo') + '">' + (ok ? pixIcon('check', 1) + ' ' : '') + chem(RECIPES[rid].formula) + '</span> ';
   });
   if (lv.lv.gateSequence) {
     const total = lv.lv.gateSequence.length;
@@ -5827,8 +6166,8 @@ function renderGalaxy() {
     btn.innerHTML =
       '<div class="planet-dot" style="background:radial-gradient(circle at 35% 35%, ' + lv.planetColor + ', #1a1030);"></div>' +
       '<div class="planet-name">' + lv.name + '</div>' +
-      '<div class="planet-status' + (done ? ' done' : '') + '">' + (done ? '★ Restaurado' : (unlocked ? 'Disponível' : 'Bloqueado')) + '</div>' +
-      (unlocked ? '' : '<div class="lock">🔒</div>');
+      '<div class="planet-status' + (done ? ' done' : '') + '">' + (done ? pixIcon('star', 1) + ' Restaurado' : (unlocked ? 'Disponível' : 'Bloqueado')) + '</div>' +
+      (unlocked ? '' : '<div class="lock">' + pixIcon('lock', 2) + '</div>');
     btn.addEventListener('click', () => {
       selectedPlanet = i;
       renderGalaxy();
@@ -5842,7 +6181,7 @@ function renderGalaxy() {
   const g = c.getContext('2d');
   g.clearRect(0, 0, c.width, c.height);
   const ship = getEquippedItem('ship');
-  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' };
+  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' };
   drawSprite(g, SPRITES.ship, (c.width - 42) / 2, 22, 3, pal);
 }
 
@@ -5873,7 +6212,7 @@ function renderWardrobe() {
     card.lastChild.textContent = item.name;
     const sub = document.createElement('div');
     sub.className = unlocked ? (equipped ? 'item-owner' : 'item-sub') : 'item-locked-hint';
-    sub.textContent = equipped ? '✓ Equipado' : (unlocked ? item.cat : '🔒 ' + unlockReason(item.id));
+    sub.innerHTML = equipped ? pixIcon('check', 1) + ' Equipado' : (unlocked ? item.cat : pixIcon('lock', 1) + ' ' + unlockReason(item.id));
     card.appendChild(sub);
     if (unlocked) {
       card.addEventListener('click', () => {
@@ -5896,7 +6235,9 @@ function drawWardrobePreview() {
   const eqH = getEquippedItem('helmet');
   const eqS = getEquippedItem('suit');
   const pal = astronautPalette(eqH, eqS);
-  drawSprite(g, SPRITES.astronaut, (c.width - 48) / 2, 16, 4, pal);
+  const spr = SPRITES.astronaut;
+  const sz = spriteSize(spr, 4);
+  drawSprite(g, spr, Math.round((c.width - sz.w) / 2), 16, 4, pal);
   const info = document.getElementById('wardrobe-info');
   info.innerHTML = '<strong>' + eqS.name + '</strong><br>Capacete: ' + eqH.name +
     '<br>Nave: ' + getEquippedItem('ship').name + '<br>Rastro: ' + getEquippedItem('trail').name;
@@ -5910,7 +6251,7 @@ function drawItemIcon(g, item) {
   } else if (cat === 'suits') {
     drawSprite(g, SPRITES.astronaut, 8, 8, 2, { H: '#2b6f9e', V: '#7ff5ff', D: '#0c1226', S: item.main, W: '#fff' });
   } else if (cat === 'ships') {
-    drawSprite(g, SPRITES.ship, 7, 8, 2, { G: item.main, V: '#7ff5ff', W: '#0c1226', F: '#ff7a3d' });
+    drawSprite(g, SPRITES.ship, 7, 8, 2, { G: item.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' });
   } else if (cat === 'trails') {
     const color = item.color || '#9fb0d8';
     g.fillStyle = '#0c1226';
@@ -5935,7 +6276,7 @@ function renderAchievements() {
     const card = document.createElement('div');
     card.className = 'achieve-card' + (got ? '' : ' locked');
     card.innerHTML =
-      '<div class="achieve-icon">' + (got ? '★' : '·') + '</div>' +
+      '<div class="achieve-icon">' + (got ? pixIcon('star', 2) : '·') + '</div>' +
       '<div><div class="achieve-name">' + a.name + '</div><div class="achieve-desc">' + a.desc + '</div></div>';
     grid.appendChild(card);
   });
@@ -5947,7 +6288,7 @@ function renderAchievements() {
 let toastTimer = null;
 function showToast(title, desc) {
   const t = document.getElementById('toast');
-  t.innerHTML = '<strong>★ ' + title + '</strong>' + (desc ? '<br>' + desc : '');
+  t.innerHTML = '<strong>' + pixIcon('star', 1) + ' ' + title + '</strong>' + (desc ? '<br>' + desc : '');
   t.hidden = false;
   requestAnimationFrame(() => t.classList.add('show'));
   clearTimeout(toastTimer);
@@ -6114,7 +6455,7 @@ function finishGame() {
   AudioSys.sfx('victory');
 
   const title = document.getElementById('victory-title');
-  title.textContent = '🌌 Galáxia Restaurada!';
+  title.innerHTML = pixIcon('galaxy', 2) + ' Galáxia Restaurada!';
 
   const stats = document.getElementById('victory-stats');
   stats.innerHTML =
@@ -6128,7 +6469,7 @@ function finishGame() {
     if (Save.hasAch(id)) {
       const tag = document.createElement('span');
       tag.className = 'ach-tag';
-      tag.textContent = '★ ' + ACHIEVEMENTS.find(a => a.id === id).name;
+      tag.innerHTML = pixIcon('star', 1) + ' ' + ACHIEVEMENTS.find(a => a.id === id).name;
       achEl.appendChild(tag);
     }
   });
@@ -6140,6 +6481,7 @@ function finishGame() {
 function gameOver() {
   AudioSys.sfx('error');
   Game.locked = true;
+  Game.player.deadT = 1;
   document.getElementById('defeat-stats').textContent =
     'Pontuação: ' + Game.run.score + ' · Tempo: ' + fmtTime(Game.levelTime);
   document.getElementById('defeat').hidden = false;
@@ -6531,8 +6873,8 @@ document.querySelectorAll('[data-nav]').forEach(b => {
 /* Som */
 function updateSoundButton() {
   const b = document.getElementById('btn-sound');
-  if (AudioSys.sfxOn) b.textContent = '🔊 Som: Ligado';
-  else b.textContent = '🔇 Som: Desligado';
+  if (AudioSys.sfxOn) b.innerHTML = pixIcon('soundOn', 1) + ' Som: Ligado';
+  else b.innerHTML = pixIcon('soundOff', 1) + ' Som: Desligado';
 }
 document.getElementById('btn-sound').addEventListener('click', () => {
   AudioSys.init();
@@ -6653,6 +6995,7 @@ function init() {
   AudioSys.musicOn = Save.data.musicOn;
   AudioSys.sfxOn = Save.data.sfxOn;
   updateSoundButton();
+  bakeIcons();
   fitCanvasScale();
   updateTouchUI();
   updateRotateHint();
