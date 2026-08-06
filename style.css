@@ -510,56 +510,95 @@ kbd {
 .gate-panel .gp-q { font-size: 15px; color: var(--accent-2); }
 .gate-panel .gp-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
 
-/* ---------------- Touch controls ---------------- */
+/* ---------------- Controles mobile (joystick virtual + botões) ---------------- */
 
-.touch-controls {
+.mobile-ui {
   position: absolute;
-  inset: auto 0 0 0;
-  height: 118px;
+  inset: 0;
+  z-index: 6;
   pointer-events: none;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding: 0 14px calc(14px + env(safe-area-inset-bottom));
-  z-index: 5;
+  display: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.touch-controls button { pointer-events: auto; touch-action: none; }
-.touch-dpad {
-  display: grid;
-  grid-template-columns: repeat(3, 52px);
-  grid-template-rows: repeat(2, 52px);
-  gap: 5px;
+.mobile-ui.show { display: block; }
+
+/* Só aparece quando o toque é o controle principal (celular/tablet).
+   Em desktop (mouse) fica sempre escondido, mesmo com tela de toque. */
+@media (hover: none) and (pointer: coarse) {
+  .mobile-ui.show { display: block; }
 }
-.touch-dpad button {
-  font-size: 17px;
-  border-radius: 12px;
-  background: rgba(19,28,66,0.82);
-  border: 2px solid var(--border-light);
-  color: var(--text);
-  min-width: 0;
-  min-height: 0;
-}
-.touch-dpad button[data-t="up"] { grid-column: 2; }
-.touch-dpad button[data-t="down"] { grid-column: 2; }
-.touch-actions { display: flex; gap: 10px; align-items: flex-end; }
-.touch-btn {
-  width: 68px;
-  height: 68px;
+
+/* Base do joystick: aparece no ponto em que o dedo toca a metade esquerda.
+   position: fixed -> usa as coordenadas do dedo (viewport) direto. */
+.joy-base {
+  position: fixed;
+  width: 112px;
+  height: 112px;
+  margin: -56px 0 0 -56px;
   border-radius: 50%;
-  font-size: 22px;
+  background: radial-gradient(circle, rgba(30,44,92,0.30), rgba(19,28,66,0.55));
+  border: 2px solid rgba(127,245,255,0.55);
+  box-shadow: 0 0 20px rgba(89,211,255,0.25), inset 0 0 24px rgba(89,211,255,0.12);
+  pointer-events: none;
+  z-index: 7;
+}
+.joy-knob {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  left: 50%;
+  top: 50%;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d9f7ff, #7ff5ff 55%, #2a9fd8);
+  border: 2px solid rgba(255,255,255,0.85);
+  box-shadow: 0 0 14px rgba(127,245,255,0.75);
+  pointer-events: none;
+}
+
+/* Botões de ação (atacar + interagir), fixos no canto direito */
+.m-actions {
+  position: absolute;
+  right: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 14px;
+  pointer-events: none;
+}
+.mbtn {
+  pointer-events: auto;
+  touch-action: none;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  font-size: 25px;
   font-weight: 900;
-  background: rgba(43,123,216,0.85);
-  border: 3px solid var(--accent);
   color: #fff;
+  border: 3px solid rgba(255,255,255,0.85);
+  background: rgba(19,28,66,0.75);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5), 0 0 16px rgba(89,211,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
-.touch-btn.touch-saber {
-  width: 58px;
-  height: 58px;
-  font-size: 18px;
-  background: rgba(32, 168, 96, 0.85);
-  border-color: var(--good);
+.mbtn:active { transform: scale(0.9); }
+.mbtn-attack {
+  background: radial-gradient(circle at 35% 30%, #3ad27a, #1e7a44);
+  border-color: #5dffa6;
 }
-.touch-btn:active, .touch-dpad button:active { transform: scale(0.92); }
+.mbtn-interact {
+  width: 56px;
+  height: 56px;
+  font-size: 21px;
+  background: radial-gradient(circle at 35% 30%, #4aa6ff, #1c4f9e);
+  border-color: #7ff5ff;
+}
 
 /* ---------------- Viagem espacial (HUD) ---------------- */
 
@@ -1137,9 +1176,14 @@ kbd {
   .canvas-wrap { flex: 1 1 auto; min-height: 0; max-width: none; }
   #game-canvas { object-fit: contain; }
   .hud { border-radius: 0; }
-  .touch-controls { height: 104px; }
-  .touch-dpad { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(2, 46px); }
-  .touch-btn { width: 60px; height: 60px; }
+  .mbtn { width: 60px; height: 60px; font-size: 22px; }
+  .mbtn-interact { width: 50px; height: 50px; font-size: 19px; }
+  .joy-base { width: 100px; height: 100px; margin: -50px 0 0 -50px; }
+}
+
+/* Em celular/tablet o canvas não pode rolar nem dar zoom enquanto se joga */
+@media (hover: none) and (pointer: coarse) {
+  .canvas-wrap { touch-action: none; }
 }
 
 @media (max-width: 480px) and (orientation: portrait) {

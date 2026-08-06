@@ -171,18 +171,12 @@
       <canvas id="game-canvas" width="640" height="360"></canvas>
       <div id="interact-hint" class="interact-hint" hidden>[ESPAÇO] Interagir</div>
       <div id="gate-panel" class="gate-panel" hidden></div>
-    </div>
-
-    <div id="touch-controls" class="touch-controls" hidden aria-hidden="true">
-      <div class="touch-dpad">
-        <button data-t="up" aria-label="Cima">▲</button>
-        <button data-t="left" aria-label="Esquerda">◀</button>
-        <button data-t="down" aria-label="Baixo">▼</button>
-        <button data-t="right" aria-label="Direita">▶</button>
-      </div>
-      <div class="touch-actions">
-        <button class="touch-btn touch-saber" data-t="attack" aria-label="Sabre de luz">⚔</button>
-        <button class="touch-btn" data-t="interact" aria-label="Interagir">A</button>
+      <div id="mobile-ui" class="mobile-ui" aria-hidden="true">
+        <div id="joy-base" class="joy-base" hidden><div id="joy-knob" class="joy-knob"></div></div>
+        <div class="m-actions">
+          <button id="mbtn-interact" class="mbtn mbtn-interact" aria-label="Interagir">A</button>
+          <button id="mbtn-attack" class="mbtn mbtn-attack" aria-label="Atacar">⚔</button>
+        </div>
       </div>
     </div>
   </div>
