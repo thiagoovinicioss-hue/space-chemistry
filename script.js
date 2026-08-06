@@ -139,11 +139,16 @@ const ENEMY_LUNGE = 26;            /* quanto o inimigo avança na investida */
 const ENEMY_WANDER_T = 1.6;        /* tempo andando na patrulha */
 const ENEMY_IDLE_T = 0.9;          /* tempo parado entre trechos de patrulha */
 
-/* --- Volta para a Terra (batalha espacial pós-vitória) --- */
+/* --- Volta para a Terra (missão final: batalha espacial pós-vitória) --- */
 const RETURN_ARMOR = 5;              /* blindagem da nave do herói */
 const RETURN_SHIP_SPEED = 210;
 const RETURN_BOLT_SPEED = 380;       /* disparo do herói */
 const RETURN_ENEMY_BOLT_SPEED = 165; /* disparo inimigo (com homing limitado) */
+const RETURN_FLEET = 12;             /* total de naves para destruir na missão */
+const RETURN_MAX_ALIVE = 5;          /* máximo de naves simultâneas */
+const RETURN_DODGE_R = 90;           /* raio em que as naves desviam de tiros */
+const RETURN_DEATH_DUR = 0.7;        /* duração da explosão da nave inimiga */
+const RETURN_BARRIER_X = 165;        /* posição da barreira até limpar a frota */
 
 /* =====================================================================
    02. UTILITÁRIOS
@@ -4986,7 +4991,10 @@ function startReturn() {
     t: 0,
     ship: { x: VIEW_W * 0.82, y: VIEW_H / 2, invuln: 1 },
     enemies: [], enemyShots: [], shots: [],
-    spawnT: 0.8, shotCd: 0, armor: RETURN_ARMOR, earthReach: false
+    spawnT: 0.9, shotCd: 0, armor: RETURN_ARMOR, earthReach: false,
+    aim: { x: VIEW_W + 80, y: VIEW_H / 2 },
+    spawned: 0, killed: 0, fleet: RETURN_FLEET,
+    cleared: false, warnT: 0
   };
   camX = 0; camY = 0;
   Game.fade = null;
@@ -5011,10 +5019,11 @@ function updateReturn(dt) {
   p.x = clamp(p.x + mx * RETURN_SHIP_SPEED * dt, 20, VIEW_W - 20);
   p.y = clamp(p.y + my * RETURN_SHIP_SPEED * dt, 26, VIEW_H - 26);
 
-  /* Spawna ondas de naves inimigas */
+  /* Frota finita: spawna até esgotar o total, respeitando o máximo em cena */
   r.spawnT -= dt;
-  if (r.spawnT <= 0 && r.enemies.length < 5) {
-    r.spawnT = rand(1.6, 2.6);
+  if (r.spawnT <= 0 && r.spawned < r.fleet &&
+      r.enemies.filter(e => !e.dead).length < RETURN_MAX_ALIVE) {
+    r.spawnT = rand(1.4, 2.2);
     spawnReturnEnemy();
   }
 
@@ -5023,7 +5032,11 @@ function updateReturn(dt) {
     const b = r.shots[i];
     b.x += b.vx * dt;
     b.y += b.vy * dt;
-    if (b.x > VIEW_W + 20) { r.shots.splice(i, 1); continue; }
+    b.t += dt;
+    if (b.x < -20 || b.x > VIEW_W + 20 || b.y < -20 || b.y > VIEW_H + 20) {
+      r.shots.splice(i, 1);
+      continue;
+    }
     let hit = false;
     for (const e of r.enemies) {
       if (e.dead || e.hp <= 0) continue;
@@ -5032,31 +5045,60 @@ function updateReturn(dt) {
         hit = true;
         burst(b.x, b.y, '#7ff5ff', 8);
         AudioSys.sfx('enemyHit');
-        if (e.hp <= 0) {
-          e.dead = true;
-          e.deadT = 0;
-          AudioSys.sfx('boom');
-          burst(e.x, e.y, e.color, 24);
-          if (!Game.replay) Game.run.score += 100;
-          updateHudScore();
-        }
+        if (e.hp <= 0) killReturnEnemy(e);
         break;
       }
     }
     if (hit) r.shots.splice(i, 1);
   }
 
-  /* Naves inimigas: avançam e atiram tiros com homing limitado */
+  /* Naves inimigas: patrulham → perseguem, desviam de tiros e atiram */
   for (const e of r.enemies) {
     if (e.dead) { e.deadT += dt; continue; }
     e.t += dt;
-    const d = Math.max(1, dist(p.x, p.y, e.x, e.y));
-    e.x += (p.x - e.x) / d * e.speed * dt;
-    e.y += (p.y - e.y) / d * e.speed * dt + Math.sin(e.t * 3) * 30 * dt;
-    e.x = clamp(e.x, -30, VIEW_W + 30);
-    e.y = clamp(e.y, 20, VIEW_H - 20);
+    e.dodgeT = Math.max(0, e.dodgeT - dt);
     e.shotCd -= dt;
-    if (e.shotCd <= 0 && e.x > -30 && e.x < VIEW_W + 10) {
+    const d = Math.max(1, dist(p.x, p.y, e.x, e.y));
+
+    /* Perseguição ou patrulha (ondulando perto da base) */
+    if (d < 240) {
+      e.state = 'chase';
+      const sp = e.speed;
+      e.vx = lerp(e.vx, (p.x - e.x) / d * sp, 2 * dt);
+      e.vy = lerp(e.vy, (p.y - e.y) / d * sp, 2 * dt);
+    } else {
+      e.state = 'patrol';
+      e.vx = lerp(e.vx, -e.speed * 0.35, 1.5 * dt);
+      const drift = (e.baseY - e.y) * 0.5 + Math.sin(e.t * 2.2 + e.pid) * 42;
+      e.vy = lerp(e.vy, clamp(drift, -e.speed * 0.8, e.speed * 0.8), 1.5 * dt);
+    }
+
+    /* Desvio: afasta-se dos lasers do herói que vêm na direção */
+    let dvx = 0, dvy = 0;
+    for (const b of r.shots) {
+      const bd = dist(b.x, b.y, e.x, e.y);
+      if (bd < RETURN_DODGE_R) {
+        const bs = Math.max(1, Math.hypot(b.vx, b.vy));
+        const along = ((e.x - b.x) * b.vx + (e.y - b.y) * b.vy) / bs;
+        if (along > 0 && along < 150) {
+          const k = (1 - bd / RETURN_DODGE_R) * (1 - along / 150);
+          dvx += -b.vy / bs * k;
+          dvy += b.vx / bs * k;
+        }
+      }
+    }
+    const dn = Math.hypot(dvx, dvy);
+    if (dn > 0.01) {
+      e.dodgeT = 0.25;
+      e.vx += dvx / dn * 170 * dt;
+      e.vy += dvy / dn * 170 * dt;
+    }
+
+    e.x = clamp(e.x + e.vx * dt, -30, VIEW_W + 30);
+    e.y = clamp(e.y + e.vy * dt, 20, VIEW_H - 20);
+
+    /* Tiro inimigo (com homing limitado), só quando está engajando */
+    if (e.shotCd <= 0 && e.x > -30 && e.x < VIEW_W + 10 && (e.state === 'chase' || d < 340)) {
       e.shotCd = rand(1.4, 2.4);
       const ang = Math.atan2(p.y - e.y, p.x - e.x);
       r.enemyShots.push({ x: e.x, y: e.y, vx: Math.cos(ang) * RETURN_ENEMY_BOLT_SPEED, vy: Math.sin(ang) * RETURN_ENEMY_BOLT_SPEED, t: 0 });
@@ -5093,18 +5135,36 @@ function updateReturn(dt) {
   for (const e of r.enemies) {
     if (e.dead || e.hp <= 0) continue;
     if (p.invuln <= 0 && dist(p.x, p.y, e.x, e.y) < e.r + 13) {
-      e.dead = true;
-      e.deadT = 0;
-      burst(e.x, e.y, e.color, 18);
+      killReturnEnemy(e);
       hitReturnShip();
     }
   }
 
-  /* Limpa naves destruídas depois da explosão */
-  r.enemies = r.enemies.filter(e => !e.dead || e.deadT < 0.6);
+  /* Limpa naves destruídas depois da animação de explosão */
+  r.enemies = r.enemies.filter(e => !e.dead || e.deadT < RETURN_DEATH_DUR);
+
+  /* Frota aniquilada: libera o caminho até a Terra */
+  if (!r.cleared && r.spawned >= r.fleet && r.enemies.length === 0) {
+    r.cleared = true;
+    r.clearedT = 0;
+    AudioSys.sfx('unlock');
+    burst(70, VIEW_H / 2, '#59d3ff', 30);
+    spawnFloater(VIEW_W / 2, VIEW_H / 2 - 40, 'Caminho para a Terra liberado!');
+  }
+
+  /* Barreira alienígena: bloqueia a Terra até a frota ser destruída */
+  if (!r.cleared && p.x < RETURN_BARRIER_X) {
+    p.x = RETURN_BARRIER_X;
+    r.warnT += dt;
+    if (r.warnT > 1.0) {
+      r.warnT = 0;
+      spawnFloater(p.x + 40, p.y - 26, 'Frota bloqueando a Terra!');
+      AudioSys.sfx('error');
+    }
+  }
 
   /* Chegou à Terra: aterrissagem com fade */
-  if (!r.earthReach && p.x < 120) {
+  if (r.cleared && !r.earthReach && p.x < 120) {
     r.earthReach = true;
     startFadeOut(1.0, () => startClassroom());
   }
@@ -5113,6 +5173,21 @@ function updateReturn(dt) {
   if (chance(0.5)) {
     emitParticle(p.x - 16, p.y + rand(-6, 6), -rand(40, 80), rand(-10, 10), '#ff7a3d', 0.4, 3);
   }
+}
+
+/* Nave inimiga destruída: explode e conta para a missão */
+function killReturnEnemy(e) {
+  if (e.dead) return;
+  const r = Game.return;
+  e.dead = true;
+  e.deadT = 0;
+  e.hp = 0;
+  r.killed++;
+  AudioSys.sfx('boom');
+  burst(e.x, e.y, e.color, 24);
+  burst(e.x, e.y, '#ffd166', 10);
+  if (!Game.replay) Game.run.score += 100;
+  updateHudScore();
 }
 
 function hitReturnShip() {
@@ -5139,11 +5214,15 @@ function hitReturnShip() {
 function spawnReturnEnemy() {
   const r = Game.return;
   const big = chance(0.3);
+  r.spawned++;
+  const y = rand(60, VIEW_H - 60);
   r.enemies.push({
-    x: VIEW_W + 30, y: rand(50, VIEW_H - 50),
-    r: big ? 22 : 15, hp: big ? 3 : 1, speed: big ? 40 : 70,
-    t: 0, shotCd: rand(0.5, 1.5), dead: false, deadT: 0,
-    color: big ? '#ff5d6c' : '#ff9df2'
+    x: VIEW_W + 40, y: y, baseY: y,
+    r: big ? 22 : 15, hp: big ? 3 : 1, maxHp: big ? 3 : 1, speed: big ? 42 : 72,
+    t: rand(0, 6), shotCd: rand(0.6, 1.6), dead: false, deadT: 0,
+    color: big ? '#ff5d6c' : '#ff9df2',
+    big, dir: chance(0.5) ? 1 : -1, pid: rand(0, 6.28),
+    vx: -60, vy: 0, state: 'patrol', dodgeT: 0
   });
 }
 
@@ -5151,8 +5230,11 @@ function returnShoot() {
   const r = Game.return;
   if (!r || r.earthReach) return;
   if (r.shotCd > 0) return;
-  r.shotCd = 0.28;
-  r.shots.push({ x: r.ship.x + 16, y: r.ship.y, vx: RETURN_BOLT_SPEED, vy: 0 });
+  r.shotCd = 0.24;
+  /* Mira: aponta para o mouse (computador) ou o último toque (celular) */
+  const ang = Math.atan2(r.aim.y - r.ship.y, r.aim.x - r.ship.x);
+  r.shots.push({ x: r.ship.x + 14, y: r.ship.y, vx: Math.cos(ang) * RETURN_BOLT_SPEED, vy: Math.sin(ang) * RETURN_BOLT_SPEED, t: 0 });
+  burst(r.ship.x + 16, r.ship.y, '#7ff5ff', 4);
   AudioSys.sfx('laser');
 }
 
@@ -5200,13 +5282,39 @@ function drawReturnScene() {
   ctx.textAlign = 'center';
   ctx.fillText('TERRA', 70, VIEW_H / 2 + 86);
 
-  /* Banner da missão de volta */
+  /* Banner da missão final */
   ctx.fillStyle = 'rgba(4,8,20,0.7)';
   ctx.fillRect(0, 0, VIEW_W, 26);
-  ctx.fillStyle = '#ffd166';
   ctx.font = 'bold 11px "Courier New", monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('🛸 VOLTA PARA A TERRA — ESQUIVE E ATIRE (ESPAÇO/J)', VIEW_W / 2, 17);
+  if (r.cleared) {
+    ctx.fillStyle = '#5dffa6';
+    ctx.fillText('✔ CAMINHO LIBERADO — VÁ PARA A TERRA!', VIEW_W / 2, 17);
+  } else {
+    ctx.fillStyle = '#ffd166';
+    ctx.fillText('🛸 MISSÃO FINAL — DESTRUA ' + r.killed + '/' + r.fleet + ' NAVES (ESPAÇO/J)', VIEW_W / 2, 17);
+  }
+
+  /* Barreira alienígena: bloqueia a Terra enquanto a frota estiver de pé */
+  if (!r.cleared) {
+    const bx = RETURN_BARRIER_X;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,93,108,0.08)';
+    ctx.fillRect(bx - 3, 16, 10, VIEW_H - 32);
+    ctx.strokeStyle = 'rgba(255,93,108,0.6)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let yy = 16; yy < VIEW_H - 16; yy += 10) {
+      ctx.moveTo(bx, yy);
+      ctx.lineTo(bx + Math.sin(r.t * 6 + yy * 0.12) * 3, yy);
+    }
+    ctx.stroke();
+    ctx.fillStyle = '#ff5d6c';
+    ctx.font = 'bold 9px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('BLOQUEIO', bx + 3, 40);
+    ctx.restore();
+  }
 
   /* Blindagem (escudo) */
   ctx.textAlign = 'left';
@@ -5219,14 +5327,22 @@ function drawReturnScene() {
     ctx.fill();
   }
 
-  /* Disparos do herói */
+  /* Disparos do herói (lasers) */
   for (const b of r.shots) {
+    const ang = Math.atan2(b.vy, b.vx);
     ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(ang);
     ctx.shadowColor = '#7ff5ff';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 12;
     ctx.fillStyle = '#bffaff';
-    ctx.fillRect(b.x - 8, b.y - 2, 14, 4);
+    ctx.fillRect(-14, -2, 26, 4);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-9, -1, 18, 2);
     ctx.restore();
+    if (chance(0.3)) {
+      emitParticle(b.x - Math.cos(ang) * 8, b.y - Math.sin(ang) * 8, -Math.cos(ang) * 40, -Math.sin(ang) * 40, '#7ff5ff', 0.2, 2);
+    }
   }
 
   /* Tiros inimigos */
@@ -5241,20 +5357,60 @@ function drawReturnScene() {
     ctx.restore();
   }
 
-  /* Naves inimigas */
+  /* Naves inimigas (patrulham, perseguem, desviam, explodem) */
   for (const e of r.enemies) {
     if (e.dead) {
+      drawReturnEnemyDeath(e);
       continue;
     }
     ctx.save();
     ctx.translate(e.x, e.y);
-    ctx.rotate(Math.sin(e.t * 4) * 0.2);
+    ctx.rotate(Math.sin(e.t * 4) * 0.25 + (e.dodgeT > 0 ? Math.sin(e.t * 40) * 0.25 : 0));
     ctx.scale(-1, 1);
     const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', F: '#ff5d6c' };
-    const sz = spriteSize(SPRITES.ship, e.r > 20 ? 3 : 2);
-    drawSprite(ctx, SPRITES.ship, -sz.w / 2, -sz.h / 2, e.r > 20 ? 3 : 2, pal);
+    const sz = spriteSize(SPRITES.ship, e.big ? 3 : 2);
+    drawSprite(ctx, SPRITES.ship, -sz.w / 2, -sz.h / 2, e.big ? 3 : 2, pal);
+    /* Motor tremeluzente */
+    if (chance(0.4)) {
+      emitParticle(e.x + (e.big ? 16 : 12), e.y + rand(-5, 5), rand(40, 80), rand(-8, 8), '#ff8a5d', 0.2, 2);
+    }
     ctx.restore();
+    /* Vida de naves grandes */
+    if (e.big && e.hp < e.maxHp) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(e.x - 12, e.y - e.r - 10, 24, 4);
+      ctx.fillStyle = e.color;
+      ctx.fillRect(e.x - 12, e.y - e.r - 10, 24 * clamp(e.hp / e.maxHp, 0, 1), 4);
+    }
   }
+
+  /* Mira do jogador: mouse no computador, último toque no celular */
+  const aim = r.aim;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(127,245,255,0.18)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath();
+  ctx.moveTo(r.ship.x, r.ship.y);
+  ctx.lineTo(aim.x, aim.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = '#7ff5ff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(aim.x, aim.y, 9 + Math.sin(r.t * 4) * 1.5, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(aim.x - 13, aim.y); ctx.lineTo(aim.x - 5, aim.y);
+  ctx.moveTo(aim.x + 5, aim.y); ctx.lineTo(aim.x + 13, aim.y);
+  ctx.moveTo(aim.x, aim.y - 13); ctx.lineTo(aim.x, aim.y - 5);
+  ctx.moveTo(aim.x, aim.y + 5); ctx.lineTo(aim.x, aim.y + 13);
+  ctx.stroke();
+  ctx.fillStyle = '#7ff5ff';
+  ctx.beginPath();
+  ctx.arc(aim.x, aim.y, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 
   /* Nave do herói */
   const ship = getEquippedItem('ship');
@@ -5266,7 +5422,28 @@ function drawReturnScene() {
   ctx.restore();
 
   drawParticles();
+  drawFloaters();
   drawFade();
+}
+
+/* Explosão da nave inimiga: encolhe com tremor + anel de expansão */
+function drawReturnEnemyDeath(e) {
+  const pr = clamp(e.deadT / RETURN_DEATH_DUR, 0, 1);
+  const sc = e.big ? 3 : 2;
+  ctx.save();
+  ctx.globalAlpha = 1 - pr;
+  const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', F: '#ff5d6c' };
+  const sz = spriteSize(SPRITES.ship, sc);
+  drawSprite(ctx, SPRITES.ship, Math.round(e.x - sz.w / 2 + rand(-3, 3)), Math.round(e.y - sz.h / 2 + rand(-3, 3)), sc, pal);
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,138,93,' + (1 - pr).toFixed(2) + ')';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(e.x, e.y, 8 + pr * 36, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+  if (chance(0.5)) burst(e.x, e.y, e.color, 2);
 }
 
 /* --- Sala de aula (chegada à Terra) --- */
@@ -6147,7 +6324,15 @@ canvas.addEventListener('pointerdown', e => {
   AudioSys.unlock();
   const lv = Game.level;
   if (!lv || Game.locked || Game.buildAnim || Game.feedback || Game.screen !== 'game') return;
-  if (Game.phase === 'return') { returnShoot(); return; }
+  if (Game.phase === 'return') {
+    /* Mira no ponto tocado/clicado e atira */
+    const rect = canvas.getBoundingClientRect();
+    const gx = (e.clientX - rect.left) / rect.width * VIEW_W;
+    const gy = (e.clientY - rect.top) / rect.height * VIEW_H;
+    if (Game.return) { Game.return.aim.x = gx; Game.return.aim.y = gy; }
+    returnShoot();
+    return;
+  }
   const rect = canvas.getBoundingClientRect();
   const wx = (e.clientX - rect.left) / rect.width * VIEW_W + camX;
   const wy = (e.clientY - rect.top) / rect.height * VIEW_H + camY;
@@ -6161,7 +6346,30 @@ canvas.addEventListener('pointerdown', e => {
   }
 });
 
+/* Mira da batalha final: acompanha o mouse (computador) ou o último toque (celular) */
+canvas.addEventListener('pointermove', e => {
+  if (Game.phase !== 'return' || !Game.return) return;
+  const rect = canvas.getBoundingClientRect();
+  Game.return.aim.x = (e.clientX - rect.left) / rect.width * VIEW_W;
+  Game.return.aim.y = (e.clientY - rect.top) / rect.height * VIEW_H;
+});
+
 /* Toque: botões virtuais (mapeados para os mesmos códigos do teclado) */
+Game.lastTouch = { x: VIEW_W, y: VIEW_H / 2 };
+document.addEventListener('touchmove', e => {
+  for (const t of e.touches) {
+    const target = t.target;
+    if (!target || !target.closest || target.closest('.touch-controls')) continue;
+    const rect = canvas.getBoundingClientRect();
+    Game.lastTouch.x = (t.clientX - rect.left) / rect.width * VIEW_W;
+    Game.lastTouch.y = (t.clientY - rect.top) / rect.height * VIEW_H;
+    if (Game.phase === 'return' && Game.return) {
+      Game.return.aim.x = Game.lastTouch.x;
+      Game.return.aim.y = Game.lastTouch.y;
+    }
+    break;
+  }
+}, { passive: true });
 const TOUCH_KEYMAP = {
   up: ['KeyW', 'ArrowUp'],
   left: ['KeyA', 'ArrowLeft'],
@@ -6182,8 +6390,23 @@ document.querySelectorAll('.touch-controls button').forEach(b => {
       if (lv && !Game.locked && dist(Game.player.x, Game.player.y, lv.machine.x, lv.machine.y) < 64) tryInteract();
     }
     if (t === 'attack' && down) {
-      if (Game.phase === 'return') returnShoot();
-      else saberAttackNearest();
+      if (Game.phase === 'return') {
+        /* Celular: atira em direção ao último toque na tela; se nunca tocou o canvas, mira na frota */
+        const g = Game.return;
+        if (g) {
+          const used = g.aim.x < VIEW_W && g.aim.x > 0 && g.aim.y > 0 && g.aim.y < VIEW_H;
+          if (!used) {
+            const nearest = g.enemies.reduce((best, e) => {
+              if (e.dead) return best;
+              const d = dist(g.ship.x, g.ship.y, e.x, e.y);
+              return (!best || d < best.d) ? { e, d } : best;
+            }, null);
+            if (nearest) { g.aim.x = nearest.e.x; g.aim.y = nearest.e.y; }
+            else { g.aim.x = VIEW_W + 80; g.aim.y = g.ship.y; }
+          }
+        }
+        returnShoot();
+      } else saberAttackNearest();
     }
   };
   b.addEventListener('pointerdown', e => { e.preventDefault(); set(true); });
