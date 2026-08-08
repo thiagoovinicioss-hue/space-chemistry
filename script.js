@@ -180,6 +180,15 @@ const RETURN_DODGE_R = 90;           /* raio em que as naves desviam de tiros */
 const RETURN_DEATH_DUR = 0.7;        /* duração da explosão da nave inimiga */
 const RETURN_BARRIER_X = 165;        /* posição da barreira até limpar a frota */
 
+/* --- Apresentação da batalha final (apenas visual, gameplay 2D intacto) --- */
+const RETURN_HOMING_T = 1.6;         /* janela de perseguição dos projéteis inimigos */
+const RETURN_HOMING_TURN = 0.85;     /* taxa máxima de curva do homing (rad/s) */
+const RETURN_HOMING_DOT = 0.4;       /* só curva se o alvo estiver ~à frente (esquiva) */
+const RETURN_ENEMY_HIT_T = 0.16;     /* piscada branca da nave ao tomar dano */
+const RETURN_RING_VR = 150;          /* velocidade de expansão dos anéis de choque */
+const RETURN_RING_LIFE = 0.5;        /* vida dos anéis de choque */
+const RETURN_EARTH_ACCENT = '#59b4ff'; /* cor-guia do fundo da batalha (Terra) */
+
 /* =====================================================================
    02. UTILITÁRIOS
 ===================================================================== */
@@ -294,7 +303,6 @@ const AudioSys = {
       case 'build': this.tone({ freq: 90, type: 'square', dur: 0.12, vol: 0.2 }); this.tone({ freq: 1318, type: 'sine', dur: 0.3, vol: 0.15, delay: 0.12 }); break;
       case 'victory': [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => this.tone({ freq: f, type: 'triangle', dur: 0.3, vol: 0.22, delay: i * 0.12 })); break;
       case 'unlock': [1047, 1319, 1568, 2093].forEach((f, i) => this.tone({ freq: f, type: 'sine', dur: 0.18, vol: 0.16, delay: i * 0.07 })); break;
-      case 'portal': this.tone({ freq: 300, slideTo: 900, type: 'sine', dur: 0.5, vol: 0.18 }); break;
       case 'gate': this.tone({ freq: 880, slideTo: 1320, type: 'triangle', dur: 0.2, vol: 0.18 }); break;
       case 'damage': this.tone({ freq: 400, slideTo: 200, type: 'square', dur: 0.2, vol: 0.15 }); break;
       case 'saber': this.tone({ freq: 200, slideTo: 900, type: 'sawtooth', dur: 0.18, vol: 0.12 }); break;
@@ -1305,6 +1313,26 @@ const ICONS = {
   arrowR:    { pal: { M: '#59d3ff', D: '#1a5a7a' }, grid: [
     '....MMM.', '...MMMM.', '..MMMMM.', 'MMMMMMMM',
     'MMMMMMMM', '..MMMMM.', '...MMMM.', '....MMM.'
+  ] },
+  chalkW:    { pal: { M: '#f4f0e0', D: '#b8b2a0' }, grid: [
+    '.WWW....', '.WWWW...', 'WWWWW...', 'WWWWW...',
+    '.WWWW...', '.WWWW...', '..WW....', '........'
+  ] },
+  chalkR:    { pal: { M: '#ff5d6c', D: '#8a1e2a' }, grid: [
+    '.RRR....', '.RRRR...', 'RRRRR...', 'RRRRR...',
+    '.RRRR...', '.RRRR...', '..RR....', '........'
+  ] },
+  chalkB:    { pal: { M: '#4a9aff', D: '#1a4a8a' }, grid: [
+    '.BBB....', '.BBBB...', 'BBBBB...', 'BBBBB...',
+    '.BBBB...', '.BBBB...', '..BB....', '........'
+  ] },
+  eraser:    { pal: { M: '#e8e0d0', D: '#5a4a3a' }, grid: [
+    '........', '.EEEEEE.', 'EEEEEEEE', 'EEEEEEEE',
+    'DDDDDDDD', 'DDDDDDDD', '........', '........'
+  ] },
+  board:     { pal: { W: '#8a5a2a', D: '#5c3d22', G: '#2f4f3f' }, grid: [
+    'WWWWWWWW', 'WGGGGGGW', 'WGGGGGGW', 'WGGGGGGW',
+    'WGGGGGGW', 'WGGGGGGW', 'WGGGGGGW', 'WWWWWWWW'
   ] }
 };
 
@@ -1777,7 +1805,7 @@ const LEVELS = [
     intro: 'Bem-vindo, recruta! O planeta vizinho perdeu sua energia. Antes de partir, aprenda a pilotar seu traje. Colete os cristais e monte a molécula de água no computador.',
     radius: 10,
     spawn: { x: 11, y: 19 }, machine: { x: 11, y: 11, label: 'Computador de Bordo', type: 'assembler' },
-    portal: { x: 11, y: 4 }, standby: { x: 2, y: 12 },
+    standby: { x: 2, y: 12 },
     walls: [
       [4, 7, 5, 7], [16, 7, 17, 7], [4, 14, 5, 14],
       [17, 13, 20, 13], [17, 16, 20, 16], [20, 13, 20, 16], [17, 13, 17, 16]
@@ -1804,7 +1832,7 @@ const LEVELS = [
     intro: 'Krystália está em chamas! Aqui, METAL + AMETAL trocam elétrons e formam cristais iônicos. Colete os elementos e monte os compostos na Fornalha Iônica.',
     radius: 14,
     spawn: { x: 15, y: 24 }, machine: { x: 15, y: 15, label: 'Fornalha Iônica', type: 'furnace' },
-    portal: { x: 15, y: 4 }, standby: { x: 2, y: 12 },
+    standby: { x: 2, y: 12 },
     walls: [
       [3, 7, 3, 10], [3, 14, 3, 16], [3, 20, 3, 22],
       [27, 7, 27, 10], [27, 14, 27, 16], [27, 20, 27, 22],
@@ -1858,7 +1886,7 @@ const LEVELS = [
     intro: 'Nébula é feita de gases. Aqui, AMETAL + AMETAL COMPARTILHAM elétrons. Monte as moléculas no Montador Molecular e limpe a atmosfera.',
     radius: 14,
     spawn: { x: 15, y: 27 }, machine: { x: 15, y: 15, label: 'Montador Molecular', type: 'assembler' },
-    portal: { x: 15, y: 4 }, standby: { x: 2, y: 12 },
+    standby: { x: 2, y: 12 },
     walls: [
       [3, 7, 4, 8], [26, 7, 27, 8],
       [3, 16, 4, 17], [26, 16, 27, 17],
@@ -1906,7 +1934,7 @@ const LEVELS = [
     intro: 'Ferravil perdeu toda a energia! Os metais guardam elétrons livres no "mar de elétrons" e conduzem corrente. Colete os metais e alimente o Núcleo de Energia.',
     radius: 14,
     spawn: { x: 15, y: 27 }, machine: { x: 15, y: 15, label: 'Núcleo de Energia', type: 'core' },
-    portal: { x: 15, y: 4 }, standby: { x: 2, y: 12 },
+    standby: { x: 2, y: 12 },
     walls: [
       [4, 6, 5, 7], [25, 6, 26, 7],
       [4, 16, 5, 17], [25, 16, 26, 17],
@@ -1964,7 +1992,7 @@ const LEVELS = [
     intro: 'O Núcleo Cósmico precisa que você aplique TUDO que aprendeu. Classifique as ligações nos portais e restaure a galáxia!',
     radius: 14,
     spawn: { x: 15, y: 27 }, machine: { x: 15, y: 15, label: 'Reator da Galáxia', type: 'reactor' },
-    portal: { x: 15, y: 4 }, standby: { x: 15, y: 12 },
+    standby: { x: 15, y: 12 },
     walls: [
       [3, 3, 5, 5], [25, 3, 27, 5],
       [6, 5, 8, 5], [22, 5, 24, 5],
@@ -2297,7 +2325,6 @@ function buildLevel(idx) {
   }));
 
   const machine = { x: lv.machine.x * TILE + TILE / 2, y: lv.machine.y * TILE + TILE / 2 };
-  const portal = { x: lv.portal.x * TILE + TILE / 2, y: lv.portal.y * TILE + TILE / 2, open: false };
 
   /* Alienígenas (combate) */
   const enemies = (lv.enemies || []).map(e => {
@@ -2359,7 +2386,7 @@ function buildLevel(idx) {
   }));
 
   return {
-    idx, lv, theme, g, crystals, hazards, traps, gates, machine, portal,
+    idx, lv, theme, g, crystals, hazards, traps, gates, machine,
     enemies, decor, breakables, lakes, bridges: (lv.bridges || []).slice(), conveyors, gears, pipes,
     npcs, charges, critters,
     R, cx, cy, inDisc, standby: lv.standby || { x: 2, y: 12 },
@@ -2629,20 +2656,16 @@ function maybeEndLevel() {
   if (Game.recipeIndex < lv.lv.recipes.length) return;
   if (lv.lv.gateSequence && !lv.gatesDone) return;
   if (!lv.quizDone) {
-    Quiz.start();
+    /* Fases com exercícios interativos (EXERCISE_LEVELS) fazem o desafio
+       da Máquina de Fusão; as demais caem no questionário rápido. */
+    const hasExercise = typeof EXERCISE_LEVELS !== 'undefined' &&
+      Array.isArray(EXERCISE_LEVELS[Game.levelIndex]) && EXERCISE_LEVELS[Game.levelIndex].length;
+    if (hasExercise && typeof Exercise !== 'undefined' && Exercise.start) {
+      Exercise.start();
+    } else {
+      Quiz.start();
+    }
   }
-}
-
-function unlockPortal() {
-  const lv = Game.level;
-  if (lv.portal.open) return;
-  lv.portal.open = true;
-  AudioSys.sfx('portal');
-  showFeedback('good', 'Portal ativado!',
-    lv.idx === FINAL_INDEX
-      ? 'A galáxia está pronta para ser restaurada. Atravesse o portal!'
-      : 'A energia do planeta foi restaurada. Atravesse o portal para continuar!', () => { Game.locked = false; });
-  burst(lv.portal.x, lv.portal.y, COL_BOND[lv.lv.theme === 'tutorial' ? 'covalent' : lv.lv.id === 'ionic' ? 'ionic' : lv.lv.id === 'metallic' ? 'metallic' : 'covalent']);
 }
 
 /* Portais de classificação (Planeta Final) */
@@ -2911,13 +2934,6 @@ function update(dt) {
 
   /* --- Portais de classificação (final) --- */
   checkGates();
-
-  /* --- Portal de saída --- */
-  if (lv.portal.open && !Game.completedOnce && dist(p.x, p.y, lv.portal.x, lv.portal.y) < 28) {
-    Game.completedOnce = true;
-    completeLevel();
-    return;
-  }
 
   /* --- Combate: sabre + alienígenas + orbes + decor --- */
   updateCombat(dt);
@@ -3288,7 +3304,7 @@ function drawMachines() {
     ctx.fillRect(-22, -20, 44, 40);
     ctx.fillStyle = '#2a1c30';
     ctx.fillRect(-16, -12, 32, 32);
-    ctx.fillStyle = lv.portal.open ? '#ff9df2' : '#ff6b6b';
+    ctx.fillStyle = '#ff6b6b';
     ctx.beginPath();
     ctx.arc(0, 4, 10, 0, Math.PI);
     ctx.fill();
@@ -3415,48 +3431,6 @@ function drawGates() {
     ctx.fillText('Ligação', dx + g.w / 2, dy + 19);
   }
   ctx.globalAlpha = 1;
-}
-
-function drawPortal() {
-  const lv = Game.level;
-  const t = performance.now() / 1000;
-  const dx = lv.portal.x - camX;
-  const dy = lv.portal.y - camY;
-  const open = lv.portal.open;
-
-  ctx.fillStyle = '#0c1226';
-  ctx.fillRect(dx - 26, dy - 30, 52, 60);
-  ctx.strokeStyle = '#2d3a75';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(dx - 26, dy - 30, 52, 60);
-
-  if (open) {
-    ctx.shadowColor = '#7ff5ff';
-    ctx.shadowBlur = 16;
-    const grad = ctx.createLinearGradient(dx - 18, 0, dx + 18, 0);
-    grad.addColorStop(0, '#59d3ff');
-    grad.addColorStop(1, '#7ff5ff');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(dx, dy, 16 + Math.sin(t * 3) * 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    /* Anel giratório */
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.ellipse(dx, dy, 20, 8, t, 0, Math.PI * 2);
-    ctx.stroke();
-    if (chance(0.25)) emitParticle(dx + rand(-14, 14), dy + rand(-14, 14), rand(-20, 20), rand(-30, 0), '#7ff5ff', 0.6, 2);
-  } else {
-    ctx.fillStyle = '#2d3a75';
-    ctx.fillRect(dx - 18, dy - 18, 36, 36);
-    ctx.fillStyle = '#1a2248';
-    ctx.font = 'bold 12px "Press Start 2P", monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    drawIconOnCanvas(ctx, 'lock', dx - 8, dy - 8, 2);
-  }
 }
 
 function drawPlayer() {
@@ -3708,7 +3682,6 @@ function render() {
   drawGates();
   drawEnemies();
   drawMachines();
-  drawPortal();
   drawHazards();
   drawGears();
   drawCharges();
@@ -5986,8 +5959,9 @@ function startReturn() {
   if (tw) tw.hidden = true;
   Game.return = {
     t: 0,
-    ship: { x: VIEW_W * 0.82, y: VIEW_H / 2, invuln: 1 },
+    ship: { x: VIEW_W * 0.82, y: VIEW_H / 2, invuln: 1, tilt: 0, flame: 0, recoil: 0 },
     enemies: [], enemyShots: [], shots: [],
+    rings: [], shake: 0, flash: 0, flashColor: '#ffffff',
     spawnT: 0.9, shotCd: 0, armor: RETURN_ARMOR, earthReach: false,
     aim: { x: VIEW_W + 80, y: VIEW_H / 2 },
     spawned: 0, killed: 0, fleet: RETURN_FLEET,
@@ -6006,6 +5980,18 @@ function updateReturn(dt) {
   const p = r.ship;
   if (p.invuln > 0) p.invuln -= dt;
   if (r.shotCd > 0) r.shotCd -= dt;
+  p.flame = Math.random();
+  p.recoil = Math.max(0, p.recoil - dt * 30);
+  /* Pequenos efeitos de câmera: tremor e clarão do impacto */
+  r.shake = Math.max(0, r.shake - dt * 34);
+  r.flash = Math.max(0, r.flash - dt * 2.2);
+  /* Anéis de choque das explosões */
+  for (let i = r.rings.length - 1; i >= 0; i--) {
+    const ring = r.rings[i];
+    ring.r += ring.vr * dt;
+    ring.life -= dt;
+    if (ring.life <= 0) r.rings.splice(i, 1);
+  }
 
   /* Movimento da nave */
   let mx = 0, my = 0;
@@ -6030,6 +6016,8 @@ function updateReturn(dt) {
     b.x += b.vx * dt;
     b.y += b.vy * dt;
     b.t += dt;
+    /* Rastro luminoso do laser */
+    if (chance(0.5)) emitParticle(b.x, b.y, -b.vx * 0.1 + rand(-6, 6), -b.vy * 0.1 + rand(-6, 6), '#7ff5ff', 0.18, 2);
     if (b.x < -20 || b.x > VIEW_W + 20 || b.y < -20 || b.y > VIEW_H + 20) {
       r.shots.splice(i, 1);
       continue;
@@ -6039,9 +6027,12 @@ function updateReturn(dt) {
       if (e.dead || e.hp <= 0) continue;
       if (dist(b.x, b.y, e.x, e.y) < e.r + 6) {
         e.hp--;
+        e.hitT = RETURN_ENEMY_HIT_T;
         hit = true;
         burst(b.x, b.y, '#7ff5ff', 8);
+        spawnSparks(e.x, e.y, e.color, 6);
         AudioSys.sfx('enemyHit');
+        r.shake = Math.max(r.shake, 2.5);
         if (e.hp <= 0) killReturnEnemy(e);
         break;
       }
@@ -6054,6 +6045,7 @@ function updateReturn(dt) {
     if (e.dead) { e.deadT += dt; continue; }
     e.t += dt;
     e.dodgeT = Math.max(0, e.dodgeT - dt);
+    e.hitT = Math.max(0, (e.hitT || 0) - dt);
     e.shotCd -= dt;
     const d = Math.max(1, dist(p.x, p.y, e.x, e.y));
 
@@ -6094,30 +6086,37 @@ function updateReturn(dt) {
     e.x = clamp(e.x + e.vx * dt, -30, VIEW_W + 30);
     e.y = clamp(e.y + e.vy * dt, 20, VIEW_H - 20);
 
-    /* Tiro inimigo (com homing limitado), só quando está engajando */
+    /* Tiro inimigo (homing limitado por tempo), só quando está engajando */
     if (e.shotCd <= 0 && e.x > -30 && e.x < VIEW_W + 10 && (e.state === 'chase' || d < 340)) {
       e.shotCd = rand(1.4, 2.4);
       const ang = Math.atan2(p.y - e.y, p.x - e.x);
-      r.enemyShots.push({ x: e.x, y: e.y, vx: Math.cos(ang) * RETURN_ENEMY_BOLT_SPEED, vy: Math.sin(ang) * RETURN_ENEMY_BOLT_SPEED, t: 0 });
+      r.enemyShots.push({ x: e.x, y: e.y, vx: Math.cos(ang) * RETURN_ENEMY_BOLT_SPEED, vy: Math.sin(ang) * RETURN_ENEMY_BOLT_SPEED, t: 0, homing: RETURN_HOMING_T });
       AudioSys.sfx('enemyShot');
     }
   }
 
-  /* Tiros inimigos: giram suavemente em direção ao herói (homing limitado) */
+  /* Tiros inimigos: perseguição limitada (só enquanto a janela de homing dura
+     e se o alvo estiver à frente) → dá para desviar na diagonal ou na hora */
   for (let i = r.enemyShots.length - 1; i >= 0; i--) {
     const b = r.enemyShots[i];
-    const curAng = Math.atan2(b.vy, b.vx);
-    const want = Math.atan2(p.y - b.y, p.x - b.x);
-    let diff = want - curAng;
-    while (diff > Math.PI) diff -= Math.PI * 2;
-    while (diff < -Math.PI) diff += Math.PI * 2;
-    const na = curAng + clamp(diff, -1.2 * dt, 1.2 * dt);
+    b.homing = Math.max(0, (b.homing || 0) - dt);
     const spd = Math.hypot(b.vx, b.vy);
-    b.vx = Math.cos(na) * spd;
-    b.vy = Math.sin(na) * spd;
+    if (b.homing > 0) {
+      const curAng = Math.atan2(b.vy, b.vx);
+      const want = Math.atan2(p.y - b.y, p.x - b.x);
+      let diff = want - curAng;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      if (Math.cos(diff) > RETURN_HOMING_DOT) {
+        const na = curAng + clamp(diff, -RETURN_HOMING_TURN * dt, RETURN_HOMING_TURN * dt);
+        b.vx = Math.cos(na) * spd;
+        b.vy = Math.sin(na) * spd;
+      }
+    }
     b.x += b.vx * dt;
     b.y += b.vy * dt;
     b.t += dt;
+    if (chance(0.45)) emitParticle(b.x, b.y, -b.vx * 0.12 + rand(-4, 4), -b.vy * 0.12 + rand(-4, 4), '#ff5d6c', 0.22, 2);
     if (b.x < -30 || b.y < -30 || b.y > VIEW_H + 30 || b.x > VIEW_W + 30) {
       r.enemyShots.splice(i, 1);
       continue;
@@ -6172,7 +6171,7 @@ function updateReturn(dt) {
   }
 }
 
-/* Nave inimiga destruída: explode e conta para a missão */
+/* Nave inimiga destruída: explosão em camadas (clarão, anéis, estilhaços) */
 function killReturnEnemy(e) {
   if (e.dead) return;
   const r = Game.return;
@@ -6181,8 +6180,16 @@ function killReturnEnemy(e) {
   e.hp = 0;
   r.killed++;
   AudioSys.sfx('boom');
+  /* Clarão central + anéis de choque + estilhaços da fuselagem */
+  spawnShipDebris(e.x, e.y, e.color, e.big ? 16 : 10);
+  spawnShipDebris(e.x, e.y, '#ffd166', e.big ? 8 : 5);
   burst(e.x, e.y, e.color, 24);
   burst(e.x, e.y, '#ffd166', 10);
+  spawnRing(e.x, e.y, e.color, e.big ? 1.4 : 1);
+  spawnRing(e.x, e.y, '#ffffff', e.big ? 0.8 : 0.6);
+  r.shake = Math.max(r.shake, e.big ? 9 : 6);
+  r.flash = Math.max(r.flash, e.big ? 0.5 : 0.3);
+  r.flashColor = e.color;
   if (!Game.replay) Game.run.score += 100;
   updateHudScore();
 }
@@ -6191,13 +6198,18 @@ function hitReturnShip() {
   const r = Game.return;
   if (!r) return;
   r.armor--;
+  r.shake = Math.max(r.shake, 12);
+  r.flash = Math.max(r.flash, 0.45);
+  r.flashColor = '#ff5d6c';
   shake(12);
   AudioSys.sfx('hurt');
   burst(r.ship.x, r.ship.y, '#ff5d6c', 14);
+  spawnRing(r.ship.x, r.ship.y, '#ff5d6c', 0.7);
   if (r.armor <= 0) {
     /* Blindagem rompida: penalidade de pontos e recarga (não falha o jogo) */
     AudioSys.sfx('bigBoom');
     burst(r.ship.x, r.ship.y, '#ff5d6c', 30);
+    spawnRing(r.ship.x, r.ship.y, '#ffffff', 1.2);
     r.armor = RETURN_ARMOR;
     r.ship.invuln = 3;
     if (!Game.replay) Game.run.score = Math.max(0, Game.run.score - 200);
@@ -6230,54 +6242,212 @@ function returnShoot() {
   r.shotCd = 0.24;
   /* Mira: aponta para o mouse (computador) ou o último toque (celular) */
   const ang = Math.atan2(r.aim.y - r.ship.y, r.aim.x - r.ship.x);
-  r.shots.push({ x: r.ship.x + 24, y: r.ship.y, vx: Math.cos(ang) * RETURN_BOLT_SPEED, vy: Math.sin(ang) * RETURN_BOLT_SPEED, t: 0 });
-  burst(r.ship.x + 26, r.ship.y, '#7ff5ff', 4);
+  const mx = Math.cos(ang), my = Math.sin(ang);
+  const ox = r.ship.x + 24 * mx, oy = r.ship.y + 24 * my;
+  r.shots.push({ x: ox, y: oy, vx: mx * RETURN_BOLT_SPEED, vy: my * RETURN_BOLT_SPEED, t: 0 });
+  /* Flash do cano + recuo visual da nave (pequenos efeitos de câmera) */
+  spawnMuzzleFlash(ox, oy, ang);
+  r.ship.recoil = 4;
+  burst(ox, oy, '#7ff5ff', 4);
   AudioSys.sfx('laser');
+}
+
+/* Anel de choque expansivo (onda de explosão / impacto) */
+function spawnRing(x, y, color, mult) {
+  const r = Game.return;
+  if (!r) return;
+  r.rings.push({
+    x, y, color,
+    r: 6, vr: RETURN_RING_VR * (mult || 1),
+    life: RETURN_RING_LIFE, maxLife: RETURN_RING_LIFE, width: 2 + (mult || 1) * 1.5
+  });
+}
+
+/* Estilhaços de uma nave inimiga (chamas + metal + centelhas) */
+function spawnShipDebris(x, y, color, n) {
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, Math.PI * 2);
+    const sp = rand(40, 190);
+    const c = chance(0.35) ? '#ffd166' : (chance(0.3) ? '#ff9d8a' : color);
+    emitParticle(x, y, Math.cos(a) * sp, Math.sin(a) * sp, c, rand(0.4, 0.95), rand(2, 5));
+  }
+}
+
+/* Centelhas curtas ao atingir uma nave inimiga */
+function spawnSparks(x, y, color, n) {
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, Math.PI * 2);
+    const sp = rand(60, 170);
+    emitParticle(x, y, Math.cos(a) * sp, Math.sin(a) * sp, chance(0.5) ? '#ffffff' : color, rand(0.15, 0.35), rand(1, 3));
+  }
+}
+
+/* Flash do cano da nave do herói (fogo + faíscas) */
+function spawnMuzzleFlash(x, y, ang) {
+  const mx = Math.cos(ang), my = Math.sin(ang);
+  for (let i = 0; i < 6; i++) {
+    emitParticle(x, y, mx * rand(30, 80) + rand(-20, 20), my * rand(30, 80) + rand(-20, 20), '#bffaff', rand(0.08, 0.18), rand(1, 3));
+  }
+  emitParticle(x, y, mx * rand(50, 110), my * rand(50, 110), '#ffffff', 0.12, 3);
+}
+
+/* Fundo espacial da batalha final: nebulosas na cor da Terra, poeira em
+   camadas, estrelas em paralaxe e estrelas cadentes. Só visual. */
+function drawReturnBackground(r) {
+  const t = r.t;
+  const accent = RETURN_EARTH_ACCENT;
+
+  const grad = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+  grad.addColorStop(0, '#04060d');
+  grad.addColorStop(0.55, '#07111f');
+  grad.addColorStop(1, '#0a1a33');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+  /* Nebulosas azul-esverdeadas (planeta Terra) */
+  for (const nb of TRAVEL_NEBULAE) {
+    const span = VIEW_W + nb.r * 2;
+    const nx = travelWrap(nb.x * VIEW_W + t * nb.spx, span) - nb.r;
+    const ny = travelWrap(nb.y * VIEW_H + t * nb.spy, VIEW_H + nb.r) - nb.r / 2;
+    const ng = ctx.createRadialGradient(nx, ny, 0, nx, ny, nb.r);
+    ng.addColorStop(0, hexToRgba(accent, nb.alpha));
+    ng.addColorStop(0.5, hexToRgba(accent, nb.alpha * 0.45));
+    ng.addColorStop(1, hexToRgba(accent, 0));
+    ctx.fillStyle = ng;
+    ctx.fillRect(nx - nb.r, ny - nb.r, nb.r * 2, nb.r * 2);
+  }
+
+  /* Poeira em 3 profundidades */
+  for (let b = 0; b < TRAVEL_DUST.length; b++) {
+    const D = TRAVEL_DUST[b];
+    for (let i = 0; i < D.n; i++) {
+      const sy = travelWrap(i * 97 + b * 41 + 13, VIEW_H);
+      const px = travelWrap(i * 151 + 9 + b * 61 - t * D.speed * 1.6, VIEW_W);
+      const tw = 0.6 + 0.4 * Math.sin(t * (0.8 + b) + i * 1.7);
+      ctx.globalAlpha = D.bright * tw;
+      ctx.fillStyle = (i + b) % 7 === 0 ? '#bfe4ff' : '#ffffff';
+      ctx.fillRect(Math.round(px), Math.round(sy), D.size, D.size);
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  /* Estrelas em 5 camadas de paralaxe */
+  drawTravelStars({ t });
+
+  /* Estrelas cadentes ambientais */
+  for (const s of TRAVEL_SHOOTERS) {
+    const p = travelWrap(s.off + t * 0.8, s.period) / s.period;
+    const fade = Math.sin(p * Math.PI);
+    if (fade < 0.04) continue;
+    const dx = s.x0 * VIEW_W + s.vx * p * VIEW_W;
+    const dy = s.y0 * VIEW_H + s.vy * p * VIEW_H;
+    if (dx < -80 || dx > VIEW_W + 80 || dy < -60 || dy > VIEW_H + 60) continue;
+    const ux = s.vx, uy = s.vy;
+    const len = s.len * s.depth;
+    const sg = ctx.createLinearGradient(dx, dy, dx - ux * len, dy - uy * len);
+    sg.addColorStop(0, 'rgba(255,255,255,' + (0.85 * fade * s.depth).toFixed(3) + ')');
+    sg.addColorStop(0.55, 'rgba(207,233,255,' + (0.4 * fade * s.depth).toFixed(3) + ')');
+    sg.addColorStop(1, 'rgba(207,233,255,0)');
+    ctx.strokeStyle = sg;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(dx, dy);
+    ctx.lineTo(dx - ux * len, dy - uy * len);
+    ctx.stroke();
+  }
+}
+
+/* Planeta Terra: atmosfera em camadas, oceano com brilho, continentes que
+   giram lentamente, nuvens e a órbita tracejada com o rótulo. */
+function drawReturnEarth(r) {
+  const ex = 70, ey = VIEW_H / 2, er = 52;
+
+  /* Halo de atmosfera */
+  const atg = ctx.createRadialGradient(ex, ey, er * 0.85, ex, ey, er * 1.75);
+  atg.addColorStop(0, 'rgba(89,180,255,0.55)');
+  atg.addColorStop(0.55, 'rgba(89,180,255,0.14)');
+  atg.addColorStop(1, 'rgba(89,180,255,0)');
+  ctx.fillStyle = atg;
+  ctx.beginPath();
+  ctx.arc(ex, ey, er * 1.75, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* Oceano com iluminação de cima */
+  const og = ctx.createRadialGradient(ex - er * 0.35, ey - er * 0.35, er * 0.1, ex, ey, er);
+  og.addColorStop(0, '#3a93e8');
+  og.addColorStop(1, '#0d3f8c');
+  ctx.fillStyle = og;
+  ctx.beginPath();
+  ctx.arc(ex, ey, er, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* Continentes girando devagar (recortados dentro do disco) */
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(ex, ey, er, 0, Math.PI * 2);
+  ctx.clip();
+  const rot = r.t * 0.1;
+  ctx.fillStyle = '#3ddc7a';
+  for (let i = 0; i < 6; i++) {
+    const ang = rot + i * 1.15;
+    const cx0 = ex + Math.cos(ang) * er * 0.42;
+    const cy0 = ey + Math.sin(ang) * er * 0.3;
+    ctx.fillRect(cx0 - 9, cy0 - 6, 18, 12);
+    ctx.fillRect(cx0 + Math.cos(ang + 1) * 12 - 5, cy0 + 9, 10, 7);
+  }
+  ctx.restore();
+
+  /* Nuvens em espiral */
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(ex, ey, er, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.beginPath();
+  ctx.arc(ex + 12, ey - 20, 13, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(ex - 18, ey + 14, 11, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(ex + 4, ey + 30, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  /* Reflexo de luz no topo */
+  ctx.fillStyle = 'rgba(255,255,255,0.16)';
+  ctx.beginPath();
+  ctx.arc(ex - er * 0.3, ey - er * 0.32, er * 0.3, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* Órbita tracejada pulsante + rótulo */
+  ctx.strokeStyle = 'rgba(89,180,255,0.5)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.arc(ex, ey, 60 + Math.sin(r.t * 2) * 3, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#8fd9ff';
+  ctx.font = 'bold 12px "Press Start 2P", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('TERRA', ex, ey + 86);
 }
 
 function drawReturnScene() {
   const r = Game.return;
   if (!r) return;
 
-  /* Fundo espacial */
-  const grad = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-  grad.addColorStop(0, '#05070f');
-  grad.addColorStop(1, '#0b1030');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-  for (let i = 0; i < 60; i++) {
-    const px = ((i * 173 + 7) % VIEW_W);
-    const py = ((i * 97 + 23) % VIEW_H);
-    ctx.fillStyle = i % 9 === 0 ? '#ffd166' : '#ffffff';
-    ctx.globalAlpha = 0.3 + (i % 5) * 0.1;
-    ctx.fillRect(px, py, i % 4 === 0 ? 2 : 1, i % 4 === 0 ? 2 : 1);
-  }
-  ctx.globalAlpha = 1;
-
-  /* Planeta Terra à esquerda */
+  /* Pequeno efeito de câmera: tremor ao redor do alvo (decaído no update) */
   ctx.save();
-  ctx.shadowColor = '#59b4ff';
-  ctx.shadowBlur = 26;
-  ctx.fillStyle = '#1f6fd0';
-  ctx.beginPath();
-  ctx.arc(70, VIEW_H / 2, 52, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-  ctx.fillStyle = '#3ddc7a';
-  ctx.fillRect(55, VIEW_H / 2 - 18, 14, 10);
-  ctx.fillRect(78, VIEW_H / 2 + 6, 10, 8);
-  ctx.fillRect(64, VIEW_H / 2 + 18, 8, 8);
-  ctx.strokeStyle = 'rgba(89,180,255,0.5)';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([5, 5]);
-  ctx.beginPath();
-  ctx.arc(70, VIEW_H / 2, 60 + Math.sin(r.t * 2) * 3, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = '#8fd9ff';
-  ctx.font = 'bold 12px "Press Start 2P", monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('TERRA', 70, VIEW_H / 2 + 86);
+  if (r.shake > 0.3) ctx.translate(rand(-r.shake, r.shake), rand(-r.shake, r.shake));
+
+  /* Fundo espacial com profundidade: nebulosas, poeira, estrelas e
+     estrelas cadentes (tudo visual — a colisão segue nos raios 2D). */
+  drawReturnBackground(r);
+
+  /* Planeta Terra à esquerda (atmosfera, continentes, nuvens, órbita) */
+  drawReturnEarth(r);
 
   /* Banner da missão final */
   ctx.fillStyle = 'rgba(4,8,20,0.7)';
@@ -6324,37 +6494,57 @@ function drawReturnScene() {
     ctx.fill();
   }
 
-  /* Disparos do herói (lasers) */
+  /* Disparos do herói: feixe com núcleo brilhante e cauda gradiente */
   for (const b of r.shots) {
     const ang = Math.atan2(b.vy, b.vx);
+    const pulse = 0.8 + Math.sin(b.t * 45) * 0.2;
     ctx.save();
     ctx.translate(b.x, b.y);
     ctx.rotate(ang);
     ctx.shadowColor = '#7ff5ff';
-    ctx.shadowBlur = 12;
-    ctx.fillStyle = '#bffaff';
-    ctx.fillRect(-14, -2, 26, 4);
+    ctx.shadowBlur = 14;
+    const lg = ctx.createLinearGradient(-16, 0, 10, 0);
+    lg.addColorStop(0, 'rgba(127,245,255,0.15)');
+    lg.addColorStop(0.55, 'rgba(191,250,255,0.9)');
+    lg.addColorStop(1, 'rgba(255,255,255,1)');
+    ctx.fillStyle = lg;
+    ctx.fillRect(-16, -2.2 * pulse, 30 * pulse, 4.4 * pulse);
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(-9, -1, 18, 2);
+    ctx.fillRect(-10, -1 * pulse, 22 * pulse, 2 * pulse);
     ctx.restore();
-    if (chance(0.3)) {
-      emitParticle(b.x - Math.cos(ang) * 8, b.y - Math.sin(ang) * 8, -Math.cos(ang) * 40, -Math.sin(ang) * 40, '#7ff5ff', 0.2, 2);
-    }
   }
 
-  /* Tiros inimigos */
+  /* Tiros inimigos: plasma com cauda e núcleo incandescente */
   for (const b of r.enemyShots) {
+    const ang = Math.atan2(b.vy, b.vx);
     ctx.save();
-    ctx.shadowColor = '#ff5d6c';
-    ctx.shadowBlur = 10;
-    ctx.fillStyle = '#ff9d8a';
+    ctx.translate(b.x, b.y);
+    ctx.rotate(ang);
+    const tg = ctx.createLinearGradient(-14, 0, 0, 0);
+    tg.addColorStop(0, 'rgba(255,93,108,0)');
+    tg.addColorStop(1, 'rgba(255,93,108,0.9)');
+    ctx.fillStyle = tg;
     ctx.beginPath();
-    ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+    ctx.moveTo(-14, -2.5); ctx.lineTo(0, -4.5); ctx.lineTo(0, 4.5); ctx.lineTo(-14, 2.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowColor = '#ff5d6c';
+    ctx.shadowBlur = 12;
+    const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, 5.5);
+    cg.addColorStop(0, 'rgba(255,255,255,0.95)');
+    cg.addColorStop(0.4, 'rgba(255,157,138,0.9)');
+    cg.addColorStop(1, 'rgba(255,93,108,0)');
+    ctx.fillStyle = cg;
+    ctx.beginPath();
+    ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 
-  /* Naves inimigas (patrulham, perseguem, desviam, explodem) */
+  /* Naves inimigas: luz ambiente, motores, alinhamento com o movimento,
+     núcleo pulsante e piscada ao tomar dano. Com o 3D ligado, o corpo da
+     nave é desenhado pela camada 3D; a luz e as chamas seguem em 2D. */
+  const fx3d = !!(window.Effects3D && Effects3D.isEnabled());
   for (const e of r.enemies) {
     if (e.dead) {
       drawReturnEnemyDeath(e);
@@ -6362,14 +6552,51 @@ function drawReturnScene() {
     }
     ctx.save();
     ctx.translate(e.x, e.y);
-    ctx.rotate(Math.sin(e.t * 4) * 0.25 + (e.dodgeT > 0 ? Math.sin(e.t * 40) * 0.25 : 0));
-    ctx.scale(-1, 1);
-    const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff5d6c', R: '#c0392b', Y: '#ffe14d' };
-    const sz = spriteSize(SPRITES.ship, e.big ? 3 : 2);
-    drawSprite(ctx, SPRITES.ship, -sz.w / 2, -sz.h / 2, e.big ? 3 : 2, pal);
-    /* Motor tremeluzente */
-    if (chance(0.4)) {
-      emitParticle(e.x + (e.big ? 16 : 12), e.y + rand(-5, 5), rand(40, 80), rand(-8, 8), '#ff8a5d', 0.2, 2);
+
+    /* Iluminação: halo suave na cor da nave */
+    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, e.r * 2.3);
+    glow.addColorStop(0, hexToRgba(e.color, 0.28));
+    glow.addColorStop(1, hexToRgba(e.color, 0));
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, e.r * 2.3, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* Motor: partículas de chama sempre (rastro visível em qualquer modo) */
+    if (chance(0.6)) {
+      emitParticle(e.x + (e.big ? 16 : 12), e.y + rand(-4, 4), rand(50, 100), rand(-10, 10), '#ff8a5d', 0.22, 2);
+      if (chance(0.4)) emitParticle(e.x + (e.big ? 14 : 10), e.y + rand(-4, 4), rand(30, 70), rand(-6, 6), '#ffe14d', 0.14, 2);
+    }
+
+    if (!fx3d) {
+      /* Alinha o nariz da nave com a direção do movimento (+ balanço) */
+      ctx.rotate(Math.atan2(-(e.vy || 0), -(e.vx || 0)) + Math.sin(e.t * 4) * 0.18 + (e.dodgeT > 0 ? Math.sin(e.t * 40) * 0.22 : 0));
+      ctx.scale(-1, 1);
+      const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff5d6c', R: '#c0392b', Y: '#ffe14d' };
+      const sc = e.big ? 3 : 2;
+      const sz = spriteSize(SPRITES.ship, sc);
+      /* Núcleo pulsante das naves grandes (reator) */
+      if (e.big) {
+        ctx.save();
+        ctx.shadowColor = '#ffd166';
+        ctx.shadowBlur = 8 + Math.sin(e.t * 6) * 3;
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath();
+        ctx.arc(6, 0, 3 + Math.sin(e.t * 7) * 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      /* Piscada branca ao ser atingida */
+      if (e.hitT > 0) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(255,255,255,' + clamp(e.hitT / RETURN_ENEMY_HIT_T, 0, 1).toFixed(2) * 0.7 + ')';
+        ctx.beginPath();
+        ctx.arc(0, 0, e.r * 1.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      drawSprite(ctx, SPRITES.ship, -sz.w / 2, -sz.h / 2, sc, pal);
+      drawEnemyEngine(e, sc);
     }
     ctx.restore();
     /* Vida de naves grandes */
@@ -6384,7 +6611,7 @@ function drawReturnScene() {
   /* Mira do jogador: mouse no computador, último toque no celular */
   const aim = r.aim;
   ctx.save();
-  ctx.strokeStyle = 'rgba(127,245,255,0.18)';
+  ctx.strokeStyle = 'rgba(127,245,255,0.16)';
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 6]);
   ctx.beginPath();
@@ -6392,10 +6619,14 @@ function drawReturnScene() {
   ctx.lineTo(aim.x, aim.y);
   ctx.stroke();
   ctx.setLineDash([]);
+  const aimPulse = 1 + Math.sin(r.t * 4) * 0.12;
+  ctx.save();
+  ctx.shadowColor = '#7ff5ff';
+  ctx.shadowBlur = 10;
   ctx.strokeStyle = '#7ff5ff';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(aim.x, aim.y, 9 + Math.sin(r.t * 4) * 1.5, 0, Math.PI * 2);
+  ctx.arc(aim.x, aim.y, 9 * aimPulse, 0, Math.PI * 2);
   ctx.stroke();
   ctx.beginPath();
   ctx.moveTo(aim.x - 13, aim.y); ctx.lineTo(aim.x - 5, aim.y);
@@ -6405,17 +6636,76 @@ function drawReturnScene() {
   ctx.stroke();
   ctx.fillStyle = '#7ff5ff';
   ctx.beginPath();
-  ctx.arc(aim.x, aim.y, 2, 0, Math.PI * 2);
+  ctx.arc(aim.x, aim.y, 2.2, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
+  ctx.restore();
 
-  /* Nave do herói */
+  /* Nave do herói: inclina para a mira, com chama do motor, recuo do tiro
+     e bolha de escudo quando invulnerável */
+  const aimAng = Math.atan2(aim.y - r.ship.y, aim.x - r.ship.x);
   const ship = getEquippedItem('ship');
   const sz = spriteSize(SPRITES.ship, 2);
   ctx.save();
-  if (r.ship.invuln > 0 && Math.floor(r.t * 10) % 2 === 0) ctx.globalAlpha = 0.5;
-  drawSprite(ctx, SPRITES.ship, Math.round(r.ship.x - sz.w / 2), Math.round(r.ship.y - sz.h / 2), 2,
+  if (r.ship.invuln > 0 && Math.floor(r.t * 10) % 2 === 0) ctx.globalAlpha = 0.45;
+  ctx.translate(r.ship.x - r.ship.recoil * Math.cos(aimAng), r.ship.y - r.ship.recoil * Math.sin(aimAng));
+  ctx.rotate(clamp(aimAng, -1.1, 1.1));
+  /* Chama do motor (fica atrás, à esquerda do nariz) */
+  const fl = 8 * (0.75 + r.ship.flame * 0.5);
+  const fg = ctx.createLinearGradient(-8 - fl, 0, -8, 0);
+  fg.addColorStop(0, 'rgba(255,122,61,0)');
+  fg.addColorStop(1, 'rgba(255,225,77,0.95)');
+  ctx.fillStyle = fg;
+  ctx.beginPath();
+  ctx.moveTo(-8, -3); ctx.lineTo(-8 - fl, 0); ctx.lineTo(-8, 3);
+  ctx.closePath();
+  ctx.fill();
+  drawSprite(ctx, SPRITES.ship, -sz.w / 2, -sz.h / 2, 2,
     { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d', R: '#c0392b', Y: '#ffe14d' });
+  /* Bolha de escudo */
+  if (r.ship.invuln > 0) {
+    ctx.save();
+    ctx.globalAlpha = 0.55 + Math.sin(r.t * 9) * 0.2;
+    ctx.strokeStyle = '#7ff5ff';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.arc(0, 0, 26 + Math.sin(r.t * 7) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  /* Anéis de choque das explosões */
+  for (const ring of r.rings) {
+    const k = 1 - ring.life / ring.maxLife;
+    ctx.save();
+    ctx.globalAlpha = clamp(ring.life / ring.maxLife, 0, 1);
+    ctx.strokeStyle = ring.color;
+    ctx.lineWidth = ring.width * (1 - k * 0.5);
+    ctx.beginPath();
+    ctx.arc(ring.x, ring.y, ring.r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+
+  /* Vinheta sutil nas bordas (foco no combate) */
+  const vg = ctx.createRadialGradient(VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.45, VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.85);
+  vg.addColorStop(0, 'rgba(2,4,12,0)');
+  vg.addColorStop(1, 'rgba(2,4,12,0.42)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+  /* Clarão de impacto (explosões e acertos) */
+  if (r.flash > 0.01) {
+    ctx.globalAlpha = clamp(r.flash, 0, 0.55);
+    ctx.fillStyle = r.flashColor || '#ffffff';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.globalAlpha = 1;
+  }
+
   ctx.restore();
 
   drawParticles();
@@ -6423,21 +6713,57 @@ function drawReturnScene() {
   drawFade();
 }
 
-/* Explosão da nave inimiga: encolhe com tremor + anel de expansão */
+/* Chama tremeluzente do motor das naves inimigas (dentro do frame 2D,
+   com o nariz apontando para a esquerda, então o motor fica à direita) */
+function drawEnemyEngine(e, sc) {
+  const fl = e.big ? 9 : 7;
+  const fw = e.big ? 4 : 3;
+  const l = fl * (0.7 + Math.random() * 0.5);
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,138,93,0.85)';
+  ctx.beginPath();
+  ctx.moveTo(8, -fw);
+  ctx.lineTo(8 + l, 0);
+  ctx.lineTo(8, fw);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,225,77,0.95)';
+  ctx.beginPath();
+  ctx.moveTo(8, -fw * 0.55);
+  ctx.lineTo(8 + l * 0.55, 0);
+  ctx.lineTo(8, fw * 0.55);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/* Explosão da nave inimiga: encolhe com tremor + anéis de expansão. Com o 3D
+   ligado, o corpo da nave some (a camada 3D já o escondeu); anéis e partículas
+   continuam em 2D. */
 function drawReturnEnemyDeath(e) {
   const pr = clamp(e.deadT / RETURN_DEATH_DUR, 0, 1);
   const sc = e.big ? 3 : 2;
-  ctx.save();
-  ctx.globalAlpha = 1 - pr;
-  const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff5d6c', R: '#c0392b', Y: '#ffe14d' };
-  const sz = spriteSize(SPRITES.ship, sc);
-  drawSprite(ctx, SPRITES.ship, Math.round(e.x - sz.w / 2 + rand(-3, 3)), Math.round(e.y - sz.h / 2 + rand(-3, 3)), sc, pal);
-  ctx.restore();
+  const fx3d = !!(window.Effects3D && Effects3D.isEnabled());
+  if (!fx3d) {
+    ctx.save();
+    ctx.globalAlpha = 1 - pr;
+    const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff5d6c', R: '#c0392b', Y: '#ffe14d' };
+    const sz = spriteSize(SPRITES.ship, sc);
+    drawSprite(ctx, SPRITES.ship, Math.round(e.x - sz.w / 2 + rand(-3, 3)), Math.round(e.y - sz.h / 2 + rand(-3, 3)), sc, pal);
+    ctx.restore();
+  }
   ctx.save();
   ctx.strokeStyle = 'rgba(255,138,93,' + (1 - pr).toFixed(2) + ')';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(e.x, e.y, 8 + pr * 36, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,' + ((1 - pr) * 0.8).toFixed(2) + ')';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(e.x, e.y, 4 + pr * 52, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
   if (chance(0.5)) burst(e.x, e.y, e.color, 2);
@@ -7150,7 +7476,6 @@ function startLevel(idx) {
   Game.buildAnim = null;
   Game.feedback = null;
   Game.locked = true;
-  Game.completedOnce = false;
   Game.particles = [];
   Game.floaters = [];
   Game.saber = createSaber();
@@ -7365,6 +7690,7 @@ function loop(t) {
   lastTime = t;
   update(dt);
   if (window.Effects3D) Effects3D.tick(dt);
+  if (typeof Exercise !== 'undefined' && Exercise.update) Exercise.update(dt);
   if (Game.screen === 'game' && Game.level) render();
   requestAnimationFrame(loop);
 }
@@ -7454,6 +7780,11 @@ window.addEventListener('keydown', e => {
       } else if ((e.code === 'Space' || e.code === 'Enter') && !document.getElementById('btn-quiz-next').hidden) {
         document.getElementById('btn-quiz-next').click();
       }
+      return;
+    }
+    /* Exercícios interativos: 1-4 na múltipla escolha, Espaço/Enter confirma ou avança */
+    if (Game.phase === 'challenge') {
+      if (typeof Exercise !== 'undefined' && Exercise.onKey) Exercise.onKey(e);
       return;
     }
     /* Missão concluída */

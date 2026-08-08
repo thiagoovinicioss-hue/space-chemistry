@@ -317,6 +317,26 @@
     </div>
   </div>
 
+  <!-- OVERLAY: exercícios interativos da Máquina de Fusão -->
+  <div id="exercise" class="overlay exercise-overlay" hidden>
+    <div class="panel exercise-panel">
+      <div class="exercise-top">
+        <h2 class="panel-title exercise-title"><img class="pix-icon" data-icon="flask" data-scale="2" alt=""> Desafio de Química</h2>
+        <span class="exercise-score" id="ex-score">0 pts</span>
+      </div>
+      <p class="exercise-progress" id="ex-progress"></p>
+      <p class="exercise-type" id="ex-type"></p>
+      <p class="exercise-instruction" id="ex-instruction"></p>
+      <div class="exercise-body" id="ex-body"></div>
+      <div class="exercise-explain" id="ex-explain" hidden></div>
+      <div class="exercise-buttons">
+        <button class="btn" id="btn-ex-clear">LIMPAR</button>
+        <button class="btn btn-primary" id="btn-ex-check">CONFIRMAR RESPOSTA <img class="pix-icon" data-icon="check" data-scale="2" alt=""></button>
+        <button class="btn btn-primary" id="btn-ex-next" hidden>Continuar <img class="pix-icon" data-icon="arrowR" data-scale="2" alt=""></button>
+      </div>
+    </div>
+  </div>
+
   <!-- OVERLAY: missão concluída (recompensa) -->
   <div id="mission" class="overlay" hidden>
     <div class="panel mission-panel">
@@ -384,5 +404,6 @@
 <script src="effects3d.js"></script>
 <script src="questions.js"></script>
 <script src="script.js"></script>
+<script src="exercises.js"></script>
 </body>
 </html>

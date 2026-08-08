@@ -90,6 +90,11 @@
   var activePhase = '';
   var phaseAge = 0;
 
+  /* Frota inimiga 3D da batalha final (pool estático, sincronizado com a
+     posição lógica 2D de Game.return.enemies — a colisão é sempre 2D). */
+  var returnFleet = null;
+  var RETURN_FLEET_POOL = 8;
+
   /* Cinemática das transições de viagem (decolagem / chegada) */
   var cin = null;
   var cinShip = null;
@@ -947,6 +952,91 @@
     return spr;
   }
 
+  /* Nave inimiga estilizada e barata (Low-poly, iluminada pelas luzes da
+     cena): casco em caixa + nariz cônico, asas, cabine emissiva e motor. */
+  function makeReturnEnemy(color, big) {
+    var g = new THREE.Group();
+    var hullMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(color), flatShading: true });
+    var wingMat = new THREE.MeshLambertMaterial({ color: big ? 0xc0392b : 0x9fb0d8, flatShading: true });
+    var cockpitMat = new THREE.MeshLambertMaterial({ color: 0xffe14d, emissive: 0xff9d00 });
+
+    var bank = new THREE.Group();
+    g.add(bank);
+
+    var hull = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.26, 0.7), hullMat);
+    bank.add(hull);
+
+    var nose = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.42, 6), hullMat);
+    nose.rotation.x = Math.PI / 2;
+    nose.position.set(0, 0, 0.56);
+    bank.add(nose);
+
+    var wl = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.04, 0.3), wingMat);
+    wl.position.set(-0.44, 0, -0.16);
+    wl.rotation.z = 0.2;
+    bank.add(wl);
+    var wr = wl.clone();
+    wr.position.set(0.44, 0, -0.16);
+    wr.rotation.z = -0.2;
+    bank.add(wr);
+
+    var cock = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), cockpitMat);
+    cock.position.set(0, 0.14, 0.1);
+    bank.add(cock);
+
+    var engine = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTex, color: 0xffa050, transparent: true, opacity: 0.85,
+      depthWrite: false, blending: THREE.AdditiveBlending
+    }));
+    engine.position.set(0, 0, -0.6);
+    engine.scale.set(0.55, 0.55, 1);
+    g.add(engine);
+
+    g.userData = { engine: engine, bank: bank, big: !!big };
+    return g;
+  }
+
+  /* Aponta o nariz da nave (eixo +z) para a direção do movimento 2D */
+  function faceReturnShip(obj, dx, dy) {
+    var l = Math.sqrt(dx * dx + dy * dy) || 1;
+    obj.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(dx / l, dy / l, 0)
+    );
+  }
+
+  /* Sincroniza o pool 3D com as naves inimigas 2D vivas da batalha final.
+     Nada aqui altera o gameplay: só projeta as posições para o mundo 3D. */
+  function updateReturnFleet(dt) {
+    var r = null;
+    try { r = Game.return; } catch (e) {}
+    if (!returnFleet || !r) { hideReturnFleet(); return; }
+    var alive = [];
+    for (var i = 0; i < r.enemies.length; i++) {
+      if (!r.enemies[i].dead) alive.push(r.enemies[i]);
+    }
+    var ships = returnFleet.children;
+    for (var j = 0; j < ships.length; j++) {
+      var mesh = ships[j];
+      var e = alive[j];
+      if (!e) { mesh.visible = false; continue; }
+      mesh.visible = true;
+      mesh.position.set(logicalToWorldX(e.x), logicalToWorldY(e.y), 0);
+      mesh.scale.setScalar(worldRadiusForPx(e.r * 1.05));
+      faceReturnShip(mesh, -(e.vx || -60), -(e.vy || 0));
+      var u = mesh.userData;
+      if (u.bank) u.bank.rotation.z = Math.sin((e.t || 0) * 4) * 0.16;
+      if (u.engine) u.engine.material.opacity = 0.55 + Math.random() * 0.4;
+    }
+  }
+
+  function hideReturnFleet() {
+    if (!returnFleet) return;
+    for (var i = 0; i < returnFleet.children.length; i++) {
+      returnFleet.children[i].visible = false;
+    }
+  }
+
   /* ---------------- renderer / cena ---------------- */
   function createRenderer() {
     var r = new THREE.WebGLRenderer({
@@ -1476,6 +1566,11 @@
       } else if (activePlanet) {
         activePlanet.visible = false;
       }
+      /* Frota inimiga 3D: só na batalha final (posições 2D projetadas) */
+      if (phase === 'return') updateReturnFleet(dt);
+      else hideReturnFleet();
+    } else {
+      hideReturnFleet();
     }
     updateScene(dt, content);
     renderer.render(scene, camera);
@@ -1535,6 +1630,15 @@
     scene.add(cinAtmo);
     cinFlash = makeCinFlash();
     scene.add(cinFlash);
+
+    /* Frota inimiga 3D da batalha final (pool, visível só na fase 'return') */
+    returnFleet = new THREE.Group();
+    for (var fi = 0; fi < RETURN_FLEET_POOL; fi++) {
+      var fShip = makeReturnEnemy(fi % 2 ? '#ff9df2' : '#ff5d6c', fi % 4 === 0);
+      fShip.visible = false;
+      returnFleet.add(fShip);
+    }
+    scene.add(returnFleet);
 
     window.addEventListener('resize', onResize);
     attachCanvas('fx3d-menu');
