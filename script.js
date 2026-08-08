@@ -2681,15 +2681,16 @@ let shakeTime = 0;
 function shake(amt) { shakeAmt = amt; shakeTime = 0.3; }
 
 /* --- Transições de fade (tela escurece/clareia) --- */
-function fadeTo(a, speed, onDone) {
-  Game.fade = { a, target: a, speed, onDone: onDone || null };
+/* color: string "R,G,B" (padrão escuro; use "255,255,255" para fade branco) */
+function fadeTo(a, speed, onDone, color) {
+  Game.fade = { a, target: a, speed, onDone: onDone || null, color: color || '2,3,10' };
   Game.fade.frozen = false;
 }
-function startFadeOut(dur, onDone) {
-  Game.fade = { a: 0, target: 1, speed: 1 / dur, onDone: onDone || null };
+function startFadeOut(dur, onDone, color) {
+  Game.fade = { a: 0, target: 1, speed: 1 / dur, onDone: onDone || null, color: color || '2,3,10' };
 }
-function startFadeIn(dur, onDone) {
-  Game.fade = { a: 1, target: 0, speed: 1 / dur, onDone: onDone || null };
+function startFadeIn(dur, onDone, color) {
+  Game.fade = { a: 1, target: 0, speed: 1 / dur, onDone: onDone || null, color: color || '2,3,10' };
 }
 function updateFade(dt) {
   const f = Game.fade;
@@ -2708,7 +2709,7 @@ function updateFade(dt) {
 function drawFade() {
   const f = Game.fade;
   if (!f || f.a <= 0) return;
-  ctx.fillStyle = 'rgba(2,3,10,' + f.a.toFixed(3) + ')';
+  ctx.fillStyle = 'rgba(' + (f.color || '2,3,10') + ',' + f.a.toFixed(3) + ')';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 }
 
@@ -2739,6 +2740,10 @@ function update(dt) {
   if (Game.phase === 'return') { updateReturn(dt); updateParticles(dt); return; }
   /* Sala de aula (diálogo do professor + fim do jogo) */
   if (Game.phase === 'classroom') { updateClassroom(dt); updateParticles(dt); return; }
+  /* Resultados finais (tela estática aguardando avanço para os créditos) */
+  if (Game.phase === 'results') { updateParticles(dt); return; }
+  /* Créditos rolando (retorno automático ao menu) */
+  if (Game.phase === 'credits') { updateCredits(dt); return; }
 
   /* Fases do overhaul com jogador congelado */
   if (Game.phase === 'arrival') { updateArrival(dt); updateParticles(dt); return; }
@@ -3646,9 +3651,16 @@ function render() {
   if (Game.phase === 'travel') { drawTravelScene(); return; }
   if (Game.phase === 'return') { drawReturnScene(); return; }
   if (Game.phase === 'classroom') { drawClassroom(); return; }
-  if (Game.phase === 'results' || Game.phase === 'credits') {
-    /* Mantém a sala de aula visível atrás dos overlays finais */
+  if (Game.phase === 'results') {
+    /* Mantém a sala de aula visível atrás do overlay de resultados */
     if (Game.classroom) drawClassroom();
+    return;
+  }
+  if (Game.phase === 'credits') {
+    /* Sala de aula + créditos rolando + fade por cima (transições) */
+    if (Game.classroom) drawClassroom();
+    drawCredits();
+    drawFade();
     return;
   }
   computeCamera();
@@ -5669,13 +5681,24 @@ function finishTravel() {
    na sala de aula, resultados, créditos automáticos e volta ao menu.
 ===================================================================== */
 
-/* Diálogo do professor na sala de aula */
-const CLASSROOM_DIALOGUE = [
-  'Bem-vindo de volta, recruta! A galáxia inteira vibra com a sua vitória.',
-  'Vocês restauraram os 5 planetas: iônica, covalente e metálica voltaram a funcionar.',
-  'Cada composto montado devolveu energia química para o universo.',
-  'Vamos rever os resultados da missão... e depois aplaudir a equipe!'
-];
+/* Diálogo do professor na sala de aula: parabeniza, resume o conteúdo e agradece */
+function classroomDialogueLines() {
+  const planets = Game.run.completed.filter(Boolean).length;
+  const t = fmtTime(Game.run.time);
+  const s = Game.run.score;
+  return [
+    'Bem-vindo de volta, recruta! A galáxia inteira vibra com a sua vitória.',
+    'Vocês restauraram os ' + planets + ' planetas do sistema e desbloquearam as ligações químicas.',
+    'Ligações IÔNICAS: metais doam elétrons a não-metais, formando NaCl, MgO e KBr.',
+    'Ligações COVALENTES: elétrons compartilhados entre átomos, como na H2O, CO2 e NH3.',
+    'Ligações METÁLICAS: o mar de elétrons que mantém os metais unidos e condutores.',
+    'Cada composto montado na máquina de fusão devolveu energia química ao universo.',
+    'E o questionário confirmou: vocês dominam a Química de verdade. Nota máxima!',
+    'Tempo total: ' + t + ' | Pontuação: ' + s + '. Missão exemplar!',
+    'Vamos revisar os resultados completos da missão... e depois aplaudir a equipe!',
+    'Obrigado por salvar a galáxia, cientistas! Até a próxima missão.'
+  ];
+}
 
 /* Créditos (turma de Ciências) */
 const CREDITS = [
@@ -6182,10 +6205,11 @@ function updateClassroom(dt) {
 }
 
 function startClassroomDialog() {
-  /* Professor usa o MESMO sistema reutilizável (retrato animado + texto) */
+  /* Professor usa o MESMO sistema reutilizável (retrato animado + texto).
+     Ao terminar, fade branco até a tela de resultados. */
   openDialog({
-    lines: CLASSROOM_DIALOGUE,
-    onEnd: showResults,
+    lines: classroomDialogueLines(),
+    onEnd: beginResultsFade,
     setPhase: false /* a sala de aula continua sendo a fase atual */
   });
 }
@@ -6237,18 +6261,20 @@ function drawClassroom() {
   ctx.fillStyle = '#ffd166';
   ctx.fillText('GALÁXIA RESTAURADA!', 260, 110);
 
-  /* Carteiras dos alunos */
+  /* Carteiras dos alunos (5 lugares: 3 na frente, 2 atrás) */
   const rows = [
-    { x: 20, y: 150 }, { x: 96, y: 150 }, { x: 172, y: 150 },
-    { x: 40, y: 210 }, { x: 116, y: 210 }, { x: 192, y: 210 },
-    { x: 268, y: 210 }
+    { x: 24, y: 176 }, { x: 124, y: 176 }, { x: 224, y: 176 },
+    { x: 74, y: 236 }, { x: 174, y: 236 }
   ];
+  /* Alunos pixel-art únicos, sentados ATRÁS das carteiras */
+  for (let i = 0; i < rows.length; i++) {
+    const d = rows[i];
+    const bob = Math.sin(c.t * 2 + i) * 1.2;
+    drawStudent(i, d.x + 23, d.y - 20 + bob);
+  }
+  /* Carteiras por cima dos alunos */
   for (const d of rows) {
     drawDesk(d.x, d.y);
-  }
-  /* Alunos (silhuetas) */
-  for (const d of rows) {
-    drawStudent(d.x + 6, d.y + 26, d.x % 2 === 0);
   }
 
   /* Mesa do professor */
@@ -6263,7 +6289,39 @@ function drawClassroom() {
   const sz = spriteSize(SPRITES.scientist, sc);
   drawSprite(ctx, SPRITES.scientist, 372 - sz.w / 2, 232 - sz.h / 2 + bob, sc, pal);
 
+  /* Armários (lockers) na parede à direita */
+  drawLockers();
+
   drawFade();
+}
+
+/* Fileira de armários pixel-art ao fundo */
+function drawLockers() {
+  ctx.save();
+  const y = 150;
+  for (let i = 0; i < 3; i++) {
+    const x = 470 + i * 56;
+    /* corpo com sombra na base */
+    ctx.fillStyle = '#38445e';
+    ctx.fillRect(x, y, 50, 96);
+    ctx.fillStyle = 'rgba(2,3,10,0.35)';
+    ctx.fillRect(x + 2, y + 92, 46, 6);
+    /* porta */
+    ctx.fillStyle = '#2b3554';
+    ctx.fillRect(x + 3, y + 3, 44, 90);
+    ctx.fillStyle = '#4a5f8a';
+    ctx.fillRect(x + 5, y + 5, 40, 86);
+    /* respiros de ventilação */
+    ctx.fillStyle = '#2b3554';
+    for (let s = 0; s < 4; s++) ctx.fillRect(x + 8, y + 12 + s * 6, 15, 2);
+    /* trinco */
+    ctx.fillStyle = '#c9b18a';
+    ctx.fillRect(x + 35, y + 62, 4, 10);
+    /* placa numerada */
+    ctx.fillStyle = '#ffd166';
+    ctx.fillRect(x + 6, y + 84, 13, 5);
+  }
+  ctx.restore();
 }
 
 function drawDesk(x, y) {
@@ -6276,23 +6334,81 @@ function drawDesk(x, y) {
   ctx.fillRect(x + 49, y + 22, 5, 22);
 }
 
-function drawStudent(x, y, two) {
-  ctx.fillStyle = two ? '#3aa0ff' : '#ff9df2';
-  ctx.beginPath();
-  ctx.arc(x, y - 6, 7, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillRect(x - 9, y - 2, 18, 20);
-  ctx.fillStyle = '#0c1226';
-  ctx.fillRect(x - 5, y - 8, 4, 4);
-  ctx.fillRect(x + 1, y - 8, 4, 4);
+/* Alunos pixel-art exclusivos (10x14): cabelos e roupas únicos.
+   Legenda: O contorno · H cabelo · S pele · E olho · C roupa · W colarinho */
+const STUDENT_SPRITES = [
+  { pal: { O: '#10141f', H: '#2b3554', S: '#ffd9a8', E: '#10141f', C: '#3aa0ff', W: '#eef2ff' }, grid: [
+    '..OOOOOO..', '.OHHHHHHO.', 'OHHHHHHHHO', '.OHHHHHHO.', '.OHSSSSSO.',
+    '.OSESSESO.', '.OSSSSSSO.', '.OSS.SSSO.', '.OSSSSSSO.',
+    '.OSSSSSSO.', '.OSSSSSSO.', '.OCCCCCCCO.', '.OCCCWCCCO.', '.OCCCCCCCO.'
+  ] },
+  { pal: { O: '#10141f', H: '#5a3a1a', S: '#ffc79a', E: '#10141f', C: '#ff9df2' }, grid: [
+    '..OHHHHO..', '.OHHHHHHO.', '.OHHHHHHO.', 'OHHHHHHHHO', 'HSSESSESSH',
+    'HSSSSSSSSH', 'HSSS.SSSSH', '.HSSSSSSH.', '.OSSSSSSO.',
+    '.OSSSSSSO.', '.OSSSSSSO.', '.OCCCCCCCO.', '.OCCCCCCCO.', '.OCCCCCCCO.'
+  ] },
+  { pal: { O: '#10141f', H: '#8a5a2b', S: '#ffd9a8', E: '#10141f', C: '#5dffa6' }, grid: [
+    '...OOOO...', '..OHHHHO..', '.OHHHHHHO.', '.OHHHHHHO.', '.OHHHHHHO.',
+    '.OSESSESO.', '.OSSSSSSO.', '.OSS.SSSO.', '.OSSSSSSO.',
+    '.OSSSSSSO.', '.OSSSSSSO.', '.OCCCCCCCO.', '.OCCCCCCCO.', '.OCCCCCCCO.'
+  ] },
+  { pal: { O: '#10141f', H: '#3a3a4a', S: '#ffd9a8', E: '#10141f', C: '#ffd166' }, grid: [
+    '..OOOOOO..', '.OOHHHHOO.', '.OHHHHHHO.', '.OHHHHHHO.', '.OSSSSSSO.',
+    '.OSESSESO.', '.OSSSSSSO.', '.OSS.SSSO.', '.OSSSSSSO.',
+    '.OSSSSSSO.', '.OSSSSSSO.', '.OCCCCCCCO.', '.OCCCCCCCO.', '.OCCCCCCCO.'
+  ] },
+  { pal: { O: '#10141f', H: '#c23b22', S: '#ffc79a', E: '#10141f', C: '#b388ff' }, grid: [
+    '...OOOO...', '..OHHHHO..', '.OHHHHHHO.', '..OHHHHO..', '.OHSSSSSO.',
+    '.OSESSESO.', '.OSSSSSSO.', '.OSS.SSSO.', '.OSSSSSSO.',
+    '.OSSSSSSO.', '.OSSSSSSO.', '.OCCCCCCCO.', '.OCCCCCCCO.', '.OCCCCCCCO.'
+  ] }
+];
+
+function drawStudent(idx, x, y) {
+  const sp = STUDENT_SPRITES[idx % STUDENT_SPRITES.length];
+  drawSprite(ctx, sp, x, y, 1.5, sp.pal);
 }
 
 /* --- Resultados e créditos --- */
+
+/* Aparece/some suavemente com um overlay HTML (ex.: resultados) */
+function revealOverlay(id, dur, onDone) {
+  const el = document.getElementById(id);
+  if (!el) { if (onDone) onDone(); return; }
+  el.style.transition = 'none';
+  el.style.opacity = '0';
+  el.hidden = false;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      el.style.transition = 'opacity ' + dur + 's ease';
+      el.style.opacity = '1';
+      if (onDone) setTimeout(onDone, dur * 1000);
+    });
+  });
+}
+
+function hideOverlay(id, dur, onDone) {
+  const el = document.getElementById(id);
+  if (!el) { if (onDone) onDone(); return; }
+  el.style.transition = 'opacity ' + dur + 's ease';
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.hidden = true;
+    el.style.transition = '';
+    el.style.opacity = '';
+    if (onDone) onDone();
+  }, dur * 1000);
+}
+
+/* Fim do diálogo do professor: fade BRANCO até a tela de estatísticas */
+function beginResultsFade() {
+  startFadeOut(1.1, showResults, '255,255,255');
+}
+
 function showResults() {
-  document.getElementById('dialog').hidden = true;
-  Game.dialog = null;
   Game.locked = true;
   Game.phase = 'results';
+  startFadeIn(0.9, null, '255,255,255');
 
   const acc = Game.quizStats.total > 0
     ? Math.round(Game.quizStats.correct / Game.quizStats.total * 100) : 100;
@@ -6306,33 +6422,84 @@ function showResults() {
     'Erros: <strong>' + Game.run.wrong + '</strong> · Vidas perdidas: <strong>' + Game.run.deaths + '</strong><br>' +
     'Planetas restaurados: <strong>' + planets + ' de 5</strong><br>' +
     'Átomos coletados: <strong>' + Game.run.atoms + '</strong> · Itens desbloqueados: <strong>' + items + '</strong>';
-  document.getElementById('results').hidden = false;
+  revealOverlay('results', 0.9);
   AudioSys.sfx('cheer');
+  /* Avança sozinho para os créditos depois de alguns segundos */
+  if (resultsTimer) clearTimeout(resultsTimer);
+  resultsTimer = setTimeout(beginCreditsFade, 7500);
 }
 
-function showCredits() {
-  document.getElementById('results').hidden = true;
-  Game.phase = 'credits';
-  const list = document.getElementById('credits-list');
-  list.innerHTML = '';
-  CREDITS.forEach(pair => {
-    const row = document.createElement('div');
-    row.className = 'credit-row';
-    const name = document.createElement('div');
-    name.className = 'credit-name';
-    name.textContent = pair[0];
-    const desc = document.createElement('div');
-    desc.className = 'credit-desc';
-    desc.textContent = pair[1];
-    row.appendChild(name);
-    row.appendChild(desc);
-    list.appendChild(row);
+/* Saída da tela de estatísticas: fade branco → créditos rolando */
+function beginCreditsFade() {
+  if (Game.phase !== 'results') return;
+  if (resultsTimer) { clearTimeout(resultsTimer); resultsTimer = null; }
+  hideOverlay('results', 0.5, () => {
+    if (Game.phase !== 'results') return;
+    startFadeOut(1.1, showCredits, '255,255,255');
   });
-  document.getElementById('credits').hidden = false;
+}
+
+/* Créditos rolando no canvas (SPACE CHEMISTRY: MISSION BONDS, Nº 29 a 33) */
+const CREDITS_SPEED = 62;
+const CREDITS_ROW_H = 46;
+
+function showCredits() {
+  Game.locked = true;
+  Game.phase = 'credits';
+  Game.credits = { t: 0, scroll: VIEW_H + 30 };
+  startFadeIn(1.0, null, '255,255,255');
   AudioSys.sfx('victory');
-  /* Retorno automático ao menu depois dos créditos */
-  if (creditsTimer) clearTimeout(creditsTimer);
-  creditsTimer = setTimeout(backToMenu, 16000);
+}
+
+function updateCredits(dt) {
+  const c = Game.credits;
+  if (!c) return;
+  c.t += dt;
+  c.scroll -= dt * CREDITS_SPEED;
+  const total = 90 + (CREDITS.length - 1) * CREDITS_ROW_H + 60;
+  if (c.scroll < -total) {
+    Game.credits = null;
+    startFadeOut(1.2, backToMenu);
+  }
+}
+
+function skipCredits() {
+  if (Game.phase !== 'credits') return;
+  Game.credits = null;
+  startFadeOut(0.7, backToMenu);
+}
+
+function drawCredits() {
+  const c = Game.credits;
+  if (!c) return;
+  ctx.save();
+  /* Escurece a sala ao fundo para destacar os créditos */
+  ctx.fillStyle = 'rgba(4,6,18,0.62)';
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const cx = VIEW_W / 2;
+  let y = c.scroll;
+  /* Título */
+  ctx.font = 'bold 28px "Press Start 2P", monospace';
+  ctx.fillStyle = '#ffd166';
+  ctx.fillText('SPACE CHEMISTRY', cx, y);
+  ctx.font = 'bold 14px "Press Start 2P", monospace';
+  ctx.fillStyle = '#7ff5ff';
+  ctx.fillText('MISSION BONDS', cx, y + 24);
+  y += 74;
+  /* Linhas (nome + descrição) */
+  for (let i = 1; i < CREDITS.length; i++) {
+    if (y < -30 || y > VIEW_H + 30) { y += CREDITS_ROW_H; continue; }
+    ctx.font = 'bold 15px "Press Start 2P", monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(CREDITS[i][0], cx, y);
+    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.fillStyle = '#9fb0d8';
+    ctx.fillText(CREDITS[i][1], cx, y + 17);
+    y += CREDITS_ROW_H;
+  }
+  ctx.restore();
 }
 
 function backToMenu() {
@@ -6373,7 +6540,11 @@ function showScreen(name) {
 function hideOverhaulOverlays() {
   ['dialog', 'fusion', 'quiz', 'mission', 'results', 'credits'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.hidden = true;
+    if (el) {
+      el.hidden = true;
+      el.style.transition = '';
+      el.style.opacity = '';
+    }
   });
   const tw = document.getElementById('travel-wrap');
   if (tw) tw.hidden = true;
@@ -6389,12 +6560,13 @@ function navTo(nav) {
 }
 
 function exitToMenu() {
-  if (creditsTimer) { clearTimeout(creditsTimer); creditsTimer = null; }
+  if (resultsTimer) { clearTimeout(resultsTimer); resultsTimer = null; }
   Game.level = null;
   Game.buildAnim = null;
   Game.feedback = null;
   Game.return = null;
   Game.classroom = null;
+  Game.credits = null;
   Game.fade = null;
   Game.locked = false;
   pauseShown = false;
@@ -6902,7 +7074,7 @@ let lastTime = 0;
 let pendingRewardItem = null;
 let pendingLevelComplete = false;
 let pendingMissionItem = null;
-let creditsTimer = null;
+let resultsTimer = null;
 let introStageTimers = [];
 const INTRO_STAGES = ['intro-planet', 'intro-title', 'intro-text', 'intro-chem', 'intro-objective'];
 
@@ -6991,20 +7163,14 @@ window.addEventListener('keydown', e => {
       if ((e.code === 'Space' || e.code === 'Enter') && Game.dialog) advanceDialog();
       return;
     }
-    /* Resultados finais */
+    /* Resultados finais: avança para os créditos */
     if (Game.phase === 'results') {
-      if (e.code === 'Space' || e.code === 'Enter') {
-        const b = document.getElementById('btn-results-credits');
-        if (b && !b.hidden) b.click();
-      }
+      if (e.code === 'Space' || e.code === 'Enter') beginCreditsFade();
       return;
     }
-    /* Créditos (retorno automático ao menu) */
+    /* Créditos: pula direto para o menu */
     if (Game.phase === 'credits') {
-      if (e.code === 'Space' || e.code === 'Enter') {
-        const b = document.getElementById('btn-credits-menu');
-        if (b && !b.hidden) b.click();
-      }
+      if (e.code === 'Space' || e.code === 'Enter') skipCredits();
       return;
     }
 
@@ -7055,7 +7221,10 @@ window.addEventListener('keyup', e => { Input.keys[e.code] = false; });
 canvas.addEventListener('pointerdown', e => {
   AudioSys.unlock();
   const lv = Game.level;
-  if (!lv || Game.locked || Game.buildAnim || Game.feedback || Game.screen !== 'game') return;
+  if (!lv || Game.screen !== 'game') return;
+  /* Créditos: toque/clique pula direto para o menu */
+  if (Game.phase === 'credits') { skipCredits(); return; }
+  if (Game.locked || Game.buildAnim || Game.feedback || Game.screen !== 'game') return;
   /* Celular: toque na metade esquerda controla o joystick, não ataca/interage */
   if (e.pointerType === 'touch') {
     const rect0 = canvas.getBoundingClientRect();
@@ -7322,12 +7491,22 @@ document.getElementById('btn-mission-continue').addEventListener('click', () => 
 /* Resultados finais e créditos */
 document.getElementById('btn-results-credits').addEventListener('click', () => {
   AudioSys.sfx('click');
-  showCredits();
+  beginCreditsFade();
 });
 document.getElementById('btn-credits-menu').addEventListener('click', () => {
   AudioSys.sfx('click');
   backToMenu();
 });
+
+/* Toque em qualquer lugar da caixa de diálogo avança a fala (celular) */
+const dialogBoxEl = document.getElementById('dialog');
+if (dialogBoxEl) {
+  dialogBoxEl.addEventListener('click', e => {
+    if (e.target && e.target.closest && e.target.closest('.dialog-portrait')) return;
+    if (Game.screen !== 'game') return;
+    if (Game.dialog) advanceDialog();
+  });
+}
 
 /* Recompensa */
 document.getElementById('btn-equip-now').addEventListener('click', () => {
