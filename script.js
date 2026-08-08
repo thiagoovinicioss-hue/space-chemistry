@@ -107,11 +107,41 @@ const TRAVEL_SPEED = 150;
 const TRAVEL_SHIP_SPEED = 225;   /* velocidade da nave (controles) */
 const TRAVEL_SHIP_R = 14;        /* raio de colisão da nave */
 
-/* Estrelas em paralaxe: 3 camadas que passam cada vez mais rápido */
+/* Estrelas em paralaxe: 5 camadas com profundidade (quanto mais rápida a
+   camada, mais "próxima" está do jogador) e tamanho/brilho crescentes. */
 const TRAVEL_STAR_LAYERS = [
-  { n: 46, speed: 55,  max: 1, bright: 0.35 },
-  { n: 34, speed: 150, max: 2, bright: 0.55 },
-  { n: 16, speed: 310, max: 3, bright: 0.8 }
+  { n: 80,  speed: 26,  max: 1, bright: 0.22, size: 1 },
+  { n: 64,  speed: 70,  max: 1, bright: 0.4,  size: 1 },
+  { n: 46,  speed: 150, max: 2, bright: 0.55, size: 1.6 },
+  { n: 26,  speed: 300, max: 2, bright: 0.78, size: 2 },
+  { n: 10,  speed: 480, max: 3, bright: 0.95, size: 2.8 }
+];
+
+/* Pequenas nebulosas de fundo, na cor do planeta de destino (profundidade) */
+const TRAVEL_NEBULAE = [
+  { x: 0.2,  y: 0.16, r: 130, spx: 5,  spy: 1.4, alpha: 0.5 },
+  { x: 0.78, y: 0.74, r: 150, spx: 3,  spy: -2.4, alpha: 0.42 },
+  { x: 0.52, y: 0.45, r: 95,  spx: -4, spy: 0.8,  alpha: 0.3 }
+];
+
+/* Poeira espacial em 3 profundidades (cada uma mais rápida que a anterior) */
+const TRAVEL_DUST = [
+  { n: 42, speed: 40,  size: 1,   bright: 0.35, drift: 6 },
+  { n: 26, speed: 120, size: 1.4, bright: 0.5,  drift: 10 },
+  { n: 12, speed: 260, size: 2,   bright: 0.65, drift: 16 }
+];
+
+/* Estrelas cadentes ambientais (só visuais — nunca colidem) */
+const TRAVEL_SHOOTERS = [
+  { off: 2.0, period: 7,  x0: 1.12, y0: 0.1,  vx: -0.5,  vy: 0.26, len: 110, depth: 0.7 },
+  { off: 5.5, period: 9,  x0: -0.08, y0: 0.62, vx: 0.4,   vy: -0.18, len: 85, depth: 1 },
+  { off: 9.0, period: 11, x0: 1.18, y0: 0.38, vx: -0.42, vy: 0.1, len: 130, depth: 1.25 }
+];
+
+/* Corpos celestes distantes (silhuetas pequenas) para dar profundidade */
+const TRAVEL_DISTANT = [
+  { x: 0.86, y: 0.22, r: 11, ring: true,  speed: 8,  phase: 0 },
+  { x: 0.1,  y: 0.8,  r: 7,  ring: false, speed: -5, phase: 1 }
 ];
 
 /* Dicas químicas que alternam no rodapé da viagem */
@@ -5241,6 +5271,12 @@ function updateTravel(dt) {
     h.y += h.vy * dt;
     h.t += dt;
     h.rot = (h.rot || 0) + (h.rotV || 0) * dt;
+    /* Trajetórias serpenteantes (asteroides/cometas/lixo) */
+    if (h.swayF) h.y += Math.sin(h.t * h.swayF + h.swayP) * h.swayA * dt;
+    /* Cometas soltam partículas luminosas na cauda enquanto cruzam a tela */
+    if (h.type === 'comet' && chance(0.7)) {
+      emitParticle(h.x + rand(-4, 4), h.y + rand(-4, 4), h.vx * -0.15, h.vy * -0.15 + rand(-6, 6), h.color, 0.4, 2);
+    }
     if (h.type === 'blackhole') {
       const dx = h.x - p.x, dy = h.y - p.y;
       const d = Math.max(1, dist(p.x, p.y, h.x, h.y));
@@ -5261,13 +5297,15 @@ function updateTravel(dt) {
       tr.hazards.splice(i, 1);
       continue;
     }
-    /* Colisão com a nave: dano com impacto visível */
+    /* Colisão com a nave: dano com impacto visível (estilhaços + faíscas) */
     if (p.invuln <= 0 && dist(p.x, p.y, h.x, h.y) < h.r + TRAVEL_SHIP_R) {
       tr.hazards.splice(i, 1);
       AudioSys.sfx('boom');
       shake(10);
       burst(p.x + rand(-8, 8), p.y + rand(-8, 8), h.color || '#ff8a5d', 18);
       burst(p.x, p.y, '#ffffff', 6);
+      if (h.type === 'asteroid' || h.type === 'debris') spawnRockDebris(h.x, h.y, h.color || '#8a7f74', 8);
+      if (h.type === 'comet' || h.type === 'meteorite') burst(h.x, h.y, '#ffd166', 6);
       spawnFloater(p.x, p.y - 24, '-1 vida');
       damagePlayer();
       p.invuln = 1.2;
@@ -5322,57 +5360,60 @@ function spawnTravelHazard() {
   const tr = Game.travel;
   const roll = Math.random();
   const y = rand(36, VIEW_H - 36);
+  /* Profundidade: objetos "próximos" são maiores E mais rápidos (coerência
+     visual com a colisão — o raio desenhado continua sendo o raio real). */
+  const depth = rand(0.62, 1.35);
+  const dsp = sp => sp * depth;
   let h;
   if (roll < 0.24) {
-    /* Asteróide: rocha irregular girando com crateras */
-    h = { type: 'asteroid', r: rand(12, 22), vx: -TRAVEL_SPEED * rand(0.9, 1.2), vy: rand(-8, 8), t: 0, rot: rand(0, 6.28), rotV: rand(-2, 2), color: '#8a7f74' };
+    /* Asteróide: rocha irregular girando, com relevo e iluminação */
+    h = { type: 'asteroid', r: rand(11, 20) * depth, vx: -TRAVEL_SPEED * dsp(rand(0.85, 1.25)), vy: rand(-10, 10), t: 0, rot: rand(0, 6.28), rotV: rand(-2.6, 2.6), color: '#8a7f74', seed: randInt(0, 9) };
   } else if (roll < 0.42) {
     /* Meteorito: rápido, com rastro de fogo e faíscas */
-    h = { type: 'meteorite', r: rand(13, 19), vx: -TRAVEL_SPEED * rand(1.3, 1.7), vy: rand(-30, 30), t: 0, rot: rand(0, 6.28), rotV: rand(-3, 3), color: '#ff8a5d' };
+    h = { type: 'meteorite', r: rand(12, 18) * depth, vx: -TRAVEL_SPEED * dsp(rand(1.3, 1.75)), vy: rand(-34, 34), t: 0, rot: rand(0, 6.28), rotV: rand(-3.2, 3.2), color: '#ff8a5d', seed: randInt(0, 9) };
   } else if (roll < 0.56) {
     /* Cometa: núcleo pequeno e cauda longa, muito veloz */
-    h = { type: 'comet', r: rand(8, 12), vx: -TRAVEL_SPEED * rand(1.8, 2.3), vy: rand(-40, 40), t: 0, rot: rand(0, 6.28), rotV: 0, color: '#8fd9ff' };
+    h = { type: 'comet', r: rand(7, 12) * depth, vx: -TRAVEL_SPEED * dsp(rand(1.8, 2.4)), vy: rand(-48, 48), t: 0, rot: rand(0, 6.28), rotV: 0, color: '#8fd9ff', seed: randInt(0, 9) };
   } else if (roll < 0.74) {
     /* Satélite abandonado: sprite com painel solar e luz piscando */
-    h = { type: 'satellite', r: 15, vx: -TRAVEL_SPEED * rand(0.7, 0.9), vy: rand(-6, 6), t: 0, rot: rand(0, 6.28), rotV: rand(-0.6, 0.6), color: '#9fb0d8' };
+    h = { type: 'satellite', r: 15, vx: -TRAVEL_SPEED * dsp(rand(0.7, 0.95)), vy: rand(-8, 8), t: 0, rot: rand(0, 6.28), rotV: rand(-0.7, 0.7), color: '#9fb0d8', seed: randInt(0, 9) };
   } else if (roll < 0.92) {
     /* Lixo espacial: aglomerado de 2 a 3 pedaços girando */
-    h = { type: 'debris', r: rand(6, 9), vx: -TRAVEL_SPEED * rand(1.1, 1.5), vy: rand(-45, 45), t: 0, rot: rand(0, 6.28), rotV: rand(-4, 4), color: '#5f574e', shards: randInt(2, 3) };
+    h = { type: 'debris', r: rand(6, 9) * depth, vx: -TRAVEL_SPEED * dsp(rand(1.05, 1.5)), vy: rand(-50, 50), t: 0, rot: rand(0, 6.28), rotV: rand(-4.5, 4.5), color: '#5f574e', shards: randInt(2, 3), seed: randInt(0, 9) };
   } else {
     /* Buraco negro (raro): puxa a nave e suga partículas */
     h = { type: 'blackhole', r: 18, vx: -TRAVEL_SPEED * 0.4, vy: 0, t: 0, color: '#1a1030' };
+  }
+  /* Trajetórias variadas: asteroides/meteoritos/cometas/lixo serpenteiam */
+  if (h.type !== 'blackhole') {
+    h.swayF = rand(0.6, 2.2);
+    h.swayA = rand(6, 26);
+    h.swayP = rand(0, 6.28);
+    h.depth = depth;
+  } else {
+    h.depth = depth;
   }
   h.x = VIEW_W + 30;
   h.y = y;
   tr.hazards.push(h);
 }
 
+/* Estilhaços de rocha ao destruir um asteroide/lixo espacial */
+function spawnRockDebris(x, y, color, n) {
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, Math.PI * 2);
+    const sp = rand(30, 130);
+    emitParticle(x, y, Math.cos(a) * sp, Math.sin(a) * sp - 20, color, rand(0.4, 0.9), rand(2, 5));
+  }
+}
+
 function drawTravelScene() {
   const tr = Game.travel;
   if (!tr) return;
-  const t = tr.t;
 
-  /* Fundo espacial: estrelas rápidas em 3 camadas de paralaxe */
-  const grad = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-  grad.addColorStop(0, '#05070f');
-  grad.addColorStop(0.55, '#080d24');
-  grad.addColorStop(1, '#0e1238');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-
-  drawTravelStars(tr);
-
-  /* Linhas de velocidade (sensação de alta velocidade) */
-  for (let i = 0; i < 10; i++) {
-    const sp = 430 + (i % 4) * 90;
-    const len = 45 + (i % 3) * 50;
-    const y = (i * 71 + 13) % VIEW_H;
-    const x = VIEW_W - ((t * sp + i * 197) % (VIEW_W + len)) + 10;
-    ctx.globalAlpha = 0.05 + (i % 4) * 0.02;
-    ctx.fillStyle = '#bffaff';
-    ctx.fillRect(x, y, len, 1);
-  }
-  ctx.globalAlpha = 1;
+  /* Fundo espacial com profundidade: nebulosas, poeira, corpos distantes,
+     estrelas em paralaxe e estrelas cadentes ambientais. */
+  drawTravelBackground(tr);
 
   /* Durante a chegada cinematográfica 3D, o planeta/nave/obstáculos 2D ficam
      escondidos atrás da cena (só as estrelas continuam). */
@@ -5389,19 +5430,166 @@ function drawTravelScene() {
   drawFade();
 }
 
-/* Estrelas em 3 camadas: fundo lento, meio, e estrelas grandes rápidas */
+/* Resto positivo de um valor que pode ser negativo (loop de parallax) */
+function travelWrap(v, span) { return ((v % span) + span) % span; }
+
+/* Converte #rrggbb em rgba com alpha (usado em gradientes da viagem) */
+function hexToRgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+
+/* Clareia/escurece uma cor hex (#rrggbb); amt de -1 (escuro) a 1 (claro) */
+function shadeHex(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  if (amt >= 0) {
+    r += (255 - r) * amt; g += (255 - g) * amt; b += (255 - b) * amt;
+  } else {
+    r *= 1 + amt; g *= 1 + amt; b *= 1 + amt;
+  }
+  return 'rgb(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ')';
+}
+
+/* Fundo completo da viagem: espaço profundo + nebulosas + corpos distantes +
+   poeira + estrelas em paralaxe + estrelas cadentes + linhas de velocidade.
+   Tudo é visual e determinístico — nenhuma colisão depende destes elementos. */
+function drawTravelBackground(tr) {
+  const t = tr.t;
+  const nextLv = LEVELS[tr.nextIdx];
+  const accent = nextLv.planetColor || '#7ff5ff';
+
+  /* Espaço profundo: gradiente vertical sutilmente mais claro na base */
+  const grad = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+  grad.addColorStop(0, '#04060d');
+  grad.addColorStop(0.55, '#070b1c');
+  grad.addColorStop(1, '#0c1026');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+  /* Pequenas nebulosas na cor do planeta de destino, derivando devagar */
+  for (const nb of TRAVEL_NEBULAE) {
+    const span = VIEW_W + nb.r * 2;
+    const nx = travelWrap(nb.x * VIEW_W + t * nb.spx, span) - nb.r;
+    const ny = travelWrap(nb.y * VIEW_H + t * nb.spy, VIEW_H + nb.r) - nb.r / 2;
+    const ng = ctx.createRadialGradient(nx, ny, 0, nx, ny, nb.r);
+    ng.addColorStop(0, hexToRgba(accent, nb.alpha));
+    ng.addColorStop(0.5, hexToRgba(accent, nb.alpha * 0.45));
+    ng.addColorStop(1, hexToRgba(accent, 0));
+    ctx.fillStyle = ng;
+    ctx.fillRect(nx - nb.r, ny - nb.r, nb.r * 2, nb.r * 2);
+  }
+
+  /* Corpos celestes distantes (silhuetas pequenas — profundidade) */
+  for (const d of TRAVEL_DISTANT) {
+    const span = VIEW_W + d.r * 8;
+    const px = travelWrap(d.x * VIEW_W - t * d.speed + d.phase * span, span) - d.r * 4;
+    const py = d.y * VIEW_H + Math.sin(t * 0.3 + d.phase) * 5;
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = '#0a0f22';
+    ctx.beginPath();
+    ctx.arc(px, py, d.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = hexToRgba(accent, 0.25);
+    ctx.beginPath();
+    ctx.arc(px - d.r * 0.25, py - d.r * 0.25, d.r * 0.55, 0, Math.PI * 2);
+    ctx.fill();
+    if (d.ring) {
+      ctx.strokeStyle = hexToRgba(accent, 0.4);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(px, py, d.r * 2.1, d.r * 0.75, -0.4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* Poeira espacial em 3 profundidades (partículas finas e lentas) */
+  for (let b = 0; b < TRAVEL_DUST.length; b++) {
+    const D = TRAVEL_DUST[b];
+    for (let i = 0; i < D.n; i++) {
+      const sy = travelWrap(i * 97 + b * 41 + 13, VIEW_H);
+      const size = D.size;
+      const px = travelWrap(i * 151 + 9 + b * 61 - t * D.speed, VIEW_W);
+      const tw = 0.6 + 0.4 * Math.sin(t * (0.8 + b) + i * 1.7);
+      ctx.globalAlpha = D.bright * tw;
+      ctx.fillStyle = (i + b) % 7 === 0 ? '#bfe4ff' : '#ffffff';
+      ctx.fillRect(Math.round(px), Math.round(sy), size, size);
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  /* Estrelas em 5 camadas de paralaxe com cintilação e brilho */
+  drawTravelStars(tr);
+
+  /* Estrelas cadentes ambientais (somente visuais) */
+  for (const s of TRAVEL_SHOOTERS) {
+    const p = travelWrap(s.off + t, s.period) / s.period;
+    const fade = Math.sin(p * Math.PI);
+    if (fade < 0.04) continue;
+    const dx = s.x0 * VIEW_W + s.vx * p * VIEW_W;
+    const dy = s.y0 * VIEW_H + s.vy * p * VIEW_H;
+    if (dx < -80 || dx > VIEW_W + 80 || dy < -60 || dy > VIEW_H + 60) continue;
+    const ux = s.vx, uy = s.vy;
+    const len = s.len * s.depth;
+    const sg = ctx.createLinearGradient(dx, dy, dx - ux * len, dy - uy * len);
+    sg.addColorStop(0, 'rgba(255,255,255,' + (0.85 * fade * s.depth).toFixed(3) + ')');
+    sg.addColorStop(0.55, 'rgba(207,233,255,' + (0.4 * fade * s.depth).toFixed(3) + ')');
+    sg.addColorStop(1, 'rgba(207,233,255,0)');
+    ctx.strokeStyle = sg;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(dx, dy);
+    ctx.lineTo(dx - ux * len, dy - uy * len);
+    ctx.stroke();
+  }
+
+  /* Linhas de velocidade em 2 profundidades (sensação de alta velocidade) */
+  for (let i = 0; i < 7; i++) {
+    const sp = 470 + (i % 3) * 120;
+    const len = 40 + (i % 4) * 46;
+    const y = travelWrap(i * 71 + 13, VIEW_H);
+    const x = travelWrap(VIEW_W - t * sp - i * 197, VIEW_W + len) - len + 10;
+    ctx.globalAlpha = 0.05 + (i % 3) * 0.03;
+    ctx.fillStyle = '#bffaff';
+    ctx.fillRect(Math.round(x), Math.round(y), Math.round(len), 1);
+  }
+  for (let i = 0; i < 4; i++) {
+    const sp = 760 + i * 90;
+    const len = 60 + i * 22;
+    const y = travelWrap(i * 113 + 57, VIEW_H);
+    const x = travelWrap(VIEW_W - t * sp - i * 311, VIEW_W + len) - len + 10;
+    ctx.globalAlpha = 0.05 + i * 0.025;
+    ctx.fillStyle = '#dff6ff';
+    ctx.fillRect(Math.round(x), Math.round(y), Math.round(len), 2);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* Estrelas em 5 camadas de paralaxe: cintilam, ganham brilho e cor própria */
 function drawTravelStars(tr) {
   const t = tr.t;
   TRAVEL_STAR_LAYERS.forEach((L, li) => {
     for (let i = 0; i < L.n; i++) {
-      const sy = ((i * 89 + 31 * (li + 1) + 7) % VIEW_H);
-      const size = 1 + (i % L.max);
-      const bx = ((i * 137 + 11 + li * 53) % VIEW_W);
-      const px = (bx - t * L.speed - (i % 7) * 23) % VIEW_W;
-      const x = (px + VIEW_W) % VIEW_W;
-      ctx.globalAlpha = L.bright + (i % 5) * 0.06;
-      ctx.fillStyle = i % 9 === 0 ? '#ffd166' : '#ffffff';
-      ctx.fillRect(Math.round(x), sy, size, size);
+      const sy = travelWrap(i * 89 + 31 * (li + 1) + 7, VIEW_H);
+      const size = Math.max(1, Math.round(L.size * (1 + (i % L.max))));
+      const bx = i * 137 + 11 + li * 53;
+      const px = travelWrap(bx - t * L.speed - (i % 7) * 23, VIEW_W);
+      const tw = 0.6 + 0.4 * Math.sin(t * (1.5 + (i % 5) * 0.4) + i);
+      const isGold = (i + li) % 9 === 0;
+      const color = isGold ? '#ffd98a' : ((i + li) % 5 === 0 ? '#bfe4ff' : '#ffffff');
+      ctx.globalAlpha = Math.min(1, L.bright * tw + (i % 5) * 0.05);
+      ctx.fillStyle = color;
+      if (size >= 2 && L.bright > 0.6) {
+        ctx.save();
+        ctx.shadowColor = color;
+        ctx.shadowBlur = size * 2.5;
+        ctx.fillRect(Math.round(px), Math.round(sy), size, size);
+        ctx.restore();
+      } else {
+        ctx.fillRect(Math.round(px), Math.round(sy), size, size);
+      }
     }
   });
   ctx.globalAlpha = 1;
@@ -5496,32 +5684,36 @@ function drawTravelHazards(tr) {
       ctx.fill();
       ctx.globalAlpha = 1;
     } else if (h.type === 'comet') {
-      /* Cometa: cauda longa + núcleo incandescente */
-      ctx.rotate(-0.35);
-      const trailGrad = ctx.createLinearGradient(0, 0, h.r * 6, 0);
-      trailGrad.addColorStop(0, 'rgba(143,217,255,0)');
-      trailGrad.addColorStop(0.55, 'rgba(143,217,255,0.55)');
-      trailGrad.addColorStop(1, 'rgba(143,217,255,0.95)');
+      /* Cometa: cauda comprida apontando contra o movimento + núcleo com brilho */
+      const ta = Math.atan2(-(h.vy || 0), -(h.vx || 0));
+      ctx.rotate(ta - (h.rot || 0));
+      const tailLen = h.r * (7 + (h.seed || 0));
+      /* Cauda externa larga e tênue */
+      const trailGrad = ctx.createLinearGradient(0, 0, tailLen, 0);
+      trailGrad.addColorStop(0, hexToRgba(h.color, 0));
+      trailGrad.addColorStop(0.45, hexToRgba(h.color, 0.35));
+      trailGrad.addColorStop(0.85, hexToRgba(h.color, 0.8));
+      trailGrad.addColorStop(1, hexToRgba(h.color, 0.95));
       ctx.fillStyle = trailGrad;
       ctx.beginPath();
-      ctx.moveTo(0, -h.r * 0.45);
-      ctx.lineTo(h.r * 6, 0);
-      ctx.lineTo(0, h.r * 0.45);
+      ctx.moveTo(0, -h.r * 0.8);
+      ctx.lineTo(tailLen, 0);
+      ctx.lineTo(0, h.r * 0.8);
       ctx.closePath();
       ctx.fill();
-      ctx.rotate(0.35);
+      /* Núcleo com halo branco-azulado */
       ctx.save();
       ctx.shadowColor = '#ffffff';
-      ctx.shadowBlur = 8;
-      ctx.fillStyle = '#ffffff';
+      ctx.shadowBlur = 14;
+      const nuc = ctx.createRadialGradient(0, 0, 0, 0, 0, h.r * 1.3);
+      nuc.addColorStop(0, 'rgba(255,255,255,0.95)');
+      nuc.addColorStop(0.4, hexToRgba(h.color, 0.75));
+      nuc.addColorStop(1, hexToRgba(h.color, 0));
+      ctx.fillStyle = nuc;
       ctx.beginPath();
-      ctx.arc(0, 0, h.r * 0.6, 0, Math.PI * 2);
+      ctx.arc(0, 0, h.r * 1.3, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
-      ctx.fillStyle = h.color;
-      ctx.beginPath();
-      ctx.arc(0, 0, h.r * 0.3, 0, Math.PI * 2);
-      ctx.fill();
     } else if (h.type === 'debris') {
       /* Lixo espacial: pedaços de sucata girando */
       for (let i = 0; i < (h.shards || 1); i++) {
@@ -5540,40 +5732,65 @@ function drawTravelHazards(tr) {
         ctx.restore();
       }
     } else {
-      /* Asteróide/meteorito: rocha irregular com crateras girando */
-      ctx.fillStyle = h.color;
+      /* Asteróide/meteorito: rocha com relevo, iluminação e crateras girando */
+      const rSeed = h.seed || 0;
+      /* Forma irregular (levemente animada) */
       ctx.beginPath();
       for (let i = 0; i < 9; i++) {
         const a = (i / 9) * Math.PI * 2;
-        const r = h.r * (0.82 + Math.abs(Math.sin(i * 2.7 + h.t)) * 0.3);
+        const r = h.r * (0.8 + Math.abs(Math.sin(i * 2.7 + rSeed * 0.6 + h.t)) * 0.32);
         const px = Math.cos(a) * r, py = Math.sin(a) * r;
         if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
       }
       ctx.closePath();
+      /* Iluminação: luz no canto superior esquerdo, sombra na base */
+      const rg = ctx.createRadialGradient(-h.r * 0.35, -h.r * 0.35, h.r * 0.1, 0, 0, h.r * 1.05);
+      rg.addColorStop(0, shadeHex(h.color, 0.35));
+      rg.addColorStop(0.5, h.color);
+      rg.addColorStop(1, shadeHex(h.color, -0.45));
+      ctx.save();
+      ctx.shadowColor = h.color;
+      ctx.shadowBlur = h.type === 'meteorite' ? 14 : 6;
+      ctx.fillStyle = rg;
       ctx.fill();
-      ctx.fillStyle = 'rgba(0,0,0,0.28)';
+      ctx.restore();
+      /* Borda iluminada (meia-lua no lado da luz) */
+      ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(-h.r * 0.12, -h.r * 0.12, h.r * 0.86, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+      /* Crateras sombreadas + pontinhos de luz */
       for (let i = 0; i < 3; i++) {
+        const cx = Math.sin(h.t * 2 + i * 9 + rSeed) * h.r * 0.45;
+        const cy = Math.cos(h.t * 1.7 + i * 7 + rSeed) * h.r * 0.45;
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
         ctx.beginPath();
-        ctx.arc(Math.sin(h.t * 2 + i * 9) * h.r * 0.45, Math.cos(h.t * 1.7 + i * 7) * h.r * 0.45, h.r * 0.17, 0, Math.PI * 2);
+        ctx.arc(cx, cy, h.r * 0.18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.beginPath();
+        ctx.arc(cx - h.r * 0.05, cy - h.r * 0.05, h.r * 0.07, 0, Math.PI * 2);
         ctx.fill();
       }
       if (h.type === 'meteorite') {
         /* Rastro de fogo do meteorito + brasa na frente */
         ctx.rotate(0.2);
-        const fg = ctx.createLinearGradient(-h.r * 2, 0, 0, 0);
+        const fg = ctx.createLinearGradient(-h.r * 2.2, 0, 0, 0);
         fg.addColorStop(0, 'rgba(255,138,93,0)');
-        fg.addColorStop(1, 'rgba(255,138,93,0.75)');
+        fg.addColorStop(0.55, 'rgba(255,138,93,0.35)');
+        fg.addColorStop(1, 'rgba(255,138,93,0.8)');
         ctx.fillStyle = fg;
         ctx.beginPath();
-        ctx.moveTo(-h.r * 2, -h.r * 0.55);
+        ctx.moveTo(-h.r * 2.2, -h.r * 0.6);
         ctx.lineTo(0, -h.r * 0.25);
         ctx.lineTo(0, h.r * 0.25);
-        ctx.lineTo(-h.r * 2, h.r * 0.55);
+        ctx.lineTo(-h.r * 2.2, h.r * 0.6);
         ctx.closePath();
         ctx.fill();
         ctx.save();
         ctx.shadowColor = '#ffd166';
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 10;
         ctx.fillStyle = '#ffd166';
         ctx.beginPath();
         ctx.arc(h.r * 0.4, 0, 3 + Math.sin(h.t * 12) * 1.5, 0, Math.PI * 2);
