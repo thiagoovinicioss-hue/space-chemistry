@@ -5371,20 +5371,24 @@ function drawTravelStars(tr) {
 function drawTravelPlanet(tr) {
   const nextLv = LEVELS[tr.nextIdx];
   const pulse = 1 + Math.sin(tr.t * 2) * 0.05;
-  ctx.save();
-  ctx.shadowColor = nextLv.planetColor;
-  ctx.shadowBlur = 28;
-  ctx.fillStyle = nextLv.planetColor;
-  ctx.beginPath();
-  ctx.arc(TR_DEST.x, TR_DEST.y, TR_DEST.r * pulse, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-  /* Relevo do planeta */
-  ctx.fillStyle = 'rgba(255,255,255,0.1)';
-  for (let i = 0; i < 3; i++) {
+  /* Com o 3D ligado, o corpo do planeta de destino é desenhado pela camada 3D
+     (no mesmo ponto da tela); anel, nome e seta guia seguem em 2D. */
+  if (!(window.Effects3D && Effects3D.isEnabled())) {
+    ctx.save();
+    ctx.shadowColor = nextLv.planetColor;
+    ctx.shadowBlur = 28;
+    ctx.fillStyle = nextLv.planetColor;
     ctx.beginPath();
-    ctx.arc(TR_DEST.x + (i - 1) * 13, TR_DEST.y + 4 + i * 5, 5 - i * 1.2, 0, Math.PI * 2);
+    ctx.arc(TR_DEST.x, TR_DEST.y, TR_DEST.r * pulse, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+    /* Relevo do planeta */
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(TR_DEST.x + (i - 1) * 13, TR_DEST.y + 4 + i * 5, 5 - i * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   ctx.strokeStyle = 'rgba(255,255,255,0.4)';
   ctx.lineWidth = 2;
