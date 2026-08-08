@@ -37,6 +37,11 @@
   var EX_ACCENT = '#59d3ff';
   var LEWIS_ORDER = ['N', 'S', 'E', 'W'];
 
+  /* Zonas de toque da transferência de elétrons (em unidades de canvas).
+     Alvos generosos para funcionarem bem no mouse E no toque (celular). */
+  var TRANSFER_HIT_R = 22;   /* pegar o elétron do metal */
+  var TRANSFER_DROP_R = 52;  /* soltar sobre o ametal */
+
   function hexToRgb(hex) {
     var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
     return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : null;
@@ -901,10 +906,15 @@
       build: function (x, item) {
         x.cv = setupCanvas(x, 460, 300);
         x.body.appendChild(x.cv);
-        x.state.moved = [];   /* índices dos elétrons de valência doados */
+        x.state.moved = [];      /* índices dos elétrons de valência doados */
         x.state.max = item.donor.valence;
+        x.state.selected = null; /* elétron escolhido (selecionado/arrastando) */
+        x.state.dragging = null;
+        x.state.dragPos = null;  /* posição do elétron durante o arrasto */
         x.cleanup.push(bindPointer(x, {
-          up: function (p) { Exercise.transferTap(item, p); }
+          down: function (p) { Exercise.transferDown(item, p); },
+          move: function (p) { Exercise.transferMove(item, p); },
+          up: function (p) { Exercise.transferUp(item, p); }
         }));
         Exercise.refresh();
       },
@@ -917,6 +927,8 @@
         var d = item.donor, a = item.acceptor;
         var dx = W * 0.3, dy = H * 0.52, ax = W * 0.7, ay = H * 0.52;
         var E = (typeof ELEMENTS !== 'undefined') ? ELEMENTS : {};
+        var s = x.state;
+        var dragging = s.dragging !== null && s.dragging !== undefined;
 
         /* doador */
         drawElemDot(ctx, d.el, dx, dy, 26);
@@ -927,23 +939,59 @@
         ctx.textBaseline = 'middle';
         ctx.fillText(d.label || (E[d.el] ? E[d.el].name : d.el) + ' (metal)', dx, dy + 52);
         ctx.restore();
+
+        /* seta de direção: do elétron selecionado/arrastado até o ametal */
+        var arrowFrom = null;
+        if (dragging && s.dragPos) {
+          arrowFrom = s.dragPos;
+        } else if (s.selected !== null && s.selected !== undefined && s.donorDots && s.donorDots[s.selected]) {
+          arrowFrom = { x: s.donorDots[s.selected].x, y: s.donorDots[s.selected].y };
+        }
+        if (arrowFrom && s.moved.indexOf(s.selected) < 0) {
+          drawTransferArrow(ctx, arrowFrom.x, arrowFrom.y, ax, ay);
+        }
+        /* anel no ametal indicando onde soltar */
+        if (dragging || (s.selected !== null && s.selected !== undefined)) {
+          ctx.save();
+          ctx.strokeStyle = dragging ? 'rgba(93,255,166,0.7)' : 'rgba(255,209,102,0.45)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([6, 5]);
+          ctx.beginPath(); ctx.arc(ax, ay, TRANSFER_DROP_R - 4, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        }
+
         var donorN = x.state.max;
         var donorDots = [];
         for (var i = 0; i < donorN; i++) {
           var an = -Math.PI / 2 + (Math.PI * 2 * i) / donorN;
           var moved = x.state.moved.indexOf(i) >= 0;
-          donorDots.push({ x: dx + Math.cos(an) * 40, y: dy + Math.sin(an) * 40, i: i, moved: moved });
+          var hx = dx + Math.cos(an) * 40, hy = dy + Math.sin(an) * 40;
+          var active = dragging && i === s.dragging;
+          var selected = s.selected === i && !moved;
+          donorDots.push({ x: hx, y: hy, i: i, moved: moved });
+          var ex = active && s.dragPos ? s.dragPos.x : hx;
+          var ey = active && s.dragPos ? s.dragPos.y : hy;
           ctx.save();
-          ctx.fillStyle = moved ? 'rgba(93,255,166,0.2)' : '#ffd166';
-          ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.arc(donorDots[i].x, donorDots[i].y, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-          if (!moved) {
+          if (moved && !active) {
+            ctx.fillStyle = 'rgba(93,255,166,0.2)';
+            ctx.strokeStyle = 'rgba(93,255,166,0.4)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(ex, ey, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          } else {
+            ctx.fillStyle = '#ffd166';
+            ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+            ctx.lineWidth = active ? 2.5 : 1.5;
+            if (selected) {
+              ctx.shadowColor = '#ffd166';
+              ctx.shadowBlur = 14;
+            }
+            ctx.beginPath(); ctx.arc(ex, ey, active ? 9 : 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.shadowBlur = 0;
             ctx.fillStyle = '#0a1030';
             ctx.font = '8px monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('e−', donorDots[i].x, donorDots[i].y + 1);
+            ctx.fillText('e−', ex, ey + 1);
           }
           ctx.restore();
         }
@@ -993,9 +1041,14 @@
       },
       clear: function (x) {
         x.state.moved = [];
+        x.state.selected = null;
+        x.state.dragging = null;
+        x.state.dragPos = null;
         Exercise.refresh();
       },
-      hint: function () { return 'Toque nos elétrons amarelos do metal para transferi-los ao ametal.'; }
+      hint: function () {
+        return 'Clique no elétron amarelo do metal e solte sobre o ametal — ou arraste o elétron até ele.';
+      }
     },
 
     /* ============ 7. FÓRMULA DE LEWIS ============ */
@@ -1190,6 +1243,32 @@
     ctx.moveTo(x - 5, y - dy * 3);
     ctx.lineTo(x, y - dy * 8);
     ctx.lineTo(x + 5, y - dy * 3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /* Seta tracejada mostrando a direção da transferência do elétron */
+  function drawTransferArrow(ctx, x1, y1, x2, y2) {
+    var dx = x2 - x1, dy = y2 - y1;
+    var len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 8) return;
+    var ux = dx / len, uy = dy / len;
+    var tx = x2 - ux * 32, ty = y2 - uy * 32;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,209,102,0.85)';
+    ctx.fillStyle = 'rgba(255,209,102,0.85)';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.moveTo(x1 + ux * 12, y1 + uy * 12);
+    ctx.lineTo(tx, ty);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(tx + ux * 10, ty + uy * 10);
+    ctx.lineTo(tx - uy * 6, ty + ux * 6);
+    ctx.lineTo(tx + uy * 6, ty - ux * 6);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
@@ -1751,7 +1830,7 @@
       var s = this.x.state;
       var best = -1, bd = 1e9;
       item.anchors.forEach(function (a, i) {
-        var d = dist(p.x, a.x * this.x.W, p.y, a.y * this.x.H);
+        var d = dist(p.x, p.y, a.x * this.x.W, a.y * this.x.H);
         if (d < 40 && d < bd) { bd = d; best = i; }
       }, this);
       if (best >= 0) {
@@ -1768,24 +1847,66 @@
       }
     },
 
-    transferTap: function (item, p) {
-      if (this.answered || !this.x) return;
+    /* Elétron do metal mais próximo do toque que ainda não foi transferido */
+    transferHit: function (item, p) {
       var s = this.x.state;
-      var hit = -1, bd = 1e9;
+      var best = -1, bd = 1e9;
       (s.donorDots || []).forEach(function (d) {
         if (d.moved) return;
-        var dd = dist(p.x, d.x, p.y, d.y);
-        if (dd < 18 && dd < bd) { bd = dd; hit = d.i; }
+        var dd = dist(p.x, p.y, d.x, d.y);
+        if (dd < TRANSFER_HIT_R && dd < bd) { bd = dd; best = d.i; }
       });
-      if (hit >= 0) {
-        if (s.moved.indexOf(hit) < 0) s.moved.push(hit);
-        AudioSys.sfx('gate');
+      return best;
+    },
+
+    transferDown: function (item, p) {
+      if (this.answered || !this.x) return;
+      var s = this.x.state;
+      var hit = this.transferHit(item, p);
+      if (hit < 0) return;
+      s.selected = hit;
+      s.dragging = hit;
+      s.dragPos = { x: p.x, y: p.y };
+      AudioSys.sfx('click');
+      this.clearFeedback();
+      this.refresh();
+    },
+
+    transferMove: function (item, p) {
+      if (this.answered || !this.x) return;
+      var s = this.x.state;
+      if (s.dragging === null || s.dragging === undefined) return;
+      s.dragPos = { x: p.x, y: p.y };
+      this.refresh();
+    },
+
+    transferUp: function (item, p) {
+      if (this.answered || !this.x) return;
+      var s = this.x.state;
+      if (s.dragging !== null && s.dragging !== undefined) {
+        var i = s.dragging;
+        var home = (s.donorDots || [])[i];
+        var ax = this.x.W * 0.7, ay = this.x.H * 0.52;
+        var onDrop = dist(p.x, p.y, ax, ay) < TRANSFER_DROP_R;
+        var onHome = home && dist(p.x, p.y, home.x, home.y) < TRANSFER_HIT_R;
+        s.dragging = null;
+        s.dragPos = null;
+        if (onDrop || onHome) {
+          if (s.moved.indexOf(i) < 0) s.moved.push(i);
+          s.selected = null;
+          AudioSys.sfx('gate');
+          this.clearFeedback();
+          this.refresh();
+          return;
+        }
+        s.selected = null;
         this.clearFeedback();
         this.refresh();
         return;
       }
-      /* devolver: tocar num elétron transferido em volta do aceitador */
-      if (s.moved.length) {
+      /* tocar no ametal sem arrastar desfaz a última transferência */
+      var aX = this.x.W * 0.7, aY = this.x.H * 0.52;
+      if (dist(p.x, p.y, aX, aY) < TRANSFER_DROP_R && s.moved.length) {
         s.moved.pop();
         AudioSys.sfx('click');
         this.clearFeedback();
