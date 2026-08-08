@@ -4171,6 +4171,10 @@ const Quiz = {
     if (this.answered) return;
     this.answered = true;
     const q = this.pool[this.idx];
+    /* Fonte única da verdade: a cor da alternativa, o feedback e a
+       pontuação usam a MESMA comparação contra q.ans (resposta correta
+       derivada dos dados da questão — nunca hardcoded no feedback). */
+    const correct = idx === q.ans;
     const opts = document.querySelectorAll('#quiz-options .quiz-opt');
     opts.forEach((o, i) => {
       o.disabled = true;
@@ -4178,7 +4182,7 @@ const Quiz = {
       else if (i === idx) o.classList.add('wrong');
     });
     const explain = document.getElementById('quiz-explain');
-    if (idx === q.ans) {
+    if (correct) {
       this.correct++;
       Game.quizStats.correct++;
       AudioSys.sfx('quizRight');
