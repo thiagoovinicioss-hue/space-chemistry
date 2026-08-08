@@ -359,197 +359,308 @@ function midi(n) { return 440 * Math.pow(2, (n - 69) / 12); }
 ===================================================================== */
 const SPRITES = {
 
-  /* Astronauta de cima (12 x 16 px) */
-  /* Astronauta frontal (10 x 14 px) — capacete H, visor V, macacão S,
-     peito branco W e detalhes escuros D. 'astronaut' é o frame de parado;
-     os demais são os frames animados do jogador. */
+
+  /* Astronauta (16 x 26 px) — redesenhado a partir da referência enviada:
+     capacete com visor, traje com painel de controle, botas e sombras.
+     Cores por paleta: O contorno, H capacete, V visor, v brilho do visor,
+     S traje, W branco do traje, A painel, D sombras/botas. */
   astronaut: {
     grid: [
-      '..HHHHHH..',
-      '.HHHHHHHH.',
-      '.HVVVVVHH.',
-      '.HHHVVVHH.',
-      '..HHHHHH..',
-      '..SSSSSS..',
-      '.SSSSSSSS.',
-      '.SSWWWWSS.',
-      '.SSWWWWSS.',
-      '..SSSSSS..',
-      '..SWSWSW..',
-      '..SS..SS..',
-      '..SS..SS..',
-      '..DD..DD..'
+      ".....OOOOOO.....",
+      "....OHHHHHHO....",
+      "...OHHVVVVVHO...",
+      "...OHHvvvvvHO...",
+      "...OHHVVVVVHO...",
+      "...OHHHHHHHHO...",
+      "....OHHHHHHO....",
+      ".....OHHHHO.....",
+      "....OSSSSSSO....",
+      "...OSSSSSSSSO...",
+      "..OSSSSSSSSSSO..",
+      "..OSWWWWWWWWSO..",
+      "..OSWWAAAWWSO...",
+      "..OSWWAAAWWSO...",
+      "..OSWWWWWWWWSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSS.SSSS.SSO..",
+      "..OSS.SSSS.SSO..",
+      "..OSS.SSSS.SSO..",
+      ".OSSS.SSSS.SSSO.",
+      ".ODDD.SSSS.DDDO.",
+      ".ODDD.SSSS.DDDO.",
+      "..DD..SSSS..DD..",
+      "...D..DDDD..D...",
     ]
   },
   astronautIdleB: {
     grid: [
-      '..HHHHHH..',
-      '.HHHHHHHH.',
-      '.HVVVVVHH.',
-      '.HHHVVVHH.',
-      '..HHHHHH..',
-      '..SSSSSS..',
-      '.SSSSSSSS.',
-      '.SSWWWWSS.',
-      '.SSWWWWSS.',
-      '..SSSSSS..',
-      '..SWSWSW..',
-      '..SS..SS..',
-      '.SSS..SSS.',
-      '.DDD..DDD.'
+      ".....OOOOOO.....",
+      "....OHHHHHHO....",
+      "...OHHVVVVVHO...",
+      "...OHHvvvvvHO...",
+      "...OHHVVVVVHO...",
+      "...OHHHHHHHHO...",
+      "....OHHHHHHO....",
+      ".....OHHHHO.....",
+      "....OSSSSSSO....",
+      "...OSSSSSSSSO...",
+      "..OSSSSSSSSSSO..",
+      "..OSWWWWWWWWSO..",
+      "..OSWAAAAAWWSO..",
+      "..OSWAAAAAWWSO..",
+      "..OSWWWWWWWWSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      ".OSSSSSSSSSSSO..",
+      ".OSS.SSSSSS.SSO.",
+      ".OSS.SSSSSS.SSO.",
+      ".OSS.SSSSSS.SSO.",
+      ".OSSS.SSSS.SSSO.",
+      ".ODDD.SSSS.DDDO.",
+      ".ODDD.SSSS.DDDO.",
+      "..DD..SSSS..DD..",
+      "...D..DDDD..D...",
     ]
   },
   astronautWalkA: {
     grid: [
-      '..HHHHHH..',
-      '.HHHHHHHH.',
-      '.HVVVVVHH.',
-      '.HHHVVVHH.',
-      '..HHHHHH..',
-      '..SSSSSS..',
-      '.SSSSSSSS.',
-      '.SSWWWWSS.',
-      '.SSWWWWSS.',
-      '..SSSSSS..',
-      '..SWSWSW..',
-      '.SS...SS..',
-      '.DD....DD.',
-      '..........'
+      ".....OOOOOO.....",
+      "....OHHHHHHO....",
+      "...OHHVVVVVHO...",
+      "...OHHvvvvvHO...",
+      "...OHHVVVVVHO...",
+      "...OHHHHHHHHO...",
+      "....OHHHHHHO....",
+      ".....OHHHHO.....",
+      "....OSSSSSSO....",
+      "...OSSSSSSSSO...",
+      "..OSSSSSSSSSSO..",
+      "..OSWWWWWWWWSO..",
+      "..OSWWAAAWWSO...",
+      "..OSWWAAAWWSO...",
+      "..OSWWWWWWWWSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSS.SSSS.SSO..",
+      "..OSS.SSSS.SSO..",
+      ".OSS..SSSS..SSO.",
+      ".OSS..SSSS..SSO.",
+      ".ODD..SSSS..DDO.",
+      ".ODD..SSS...DDO.",
+      "..DD..SSS....DD.",
+      "...D..DDD....D..",
     ]
   },
   astronautWalkB: {
     grid: [
-      '..HHHHHH..',
-      '.HHHHHHHH.',
-      '.HVVVVVHH.',
-      '.HHHVVVHH.',
-      '..HHHHHH..',
-      '..SSSSSS..',
-      '.SSSSSSSS.',
-      '.SSWWWWSS.',
-      '.SSWWWWSS.',
-      '..SSSSSS..',
-      '..SWSWSW..',
-      '..SS...SS.',
-      '..DD....DD',
-      '..........'
+      ".....OOOOOO.....",
+      "....OHHHHHHO....",
+      "...OHHVVVVVHO...",
+      "...OHHvvvvvHO...",
+      "...OHHVVVVVHO...",
+      "...OHHHHHHHHO...",
+      "....OHHHHHHO....",
+      ".....OHHHHO.....",
+      "....OSSSSSSO....",
+      "...OSSSSSSSSO...",
+      "..OSSSSSSSSSSO..",
+      "..OSWWWWWWWWSO..",
+      "..OSWWAAAWWSO...",
+      "..OSWWAAAWWSO...",
+      "..OSWWWWWWWWSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSS.SSSS.SSO..",
+      "..OSS.SSSS.SSO..",
+      "...SS.SSSS.SS...",
+      "..DSS.SSSS.SSD..",
+      "..DD.SSSS.SS.DD.",
+      "..DD.SSSS.SS.DD.",
+      "..DD..SSSS..DD..",
+      "...D..DDDD..D...",
     ]
   },
   astronautAtkA: {
     grid: [
-      '..HHHHHH..',
-      '.HHHHHHHH.',
-      '.HVVVVVVH.',
-      '.HHHVVVVH.',
-      '..HHHVVH..',
-      '..SSVSSS..',
-      '.SSVSSSSS.',
-      '.SVWWWWSS.',
-      '.VSWWWWSS.',
-      '..SSSSSS..',
-      '..SWSWSW..',
-      '..SS..SS..',
-      '..SS..SS..',
-      '..DD..DD..'
+      ".....OOOOOO.....",
+      "....OHHHHHHO....",
+      "...OHHVVVVVHO...",
+      "...OHHvvvvvHO...",
+      "...OHHVVVVVHO...",
+      "...OHHHHHHHHO...",
+      "....OHHHHHHO....",
+      ".....OHHHHO.....",
+      "....OSSSSSSO....",
+      "...OSSSSSSSSO...",
+      "..OSSSSSSSSSSO..",
+      "..OSWWWWWWWWSO..",
+      "..OSWWAAAWWSO...",
+      "..OSWWAAAWWSO...",
+      "..OSWWWWWWWWSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSS.SSSS.SSS..",
+      "..OSS.SSSS.SSS..",
+      "..OSS.SSSS.SSSS.",
+      "..OSS.SSSS.SSSSS",
+      "..ODD.SSSS.DDDD.",
+      "..ODD.SSSS.DDDD.",
+      "..DD..SSSS.DDD..",
+      "...D..DDDD.DD...",
     ]
   },
   astronautAtkB: {
     grid: [
-      '..HHHHHH..',
-      '.HHHHHHHH.',
-      '.HVVVVVHH.',
-      '.HHHVVVHH.',
-      '..HHHVVH..',
-      '..SSSVSS..',
-      '.SSSSSVSS.',
-      '.SSWWWWSV.',
-      '.SSWWWWSS.',
-      '..SSSSSS..',
-      '..SWSWSW..',
-      '.SS...SS..',
-      '.DD....DD.',
-      '..........'
+      ".....OOOOOO.....",
+      "....OHHHHHHO....",
+      "...OHHVVVVVHO...",
+      "...OHHvvvvvHO...",
+      "...OHHVVVVVHO...",
+      "...OHHHHHHHHO...",
+      "....OHHHHHHO....",
+      ".....OHHHHO.....",
+      "....OSSSSSSO....",
+      "...OSSSSSSSSO...",
+      "..OSSSSSSSSSSO..",
+      "..OSWWWWWWWWSO..",
+      "..OSWWAAAWWSO...",
+      "..OSWWAAAWWSO...",
+      "..OSWWWWWWWWSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSS.SSSS.SSO..",
+      "..OSS.SSSS.SSO..",
+      "..OSS.SSSS.SSO..",
+      "..OSS.SSSS.SSO..",
+      "..ODD.SSSS.DDDO.",
+      "..ODD.SSSS.DDDO.",
+      "..DD..SSSS..DD..",
+      "...D..DDDD..D...",
     ]
   },
   astronautHurt: {
     grid: [
-      '..HHHHHH..',
-      '.HHHHHHHH.',
-      '.HDDDDDHH.',
-      '.HHDDDDHH.',
-      '..HHHHHH..',
-      '..SSSSSS..',
-      '.SSSSSSSS.',
-      '.SSWWWWSS.',
-      '.SSWWWWSS.',
-      '..SSSSSS..',
-      '..SWSWSW..',
-      '..SS..SS..',
-      '..SS..SS..',
-      '..DD..DD..'
+      ".....OOOOOO.....",
+      "....OHHHHHHO....",
+      "...OHHVVVVVHO...",
+      "...OHDvvvvDHO...",
+      "...OHHVVVVVHO...",
+      "...OHHHHHHHHO...",
+      "....OHHHHHHO....",
+      ".....OHHHHO.....",
+      "....OSSSSSSO....",
+      "...OSSSSSSSSO...",
+      "..OSSSSSSSSSSO..",
+      "..OSWWWWWWWWSO..",
+      "..OSWWAAAWWSO...",
+      "..OSWWAAAWWSO...",
+      "..OSWWWWWWWWSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSS.SSSS.SSO..",
+      "..OSS.SSSS.SSO..",
+      "..OSS.SSSS.SSO..",
+      ".OSSS.SSSS.SSSO.",
+      ".ODDD.SSSS.DDDO.",
+      ".ODDD.SSSS.DDDO.",
+      "..DD..SSSS..DD..",
+      "...D..DDDD..D...",
     ]
   },
   astronautDeath: {
     grid: [
-      '....DD....',
-      '...DDDD...',
-      '..HHHHHH..',
-      '..HVVVVHH.',
-      '..HHHHHH..',
-      '...SSSS...',
-      '..SSSSSS..',
-      '.SSWWWWSS.',
-      '.SSWWWWSS.',
-      '..SSSSSS..',
-      '...SSSS...',
-      '...DD..DD.',
-      '...DD..DD.',
-      '..........'
+      "......OO........",
+      ".....OHO........",
+      "....OHHO........",
+      "....OHVHO.......",
+      "....OHHHO.......",
+      "....OHHHHO......",
+      "....OHHHHO......",
+      ".....OHO........",
+      "..OOOOOOOO......",
+      ".OSSSSSSSSSO....",
+      ".OSWWWWWWWWS....",
+      ".OSWWAAAWWS.....",
+      ".OSSWWWWWWS.....",
+      "..OSSSSSSS......",
+      "..OSS.SSSS......",
+      "..OSS.SSSS......",
+      "..OSS.SSSS......",
+      "..OSS.SSSS......",
+      "..OSS.SSSS......",
+      "..OSS.SSSS......",
+      "..OSS.SSSS......",
+      "..DDD.DDDD......",
+      "..DD..DD........",
+      "..DD..DD........",
+      "..D...DD........",
+      "................",
     ]
   },
   astronautVictory: {
     grid: [
-      '..HHHHHH..',
-      '.HHHHHHHH.',
-      '.HVVVVVHH.',
-      '.HHHVVVHH.',
-      '..HHHHHH..',
-      '.SSSSSSSS.',
-      '.SWWWWWWS.',
-      '.SSWWWWSS.',
-      '.SSWWWWSS.',
-      '..SSSSSS..',
-      '..SWSWSW..',
-      '..SS..SS..',
-      '..SS..SS..',
-      '..DD..DD..'
+      ".....OOOOOO.....",
+      "....OHHHHHHO....",
+      "...OHHVVVVVHO...",
+      "...OHHvvvvvHO...",
+      "...OHHVVVVVHO...",
+      "...OHHHHHHHHO...",
+      "....OHHHHHHO....",
+      ".....OHHHHO.....",
+      "....OSSSSSSO....",
+      "...OSSSSSSSSO...",
+      "..OSSSSSSSSSSO..",
+      "..OSWWWWWWWWSO..",
+      "..OSWWAAAWWSO...",
+      "..OSWWAAAWWSO...",
+      "..OSWWWWWWWWSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      "..OSSSSSSSSSSO..",
+      ".OSS.SSSSSS.SSO.",
+      ".OSS.SSSSSS.SSO.",
+      "OSS.SSSSSSS.SSO.",
+      "OSS.SSSSSSS.SSO.",
+      "ODD.SSSSSSS.DDO.",
+      "ODD..SSSSS..DDO.",
+      ".DD..SSSSS..DD..",
+      "..DD..DDD...DD..",
     ]
   },
 
-  /* Nave espacial estilo foguete (14 x 15 px) — baseada na referência
-     enviada: cone escuro, casco azul, sombra clara no topo, janela ciano
-     e chama laranja. Cores por paleta: G casco, V janela/glow, W contorno,
-     D azul-escuro (fins/cone), L sombra clara, F chama. */
+  /* Nave (26 x 18 px) — redesenhada a partir da referência enviada:
+     foguete vermelho/branco com janela azul, aletas e motor. Cores por paleta:
+     G casco (recorável), L casco superior branco, V janela, Y brilho da janela,
+     R nariz/aletas vermelhas, W contorno, D motor/sombras, F chama. */
   ship: {
     grid: [
-      '......DDD......',
-      '.....DGGGD.....',
-      '....DGGLLGD....',
-      '...DGGLLLGD....',
-      '..DGGLLVVGD....',
-      '.DGGLLVVVGD....',
-      'DGGGGGGGGGDD...',
-      'DGGGGGGGGGD....',
-      '.DGGGGGGGGD....',
-      '..DGGGGGGD.....',
-      '...DDGGGDD.....',
-      '.....DGGD......',
-      '.....DFF.......',
-      '....DFFFD......',
-      '......DD.......'
+      '..........................',
+      '...RRRR...................',
+      '...RRRR...................',
+      '...RRRRWWWWWWWWWWWWWWR....',
+      '...WLLLLLLLLLLLLLLLLWW....',
+      '...WLLLLYYVVVVLLLLLLRR....',
+      '..DDLLLLVVVVVVLLLLLLRRR...',
+      'F.DDLLLLVVVVVVLLLLLLRRRR..',
+      'FYDDLLLLVVVVVVLLLLLLRRRRRW',
+      'FYDDGGGGGGGGGGGGGGGGRRRRRW',
+      'F.DDGGGGGGGGGGGGGGGGRRRR..',
+      '..DDGGGGGGGGGGGGGGGGRRR...',
+      '...WGGGGGGGGGGGGGGGGRR....',
+      '...WGGGGGGGGGGGGGGGGWW....',
+      '...RRRRWWWWWWWWWWWWWWR....',
+      '...RRRR...................',
+      '...RRRR...................',
+      '..........................',
     ]
   },
-
   /* Cristal coletável (10 x 12 px) */
   crystal: {
     grid: [
@@ -1009,9 +1120,12 @@ function astronautPalette(helmet, suit) {
   return {
     H: helmet.main,
     V: helmet.visor,
-    D: '#0c1226',
+    v: '#3aa0ff',
+    O: '#000000',
     S: suit.main,
-    W: '#ffffff'
+    W: '#ffffff',
+    D: '#0c1226',
+    A: '#ff7a3d'
   };
 }
 
@@ -1294,6 +1408,253 @@ const COSMETICS = {
     { id: 't_elec', name: 'Rastro Elétrico', unlock: 'ach:speedrun', cat: 'Rastro', color: '#ffe14d' },
     { id: 't_flame', name: 'Rastro de Fogo', unlock: 'ach:perfect', cat: 'Rastro', color: '#ff7a3d' }
   ]
+};
+
+/* Overlays de forma para capacetes e trajes */
+const HELMET_OVERLAYS = {
+  h_blue: {
+    grid: [
+      '.....OOOOOO.....',
+      '....OHHHHHHO....',
+      '...OHHVVVVVHO...',
+      '...OHHvvvvvHO...',
+      '...OHHVVVVVHO...',
+      '...OHHHHHHHHO...',
+      '....OHHHHHHO....',
+      '.....OHHHHO.....',
+      '.....OSSSSO.....',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+    ]
+  },
+  h_red: {
+    grid: [
+      '.....OOOOOO.....',
+      '....OHHHHHHO....',
+      '...OHHVVVVVHO...',
+      '...OHHvvvvvHO...',
+      '...OHHVVVVVHO...',
+      '...OHHHHHHHHO...',
+      '....OHHHHHHO....',
+      '.....OHHHHO.....',
+      '.....OSSSSO.....',
+      '....OHHHHHO.....',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+    ]
+  },
+  h_gold: {
+    grid: [
+      '.....OOOOOO.....',
+      '....OHHHHHHO....',
+      '...OHHVVVVVHO...',
+      '...OHHvvvvvHO...',
+      '...OHHVVVVVHO...',
+      '...OHHHHHHHHO...',
+      '....OHHHHHHO....',
+      '.....OHHHHO.....',
+      '.....OSSSSO.....',
+      '....OSSSSSSO....',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+    ]
+  },
+  h_neon: {
+    grid: [
+      '.....OOOOOO.....',
+      '....OHHHHHHO....',
+      '...OHHVVVVVHO...',
+      '...OHHvvvvvHO...',
+      '...OHHVVVVVHO...',
+      '...OHHHHHHHHO...',
+      '....OHHHHHHO....',
+      '.....OHHHHO.....',
+      '....OSSSSSSO....',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+    ]
+  },
+};
+
+const SUIT_OVERLAYS = {
+  s_ionic: {
+    grid: [
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '....OSSSSSSO....',
+      '...OSSSSSSSSO...',
+      '..OSSSSSSSSSSO..',
+      '..OSWWWWWWWWSO..',
+      '..OSWWAAAWWSO...',
+      '..OSWWAAAWWSO...',
+      '..OSWWWWWWWWSO..',
+      '..OSSSSSSSSSSO..',
+      '..OSSSSSSSSSSO..',
+      '..OSSSSSSSSSSO..',
+      '..OSS.SSSS.SSO..',
+      '..OSS.SSSS.SSO..',
+      '..OSS.SSSS.SSO..',
+      '.OSSS.SSSS.SSSO.',
+      '.ODDD.SSSS.DDDO.',
+      '.ODDD.SSSS.DDDO.',
+      '..DD..SSSS..DD..',
+      '...D..DDDD..D...',
+    ]
+  },
+  s_covalent: {
+    grid: [
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '....OSSSSSSO....',
+      '..OSSSSSSSSSO...',
+      '..OSSSSSSSSSSO..',
+      '..OSWWWWWWWWSO..',
+      '..OSWAAAAAAWSO..',
+      '..OSWAAAAAAWSO..',
+      '..OSWWWWWWWWSO..',
+      '..OSSSSSSSSSSO..',
+      '.OSSSSSSSSSSSO..',
+      '.OSSSSSSSSSSSO..',
+      '.OSS.SSSSSS.SSO.',
+      '.OSS.SSSSSS.SSO.',
+      '.OSS.SSSSSS.SSO.',
+      '.OSSS.SSSS.SSSO.',
+      '.ODDD.SSSS.DDDO.',
+      '.ODDD.SSSS.DDDO.',
+      '..DD..SSSS..DD..',
+      '...D..DDDD..D...',
+    ]
+  },
+  s_metallic: {
+    grid: [
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '....OSSSSSSO....',
+      '..OSSSSSSSSSO...',
+      '..OSSSSSSSSSSO..',
+      '..OSSWWWWWSSO...',
+      '..OSSWAAAWSSO...',
+      '..OSSWAAAWSSO...',
+      '..OSSWWWWWSSO...',
+      '..OSSSSSSSSSSO..',
+      '..OSSSSSSSSSSO..',
+      '..OSSSSSSSSSSO..',
+      '..OSS.SSSS.SSO..',
+      '..OSS.SSSS.SSO..',
+      '..OSS.SSSS.SSO..',
+      '..OSSS.SSS.SSSO.',
+      '..ODDD.SSS.DDDO.',
+      '..ODDD.SSS.DDDO.',
+      '..DD..SSSS..DD..',
+      '...D..DDDD..D...',
+    ]
+  },
+  s_galaxy: {
+    grid: [
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '....OSSSSSSO....',
+      '...OSSSSSSSSO...',
+      '..OSSSSSSSSSSO..',
+      '..OSWWWWWWWWSO..',
+      '..OSWWAAAWWSO...',
+      '..OSWWAAAWWSO...',
+      '..OSWWWWWWWWSO..',
+      '..OSSSSSSSSSSO..',
+      '..OSSSSSSSSSSO..',
+      '..OSSSSSSSSSSO..',
+      '..OSS.SSSS.SSO..',
+      '..OSS.SSSS.SSO..',
+      '..OSS.SSSS.SSO..',
+      '.OSSS.SSSS.SSSO.',
+      '.ODDD.SSSS.DDDO.',
+      '.ODDD.SSSS.DDDO.',
+      '..DD..SSSS..DD..',
+      '...D..DDDD..D...',
+    ]
+  },
 };
 
 const CATS = ['helmets', 'suits', 'ships', 'trails'];
@@ -3069,7 +3430,6 @@ function drawPlayer() {
   const pal = astronautPalette(eqH, eqS);
   const sc = 2;
 
-  /* Escolha do frame conforme o estado atual */
   const s = Game.saber;
   const now = performance.now();
   let grid = SPRITES.astronaut;
@@ -3087,6 +3447,8 @@ function drawPlayer() {
     grid = (Math.floor(now / 600) % 2 === 0) ? SPRITES.astronaut : SPRITES.astronautIdleB;
   }
 
+  const helmetOverlay = HELMET_OVERLAYS[eqH.id] || null;
+  const suitOverlay = SUIT_OVERLAYS[eqS.id] || null;
   const sz = spriteSize(grid, sc);
 
   ctx.save();
@@ -3096,6 +3458,12 @@ function drawPlayer() {
     ctx.globalAlpha = 0.4;
   }
   drawSprite(ctx, grid, -Math.round(sz.w / 2), -Math.round(sz.h / 2), sc, pal);
+  if (helmetOverlay) {
+    drawSprite(ctx, helmetOverlay, -Math.round(sz.w / 2), -Math.round(sz.h / 2), sc, pal);
+  }
+  if (suitOverlay) {
+    drawSprite(ctx, suitOverlay, -Math.round(sz.w / 2), -Math.round(sz.h / 2), sc, pal);
+  }
   ctx.restore();
 }
 
@@ -3342,9 +3710,9 @@ function drawArrival() {
   if (!a) return;
   const prog = clamp(a.t / a.dur, 0, 1);
   const ship = getEquippedItem('ship');
-  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' };
+  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d', R: '#c0392b', Y: '#ffe14d' };
   const sp = SPRITES.ship;
-  const scale = 3;
+  const scale = 2;
   const w = sp.grid[0].length * scale, h = sp.grid.length * scale;
   const sx = lerp(VIEW_W + w, VIEW_W / 2, easeInOut(prog));
   const sy = lerp(40, VIEW_H - 40, easeInOut(prog));
@@ -5161,8 +5529,8 @@ function drawTravelHazards(tr) {
 function drawTravelShip(tr) {
   const p = tr.ship;
   const ship = getEquippedItem('ship');
-  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' };
-  const sz = spriteSize(SPRITES.ship, 3);
+  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d', R: '#c0392b', Y: '#ffe14d' };
+  const sz = spriteSize(SPRITES.ship, 2);
   const bob = Math.sin(tr.t * 4) * 1.5;
 
   /* Escudo: bolha ao redor da nave quando invulnerável */
@@ -5246,7 +5614,7 @@ function drawTravelHud(tr) {
 
 /* Mini-nave usada como ícone de vida no HUD */
 function drawShipPip(cx, cy) {
-  const pal = { G: '#2b6f9e', V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' };
+  const pal = { G: '#2b6f9e', V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d', R: '#c0392b', Y: '#ffe14d' };
   const sz = spriteSize(SPRITES.ship, 1);
   drawSprite(ctx, SPRITES.ship, Math.round(cx - sz.w / 2), Math.round(cy - sz.h / 2), 1, pal);
 }
@@ -5574,8 +5942,8 @@ function returnShoot() {
   r.shotCd = 0.24;
   /* Mira: aponta para o mouse (computador) ou o último toque (celular) */
   const ang = Math.atan2(r.aim.y - r.ship.y, r.aim.x - r.ship.x);
-  r.shots.push({ x: r.ship.x + 14, y: r.ship.y, vx: Math.cos(ang) * RETURN_BOLT_SPEED, vy: Math.sin(ang) * RETURN_BOLT_SPEED, t: 0 });
-  burst(r.ship.x + 16, r.ship.y, '#7ff5ff', 4);
+  r.shots.push({ x: r.ship.x + 24, y: r.ship.y, vx: Math.cos(ang) * RETURN_BOLT_SPEED, vy: Math.sin(ang) * RETURN_BOLT_SPEED, t: 0 });
+  burst(r.ship.x + 26, r.ship.y, '#7ff5ff', 4);
   AudioSys.sfx('laser');
 }
 
@@ -5708,7 +6076,7 @@ function drawReturnScene() {
     ctx.translate(e.x, e.y);
     ctx.rotate(Math.sin(e.t * 4) * 0.25 + (e.dodgeT > 0 ? Math.sin(e.t * 40) * 0.25 : 0));
     ctx.scale(-1, 1);
-    const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff5d6c' };
+    const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff5d6c', R: '#c0392b', Y: '#ffe14d' };
     const sz = spriteSize(SPRITES.ship, e.big ? 3 : 2);
     drawSprite(ctx, SPRITES.ship, -sz.w / 2, -sz.h / 2, e.big ? 3 : 2, pal);
     /* Motor tremeluzente */
@@ -5755,11 +6123,11 @@ function drawReturnScene() {
 
   /* Nave do herói */
   const ship = getEquippedItem('ship');
-  const sz = spriteSize(SPRITES.ship, 3);
+  const sz = spriteSize(SPRITES.ship, 2);
   ctx.save();
   if (r.ship.invuln > 0 && Math.floor(r.t * 10) % 2 === 0) ctx.globalAlpha = 0.5;
-  drawSprite(ctx, SPRITES.ship, Math.round(r.ship.x - sz.w / 2), Math.round(r.ship.y - sz.h / 2), 3,
-    { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' });
+  drawSprite(ctx, SPRITES.ship, Math.round(r.ship.x - sz.w / 2), Math.round(r.ship.y - sz.h / 2), 2,
+    { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d', R: '#c0392b', Y: '#ffe14d' });
   ctx.restore();
 
   drawParticles();
@@ -5773,7 +6141,7 @@ function drawReturnEnemyDeath(e) {
   const sc = e.big ? 3 : 2;
   ctx.save();
   ctx.globalAlpha = 1 - pr;
-  const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff5d6c' };
+  const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff5d6c', R: '#c0392b', Y: '#ffe14d' };
   const sz = spriteSize(SPRITES.ship, sc);
   drawSprite(ctx, SPRITES.ship, Math.round(e.x - sz.w / 2 + rand(-3, 3)), Math.round(e.y - sz.h / 2 + rand(-3, 3)), sc, pal);
   ctx.restore();
@@ -6181,8 +6549,8 @@ function renderGalaxy() {
   const g = c.getContext('2d');
   g.clearRect(0, 0, c.width, c.height);
   const ship = getEquippedItem('ship');
-  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' };
-  drawSprite(g, SPRITES.ship, (c.width - 42) / 2, 22, 3, pal);
+  const pal = { G: ship.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d', R: '#c0392b', Y: '#ffe14d' };
+  drawSprite(g, SPRITES.ship, (c.width - 52) / 2, 22, 2, pal);
 }
 
 function startSelectedLevel() {
@@ -6237,7 +6605,17 @@ function drawWardrobePreview() {
   const pal = astronautPalette(eqH, eqS);
   const spr = SPRITES.astronaut;
   const sz = spriteSize(spr, 4);
-  drawSprite(g, spr, Math.round((c.width - sz.w) / 2), 16, 4, pal);
+  const ox = Math.round((c.width - sz.w) / 2);
+  const oy = 16;
+  drawSprite(g, spr, ox, oy, 4, pal);
+  const helmetOverlay = HELMET_OVERLAYS[eqH.id] || null;
+  const suitOverlay = SUIT_OVERLAYS[eqS.id] || null;
+  if (helmetOverlay) {
+    drawSprite(g, helmetOverlay, ox, oy, 4, pal);
+  }
+  if (suitOverlay) {
+    drawSprite(g, suitOverlay, ox, oy, 4, pal);
+  }
   const info = document.getElementById('wardrobe-info');
   info.innerHTML = '<strong>' + eqS.name + '</strong><br>Capacete: ' + eqH.name +
     '<br>Nave: ' + getEquippedItem('ship').name + '<br>Rastro: ' + getEquippedItem('trail').name;
@@ -6247,11 +6625,21 @@ function drawWardrobePreview() {
 function drawItemIcon(g, item) {
   const cat = item.catName || CATS.find(c => COSMETICS[c].some(i => i.id === item.id)) || 'helmets';
   if (cat === 'helmets') {
-    drawSprite(g, SPRITES.astronaut, 8, 8, 2, { H: item.main, V: item.visor, D: '#0c1226', S: '#3a4a72', W: '#fff' });
+    const pal = { H: item.main, V: item.visor, v: '#3aa0ff', O: '#000000', A: '#ff7a3d', D: '#0c1226', S: '#3a4a72', W: '#fff' };
+    drawSprite(g, SPRITES.astronaut, 12, 7, 1, pal);
+    const overlay = HELMET_OVERLAYS[item.id];
+    if (overlay) {
+      drawSprite(g, overlay, 12, 7, 1, pal);
+    }
   } else if (cat === 'suits') {
-    drawSprite(g, SPRITES.astronaut, 8, 8, 2, { H: '#2b6f9e', V: '#7ff5ff', D: '#0c1226', S: item.main, W: '#fff' });
+    const pal = { H: '#2b6f9e', V: '#7ff5ff', v: '#3aa0ff', O: '#000000', A: '#ff7a3d', D: '#0c1226', S: item.main, W: '#fff' };
+    drawSprite(g, SPRITES.astronaut, 12, 7, 1, pal);
+    const overlay = SUIT_OVERLAYS[item.id];
+    if (overlay) {
+      drawSprite(g, overlay, 12, 7, 1, pal);
+    }
   } else if (cat === 'ships') {
-    drawSprite(g, SPRITES.ship, 7, 8, 2, { G: item.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d' });
+    drawSprite(g, SPRITES.ship, 7, 12, 1, { G: item.main, V: '#7ff5ff', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff7a3d', R: '#c0392b', Y: '#ffe14d' });
   } else if (cat === 'trails') {
     const color = item.color || '#9fb0d8';
     g.fillStyle = '#0c1226';
