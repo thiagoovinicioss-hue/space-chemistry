@@ -90,6 +90,21 @@
   var activePhase = '';
   var phaseAge = 0;
 
+  /* Cinemática das transições de viagem (decolagem / chegada) */
+  var cin = null;
+  var cinShip = null;
+  var cinExhaust = null;
+  var cinAtmo = null;
+  var cinFlash = null;
+  var blackTex = null;
+  var blackScreen = null;
+  var black = { a: 0, target: 0, speed: 1 };
+  var cinPaused = false;
+  var CIN_DEPART_DUR = 4.2;
+  var CIN_ARRIVE_DUR = 4.6;
+  var CIN_REVEAL = 0.45;
+  var CIN_TAIL = 0.6;
+
   var YVEC = null;
 
   var shoot = { active: false, t: 0, dur: 0, vx: 0, vy: 0, sx: 0, sy: 0 };
@@ -99,6 +114,7 @@
   var lerp = function (a, b, t) { return a + (b - a) * t; };
   var rand = function (a, b) { return a + Math.random() * (b - a); };
   var easeOut = function (t) { return 1 - (1 - t) * (1 - t); };
+  var easeInOut = function (t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; };
 
   /* ---------------- preferência do jogador ---------------- */
   function loadPref() {
@@ -982,12 +998,16 @@
       if (!Game) return '';
       var phase = readPhase();
       if (phase === 'travel') {
-        var idx = Math.min((Game.levelIndex || 0) + 1, 4);
+        var idx = Math.min((Game.levelIndex || 0) + 1, LEVELS.length - 1);
         var lv = LEVELS[idx];
         if (lv && lv.theme) return lv.theme;
         return '';
       }
-      if (Game.level && Game.level.theme) return Game.level.theme;
+      if (Game.level) {
+        if (Game.level.lv && Game.level.lv.id) return Game.level.lv.id;
+        if (Game.level.lv && Game.level.lv.theme) return Game.level.lv.theme;
+        if (typeof Game.level.theme === 'string' && THEMES[Game.level.theme]) return Game.level.theme;
+      }
     } catch (e) {}
     return '';
   }
@@ -1005,6 +1025,302 @@
         levelColor = Game.level.theme.planet || Game.level.theme.accent || levelColor;
       }
     } catch (e) {}
+  }
+
+  /* ---------------- cinemática das transições (decolagem / chegada) ---------------- */
+  function makeSolidTex() {
+    var cv = document.createElement('canvas');
+    cv.width = 4; cv.height = 4;
+    var g = cv.getContext('2d');
+    g.fillStyle = '#ffffff';
+    g.fillRect(0, 0, 4, 4);
+    return new THREE.CanvasTexture(cv);
+  }
+
+  function makeCinematicShip() {
+    var g = new THREE.Group();
+    var bodyMat = new THREE.MeshPhongMaterial({ color: 0xe8f0ff, emissive: 0x223344 });
+    var accentMat = new THREE.MeshPhongMaterial({ color: 0xff6a3d, emissive: 0x772200 });
+    var hull = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.3, 1.0), bodyMat);
+    g.add(hull);
+    var nose = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 4), accentMat);
+    nose.rotation.x = Math.PI / 2;
+    nose.position.set(0, 0, 0.75);
+    g.add(nose);
+    var wingL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.42), accentMat);
+    wingL.position.set(-0.36, 0, -0.22);
+    wingL.rotation.z = 0.25;
+    g.add(wingL);
+    var wingR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.42), accentMat);
+    wingR.position.set(0.36, 0, -0.22);
+    wingR.rotation.z = -0.25;
+    g.add(wingR);
+    var flame = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTex, color: 0xffb05a, transparent: true, opacity: 0.9,
+      depthWrite: false, blending: THREE.AdditiveBlending
+    }));
+    flame.position.set(0, 0, -0.95);
+    flame.scale.set(0.6, 0.6, 1);
+    g.add(flame);
+    g.userData.flame = flame;
+    return g;
+  }
+
+  function makeExhaustPool() {
+    var g = new THREE.Group();
+    for (var i = 0; i < 16; i++) {
+      var s = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowTex, transparent: true, opacity: 0,
+        depthWrite: false, blending: THREE.AdditiveBlending
+      }));
+      s.visible = false;
+      s.userData = { life: 0, max: 0.5, vx: 0, vy: 0, vz: 0, r: 0.1 };
+      g.add(s);
+    }
+    return g;
+  }
+
+  function makeAtmoRing() {
+    var s = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: ringTex, color: 0x9fe2ff, transparent: true, opacity: 0,
+      depthWrite: false, blending: THREE.AdditiveBlending
+    }));
+    s.visible = false;
+    s.scale.set(6, 6, 1);
+    return s;
+  }
+
+  function makeCinFlash() {
+    var s = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTex, color: 0xffffff, transparent: true, opacity: 0,
+      depthWrite: false, blending: THREE.AdditiveBlending
+    }));
+    s.visible = false;
+    s.scale.set(6, 6, 1);
+    return s;
+  }
+
+  function makeBlackScreen() {
+    var s = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: blackTex, color: 0x000000, transparent: true, opacity: 0,
+      depthWrite: false, depthTest: false
+    }));
+    s.scale.set(40, 22.5, 1);
+    s.position.set(0, 0, CAM_DIST - 0.5);
+    return s;
+  }
+
+  function setBlack(a, dur) {
+    black.target = a;
+    black.speed = dur > 0 ? 1 / dur : 1000;
+  }
+
+  function updateBlack(dt) {
+    if (!blackScreen) return;
+    if (black.a < black.target) black.a = Math.min(black.target, black.a + black.speed * dt);
+    else if (black.a > black.target) black.a = Math.max(black.target, black.a - black.speed * dt);
+    blackScreen.material.opacity = black.a;
+  }
+
+  function spawnExhaust(sx, sy, sz, vx, vy, vz, intensity) {
+    if (!cinExhaust) return;
+    var list = cinExhaust.children;
+    if (!list.length) return;
+    var s = list[cin.exhaustCursor % list.length];
+    cin.exhaustCursor = (cin.exhaustCursor + 1) % list.length;
+    s.visible = true;
+    s.position.set(sx + rand(-0.04, 0.04), sy + rand(-0.04, 0.04), sz + rand(-0.04, 0.04));
+    s.userData.life = 0;
+    s.userData.max = 0.5;
+    s.userData.vx = vx + rand(-0.25, 0.25);
+    s.userData.vy = vy + rand(-0.25, 0.25);
+    s.userData.vz = vz + rand(-0.25, 0.25);
+    s.userData.r = (0.12 + Math.random() * 0.14) * intensity;
+    s.scale.set(s.userData.r, s.userData.r, 1);
+    s.material.opacity = 0.9;
+  }
+
+  function updateExhaust(dt) {
+    var list = cinExhaust.children;
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      if (!s.visible) continue;
+      var u = s.userData;
+      u.life += dt;
+      if (u.life >= u.max) { s.visible = false; continue; }
+      s.position.x += u.vx * dt;
+      s.position.y += u.vy * dt;
+      s.position.z += u.vz * dt;
+      var f = 1 - u.life / u.max;
+      s.material.opacity = f * 0.9;
+      var sc = u.r * (1 + u.life * 3.5);
+      s.scale.set(sc, sc, 1);
+    }
+  }
+
+  function alignShip(obj, dx, dy, dz) {
+    var l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+    obj.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(dx / l, dy / l, dz / l)
+    );
+  }
+
+  function playCinematic(type, theme, onBlack) {
+    if (!enabled || !renderer) { if (onBlack) onBlack(); return false; }
+    var planet = ensurePlanet(theme || 'bond');
+    planet.visible = true;
+    planet.position.set(0, 0, 0);
+    planet.rotation.x = 0; planet.rotation.y = 0; planet.rotation.z = 0;
+    menuGroup.visible = false;
+    galaxyGroup.visible = false;
+    if (activePlanet && activePlanet !== planet) activePlanet.visible = false;
+    starsFar.visible = true;
+    starsNear.visible = true;
+    cinShip.visible = true;
+    cinExhaust.visible = true;
+    cinAtmo.visible = false;
+    cinFlash.visible = false;
+    cin = {
+      type: type,
+      theme: theme || 'bond',
+      t: 0,
+      dur: type === 'departure' ? CIN_DEPART_DUR : CIN_ARRIVE_DUR,
+      planet: planet,
+      onBlack: onBlack || null,
+      exhaustCursor: 0,
+      shake: 0
+    };
+    black.a = 1; black.target = 1; black.speed = 1000;
+    blackScreen.material.opacity = 1;
+    renderer.setClearColor(0x02040c, 1);
+    attachCanvas('fx3d-game');
+    var host = document.getElementById('fx3d-game');
+    if (host) fitToContainer(host);
+    return true;
+  }
+
+  function updateCinematic(dt) {
+    cin.t += dt;
+    var k = cin.t / cin.dur;
+    if (cin.t < CIN_REVEAL) {
+      setBlack(1 - cin.t / CIN_REVEAL, 1);
+    }
+    if (cin.type === 'departure') updateCinDeparture(dt, k);
+    else updateCinArrival(dt, k);
+    updateExhaust(dt);
+    if (k >= 1 - CIN_TAIL / cin.dur) setBlack(1, CIN_TAIL);
+    if (k >= 1 && black.a > 0.97) endCinematic();
+  }
+
+  function endCinematic() {
+    if (!cin) return;
+    cin.planet.visible = false;
+    cinShip.visible = false;
+    cinExhaust.visible = false;
+    cinAtmo.visible = false;
+    cinFlash.visible = false;
+    camera.position.set(0, 0, CAM_DIST);
+    camera.lookAt(0, 0, 0);
+    renderer.setClearColor(0x000000, 0);
+    /* Revela a cena seguinte: a tela preta se dissolve sozinha (0.5s).
+       Chamadas explícitas a fadeBlack(0, ...) depois disso são inofensivas. */
+    black.a = 1; black.target = 0; black.speed = 2;
+    var cb = cin.onBlack;
+    cin = null;
+    if (cb) { try { cb(); } catch (e) {} }
+  }
+
+  function updateCinDeparture(dt, k) {
+    var px;
+    if (k < 0.13) px = 150;
+    else if (k < 0.42) px = lerp(150, 130, easeOut((k - 0.13) / 0.29));
+    else if (k < 0.72) px = lerp(130, 42, easeInOut((k - 0.42) / 0.3));
+    else px = lerp(42, 30, easeInOut((k - 0.72) / 0.28));
+    var R = worldRadiusForPx(px);
+    cin.planet.scale.setScalar(R);
+    cin.planet.rotation.y += dt * 0.25;
+    cin.planet.rotation.z = Math.sin(cin.t * 0.4) * 0.02;
+    if (cin.planet.userData.update) cin.planet.userData.update(dt, cin.t);
+
+    var syp, szp, sscale;
+    if (k < 0.13) { syp = R + 0.25; szp = 0.45; sscale = 1; }
+    else if (k < 0.42) {
+      var a = easeOut((k - 0.13) / 0.29);
+      syp = lerp(R + 0.25, halfH * 0.55, a);
+      szp = lerp(0.45, 0.9, a); sscale = 1;
+    } else if (k < 0.72) {
+      var b = easeInOut((k - 0.42) / 0.3);
+      syp = lerp(halfH * 0.55, halfH * 0.9, b);
+      szp = lerp(0.9, -1.2, b);
+      sscale = lerp(1, 0.55, b);
+    } else {
+      var c = easeInOut((k - 0.72) / 0.28);
+      syp = halfH * 0.9 + c * 0.35;
+      szp = lerp(-1.2, -2.2, c);
+      sscale = lerp(0.55, 0.4, c);
+    }
+    cinShip.position.set(0, syp, szp);
+    cinShip.scale.set(sscale, sscale, sscale);
+    alignShip(cinShip, 0, 1, 0);
+    var flame = cinShip.userData.flame;
+    flame.scale.set(0.55 + Math.sin(cin.t * 42) * 0.15, 0.55 + Math.sin(cin.t * 42) * 0.15, 1);
+    spawnExhaust(0, syp - 0.95 * sscale, szp, 0, -2.2 * sscale, 0, k < 0.42 ? 1.2 : 0.9);
+
+    starsFar.rotation.y += dt * 0.008;
+    starsNear.rotation.y -= dt * 0.012;
+  }
+
+  function updateCinArrival(dt, k) {
+    var px;
+    if (k < 0.28) px = lerp(16, 34, easeOut(k / 0.28));
+    else if (k < 0.57) px = lerp(34, 150, easeInOut((k - 0.28) / 0.29));
+    else if (k < 0.78) px = lerp(150, 172, easeInOut((k - 0.57) / 0.21));
+    else px = 172 + Math.sin((k - 0.78) * 8) * 3;
+    var R = worldRadiusForPx(px);
+    cin.planet.scale.setScalar(R);
+    cin.planet.rotation.y += dt * 0.3;
+    cin.planet.rotation.z = Math.sin(cin.t * 0.5) * 0.03;
+    if (cin.planet.userData.update) cin.planet.userData.update(dt, cin.t);
+
+    var prog = clamp(k / 0.85, 0, 1);
+    var sx = lerp(-halfW * 0.72, 0, easeInOut(prog));
+    var sy = lerp(-halfH * 0.55, 0, easeInOut(prog));
+    var sz = lerp(2.3, R * 1.7 + 0.25, easeInOut(prog));
+    var sc = lerp(0.8, 1.3, easeInOut(clamp(k / 0.7, 0, 1)));
+    cinShip.position.set(sx, sy, sz);
+    cinShip.scale.set(sc, sc, sc);
+    alignShip(cinShip, -sx, -sy, -sz);
+    var flame = cinShip.userData.flame;
+    flame.scale.set(0.5 + Math.sin(cin.t * 30) * 0.1, 0.5 + Math.sin(cin.t * 30) * 0.1, 1);
+
+    var dl = Math.sqrt(sx * sx + sy * sy + sz * sz) || 1;
+    spawnExhaust(
+      sx + (sx / dl) * 0.9, sy + (sy / dl) * 0.9, sz + (sz / dl) * 0.9,
+      (sx / dl) * 1.3, (sy / dl) * 1.3, (sz / dl) * 1.3, 1.0
+    );
+
+    var atmoK = clamp((k - 0.57) / 0.21, 0, 1);
+    if (atmoK > 0) {
+      cinAtmo.visible = true;
+      cinAtmo.position.set(0, 0, R * 0.15);
+      cinAtmo.scale.set(R * 2.6, R * 2.6, 1);
+      cinAtmo.material.opacity = Math.sin(atmoK * Math.PI) * 0.85;
+      cinFlash.visible = true;
+      cinFlash.position.set(0, 0, R * 0.05);
+      cinFlash.scale.set(R * 3.2, R * 3.2, 1);
+      cinFlash.material.opacity = Math.sin(atmoK * Math.PI) * 0.38;
+      cin.shake = Math.sin(atmoK * Math.PI) * 0.055;
+    } else {
+      cinAtmo.visible = false;
+      cinFlash.visible = false;
+      cin.shake = 0;
+    }
+    if (cin.shake > 0.001) camera.position.set(rand(-cin.shake, cin.shake), rand(-cin.shake, cin.shake), CAM_DIST);
+    else camera.position.set(0, 0, CAM_DIST);
+
+    starsFar.rotation.y += dt * 0.01;
+    starsNear.rotation.y -= dt * 0.015;
   }
 
   /* ---------------- seleção de conteúdo ---------------- */
@@ -1131,6 +1447,13 @@
   /* ---------------- API pública ---------------- */
   function tick(dt) {
     if (!enabled || !renderer) return;
+    updateBlack(dt);
+    if (cin) {
+      if (cinPaused) return;
+      updateCinematic(dt);
+      if (cin) renderer.render(scene, camera);
+      return;
+    }
     var screen = readScreen();
     var phase = readPhase();
     readLevelColor();
@@ -1198,6 +1521,21 @@
     shootingStar = makeShooting();
     scene.add(shootingStar);
 
+    blackTex = makeSolidTex();
+    blackScreen = makeBlackScreen();
+    scene.add(blackScreen);
+
+    cinShip = makeCinematicShip();
+    cinShip.visible = false;
+    scene.add(cinShip);
+    cinExhaust = makeExhaustPool();
+    cinExhaust.visible = false;
+    scene.add(cinExhaust);
+    cinAtmo = makeAtmoRing();
+    scene.add(cinAtmo);
+    cinFlash = makeCinFlash();
+    scene.add(cinFlash);
+
     window.addEventListener('resize', onResize);
     attachCanvas('fx3d-menu');
     fitToContainer(document.getElementById('fx3d-menu'));
@@ -1221,6 +1559,11 @@
     } else {
       detachCanvas();
       lastContent = '';
+      if (cin) {
+        endCinematic();
+        black.a = 0; black.target = 0; black.speed = 1000;
+        if (blackScreen) blackScreen.material.opacity = 0;
+      }
     }
     return enabled;
   }
@@ -1236,6 +1579,10 @@
     tick: tick,
     toggle: toggle,
     isEnabled: function () { return enabled; },
-    supported: function () { return supported; }
+    supported: function () { return supported; },
+    cinematic: playCinematic,
+    fadeBlack: function (a, dur) { setBlack(a, dur || 0.3); },
+    isCinematic: function () { return !!cin; },
+    setPaused: function (v) { cinPaused = !!v; }
   };
 })();

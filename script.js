@@ -282,6 +282,7 @@ const AudioSys = {
       case 'npc': this.tone({ freq: 520, slideTo: 780, type: 'sine', dur: 0.2, vol: 0.14 }); break;
       case 'charge': this.tone({ freq: 880, slideTo: 1320, type: 'sine', dur: 0.1, vol: 0.12 }); break;
       case 'arrival': this.tone({ freq: 160, slideTo: 480, type: 'sine', dur: 0.8, vol: 0.15 }); break;
+      case 'takeoff': this.tone({ freq: 120, slideTo: 520, type: 'sawtooth', dur: 0.6, vol: 0.14 }); break;
       case 'travel': this.tone({ freq: 110, slideTo: 220, type: 'sine', dur: 1.2, vol: 0.12 }); break;
       case 'saberWindup': this.tone({ freq: 90, slideTo: 320, type: 'sawtooth', dur: 0.12, vol: 0.1 }); break;
       case 'laser': this.tone({ freq: 520, slideTo: 240, type: 'square', dur: 0.1, vol: 0.12 }); break;
@@ -5129,7 +5130,25 @@ function missionDone(equip) {
   Save.save();
   updateHudProgress();
 
-  startTravel();
+  startDeparture();
+}
+
+/* Transição de partida: preparação, decolagem e câmera afastando do planeta 3D
+   antes de entrar na viagem espacial 2D (a mecânica da viagem é preservada). */
+function startDeparture() {
+  Game.phase = 'departure';
+  Game.locked = true;
+  if (window.Effects3D && Effects3D.supported() && Effects3D.isEnabled()) {
+    AudioSys.sfx('takeoff');
+    const theme = (Game.level && Game.level.lv && Game.level.lv.id) ||
+      (LEVELS[Game.levelIndex] && LEVELS[Game.levelIndex].theme);
+    Effects3D.cinematic('departure', theme, () => {
+      startTravel();
+      Effects3D.fadeBlack(0, 0.5);
+    });
+  } else {
+    startTravel();
+  }
 }
 
 /* ---------------- Viagem espacial ---------------- */
@@ -5159,6 +5178,10 @@ function startTravel() {
 function updateTravel(dt) {
   const tr = Game.travel;
   if (!tr) return;
+
+  /* Chegada cinematográfica em 3D: o jogo 2D fica congelado atrás da cena */
+  if (tr.cinematic) return;
+
   tr.t += dt;
   const p = tr.ship;
 
@@ -5275,7 +5298,22 @@ function updateTravel(dt) {
 /* Colisão nave ↔ planeta: a nave voa até o planeta e o fade acontece sozinho */
 function startTravelArrive() {
   const tr = Game.travel;
-  if (tr.arriving) return;
+  if (tr.arriving || tr.cinematic) return;
+  const nextLv = LEVELS[tr.nextIdx];
+
+  /* Chegada cinematográfica em 3D: planeta cresce, nave se aproxima, entra na
+     atmosfera e o fade revela o mapa do próximo planeta. Sem botão. */
+  if (window.Effects3D && Effects3D.supported() && Effects3D.isEnabled()) {
+    tr.cinematic = 'arrival';
+    Game.locked = true;
+    AudioSys.sfx('arrival');
+    Effects3D.cinematic('arrival', nextLv && nextLv.theme, () => {
+      tr.cinematic = null;
+      finishTravel();
+      Effects3D.fadeBlack(0, 0.5);
+    });
+    return;
+  }
   tr.arriving = { t: 0, dur: 1.7, x0: tr.ship.x, y0: tr.ship.y };
   AudioSys.sfx('arrival');
 }
@@ -5336,13 +5374,15 @@ function drawTravelScene() {
   }
   ctx.globalAlpha = 1;
 
-  drawTravelPlanet(tr);
-  drawTravelHazards(tr);
-  drawTravelShip(tr);
-  drawTravelHud(tr);
-
-  /* Barra de dicas químicas (alterna sozinha no rodapé) */
-  drawTravelTip();
+  /* Durante a chegada cinematográfica 3D, o planeta/nave/obstáculos 2D ficam
+     escondidos atrás da cena (só as estrelas continuam). */
+  if (!tr.cinematic) {
+    drawTravelPlanet(tr);
+    drawTravelHazards(tr);
+    drawTravelShip(tr);
+    drawTravelHud(tr);
+    drawTravelTip();
+  }
 
   drawParticles();
   drawFloaters();
@@ -7066,6 +7106,7 @@ function togglePause() {
   if (document.getElementById('reward').hidden === false) return;
 
   pauseShown = !pauseShown;
+  if (window.Effects3D && Effects3D.setPaused) Effects3D.setPaused(pauseShown);
   document.getElementById('pause').hidden = !pauseShown;
   if (pauseShown) {
     document.getElementById('pause-stats').innerHTML =
