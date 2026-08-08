@@ -7102,6 +7102,7 @@ function loop(t) {
   const dt = Math.min(0.05, (t - lastTime) / 1000 || 0);
   lastTime = t;
   update(dt);
+  if (window.Effects3D) Effects3D.tick(dt);
   if (Game.screen === 'game' && Game.level) render();
   requestAnimationFrame(loop);
 }
@@ -7448,6 +7449,21 @@ document.getElementById('btn-sound').addEventListener('click', () => {
   AudioSys.sfx('click');
 });
 
+/* Botão da camada 3D/2.5D (Three.js) — liga/desliga sem afetar o gameplay */
+function updateEffects3DButton() {
+  const b = document.getElementById('btn-effects3d');
+  if (!b || !window.Effects3D) return;
+  if (!Effects3D.supported()) { b.style.display = 'none'; return; }
+  b.style.display = '';
+  b.innerHTML = pixIcon('galaxy', 1) + ' Efeitos 3D: ' + (Effects3D.isEnabled() ? 'Ligado' : 'Desligado');
+}
+document.getElementById('btn-effects3d').addEventListener('click', () => {
+  if (!window.Effects3D) return;
+  Effects3D.toggle();
+  updateEffects3DButton();
+  AudioSys.sfx('click');
+});
+
 /* Vestiário: abas */
 document.querySelectorAll('#wardrobe-tabs .tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -7576,6 +7592,9 @@ function init() {
   selectedPlanet = Math.min(Math.max(Save.data.completed.indexOf(false), 0), LEVELS.length - 1);
   lastTime = performance.now();
   requestAnimationFrame(loop);
+  /* Camada 3D/2.5D complementar (Three.js) — nunca interfere no gameplay */
+  if (window.Effects3D) Effects3D.init();
+  updateEffects3DButton();
 }
 
 document.addEventListener('DOMContentLoaded', init);

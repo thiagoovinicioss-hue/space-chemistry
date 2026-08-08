@@ -15,6 +15,7 @@
 ============================================================ -->
 <section id="screen-menu" class="screen active" role="dialog" aria-label="Menu principal">
   <div class="starfield" aria-hidden="true"></div>
+  <div id="fx3d-menu" class="fx3d" aria-hidden="true"></div>
   <div class="menu-box">
     <div class="logo">
       <div class="logo-icon" id="menu-ship" aria-hidden="true"></div>
@@ -27,6 +28,7 @@
       <button class="btn" data-nav="wardrobe"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> Vestiário</button>
       <button class="btn" data-nav="achievements"><img class="pix-icon" data-icon="trophy" data-scale="1" alt=""> Conquistas</button>
       <button class="btn" id="btn-sound"><img class="pix-icon" data-icon="soundOn" data-scale="1" alt=""> Som: Ligado</button>
+      <button class="btn" id="btn-effects3d"><img class="pix-icon" data-icon="galaxy" data-scale="1" alt=""> Efeitos 3D: Ligado</button>
     </nav>
     <p class="menu-hint">Use as setas ou WASD e ENTER para navegar · ESC volta</p>
   </div>
@@ -37,6 +39,7 @@
 ============================================================ -->
 <section id="screen-rules" class="screen" role="dialog" aria-label="Regras do jogo">
   <div class="starfield" aria-hidden="true"></div>
+  <div id="fx3d-rules" class="fx3d" aria-hidden="true"></div>
   <div class="panel rules-panel">
     <h2 class="panel-title"><img class="pix-icon" data-icon="scroll" data-scale="2" alt=""> Como Jogar</h2>
     <div class="rules-grid">
@@ -87,6 +90,7 @@
 ============================================================ -->
 <section id="screen-galaxy" class="screen" role="dialog" aria-label="Mapa da galáxia">
   <div class="starfield" aria-hidden="true"></div>
+  <div id="fx3d-galaxy" class="fx3d" aria-hidden="true"></div>
   <div class="panel">
     <h2 class="panel-title"><img class="pix-icon" data-icon="galaxy" data-scale="2" alt=""> Mapa da Galáxia</h2>
     <p class="galaxy-sub">Complete os planetas para restaurar a galáxia.</p>
@@ -109,6 +113,7 @@
 ============================================================ -->
 <section id="screen-wardrobe" class="screen" role="dialog" aria-label="Vestiário">
   <div class="starfield" aria-hidden="true"></div>
+  <div id="fx3d-wardrobe" class="fx3d" aria-hidden="true"></div>
   <div class="panel">
     <h2 class="panel-title"><img class="pix-icon" data-icon="rocket" data-scale="2" alt=""> Vestiário</h2>
     <div class="wardrobe-preview" id="wardrobe-preview" aria-hidden="true">
@@ -133,6 +138,7 @@
 ============================================================ -->
 <section id="screen-achievements" class="screen" role="dialog" aria-label="Conquistas">
   <div class="starfield" aria-hidden="true"></div>
+  <div id="fx3d-achievements" class="fx3d" aria-hidden="true"></div>
   <div class="panel">
     <h2 class="panel-title"><img class="pix-icon" data-icon="trophy" data-scale="2" alt=""> Conquistas</h2>
     <p class="galaxy-sub" id="achievement-count"></p>
@@ -169,6 +175,7 @@
 
     <div class="canvas-wrap">
       <canvas id="game-canvas" width="640" height="360"></canvas>
+      <div id="fx3d-game" class="fx3d" aria-hidden="true"></div>
       <div id="interact-hint" class="interact-hint" hidden>[ESPAÇO] Interagir</div>
       <div id="gate-panel" class="gate-panel" hidden></div>
       <div id="mobile-ui" class="mobile-ui" aria-hidden="true">
@@ -373,6 +380,8 @@
 <!-- Overlay global: notificação de conquista -->
 <div id="toast" class="toast" hidden aria-live="polite"></div>
 
+<script src="assets/vendor/three.min.js"></script>
+<script src="effects3d.js"></script>
 <script src="questions.js"></script>
 <script src="script.js"></script>
 </body>

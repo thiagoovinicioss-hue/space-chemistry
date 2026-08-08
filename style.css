@@ -125,6 +125,17 @@ h3 .pix-icon { margin-right: 4px; }
   pointer-events: none;
 }
 
+/* Camada 3D complementar (Three.js) — efeitos2.5D opcionais.
+   Sempre por trás dos painéis/menus e nunca captura cliques/toques.
+   Se desligada (botão do menu) ou sem WebGL, esta camada fica vazia e o
+   jogo funciona exatamente como antes. */
+.fx3d {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 /* ---------------- Menu ---------------- */
 
 .menu-box {
