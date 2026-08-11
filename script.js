@@ -2086,6 +2086,7 @@ const Save = {
     return {
       version: 1,
       completed: [false, false, false, false, false],
+      exerciseBest: [0, 0, 0, 0, 0],
       bestScore: 0,
       unlocks: ['h_classic', 's_classic', 'ship_default', 't_none'],
       equipped: { helmet: 'h_classic', suit: 's_classic', ship: 'ship_default', trail: 't_none' },
