@@ -1465,3 +1465,143 @@ h3 .pix-icon { margin-right: 4px; }
   .hud-time { font-size: 13px; }
   .hud-score { font-size: 15px; }
 }
+
+/* ============================================================
+   PRATICAR LEWIS (construtor de fórmulas)
+============================================================ */
+.lewis-panel { max-width: 1080px; }
+.lewis-layout {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  text-align: left;
+}
+.lewis-main { flex: 1 1 auto; min-width: 0; }
+.lewis-side {
+  flex: 0 0 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+.lewis-mol-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.lewis-mol {
+  font-size: 12px;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel-2);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.lewis-mol:hover { transform: translateY(-2px); border-color: var(--accent); color: var(--text); }
+.lewis-mol.active {
+  border-color: var(--accent);
+  color: var(--text);
+  background: rgba(89, 211, 255, 0.12);
+  box-shadow: 0 0 12px rgba(89, 211, 255, 0.35);
+}
+.lewis-stage {
+  position: relative;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #142720;
+}
+.lewis-stage canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+.lewis-score-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--accent-3);
+}
+.lewis-step {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+.lewis-instruction {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.lewis-tray { display: flex; flex-wrap: wrap; gap: 8px; }
+.lewis-tray.hidden { display: none; }
+.lewis-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 8px 10px;
+  border: 2px solid var(--border-light);
+  border-radius: 10px;
+  background: #2b3554;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
+}
+.lewis-chip:hover { transform: translateY(-2px); border-color: var(--accent); }
+.lewis-chip:disabled { opacity: 0.45; cursor: default; transform: none; border-color: var(--border-light); }
+.lewis-chip:disabled:hover { transform: none; border-color: var(--border-light); }
+.lewis-chip.picked {
+  border-color: var(--accent-3);
+  box-shadow: 0 0 12px rgba(255, 209, 102, 0.5);
+}
+.lewis-chip-sym { font-family: var(--font-mono); font-size: 18px; font-weight: 700; }
+.lewis-dica { font-size: 11.5px; color: var(--text-dim); line-height: 1.5; }
+.lewis-msg {
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.lewis-msg.good { color: var(--good); border-color: rgba(93, 255, 166, 0.4); background: rgba(93, 255, 166, 0.08); }
+.lewis-msg.bad { color: var(--bad); border-color: rgba(255, 93, 108, 0.4); background: rgba(255, 93, 108, 0.08); }
+.lewis-msg .lewis-tip { color: var(--text-dim); display: block; margin-top: 4px; }
+.lewis-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.lewis-buttons .btn { padding: 10px 14px; font-size: 12px; }
+
+/* Exercício dentro do overlay da Máquina de Fusão */
+.lewis-exercise { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+.lewis-stage-ex { width: 100%; max-width: 640px; }
+.lewis-stage-ex canvas { width: 100%; height: auto; }
+.lewis-side-ex {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+.lewis-side-ex .lewis-buttons { justify-content: flex-end; }
+
+@media (max-width: 860px) {
+  .lewis-layout { flex-direction: column; }
+  .lewis-side { flex: 1 1 auto; max-width: none; }
+}
+@media (max-width: 480px) {
+  .lewis-buttons .btn { flex: 1 1 auto; padding: 12px 8px; font-size: 11px; }
+  .lewis-mol { font-size: 10px; padding: 6px 8px; }
+  .lewis-chip { min-width: 44px; padding: 6px 8px; }
+}

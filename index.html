@@ -27,6 +27,8 @@
       <button class="btn" data-nav="rules"><img class="pix-icon" data-icon="scroll" data-scale="1" alt=""> Regras</button>
       <button class="btn" data-nav="wardrobe"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> Vestiário</button>
       <button class="btn" data-nav="achievements"><img class="pix-icon" data-icon="trophy" data-scale="1" alt=""> Conquistas</button>
+      <button class="btn" data-nav="lewis"><img class="pix-icon" data-icon="flask" data-scale="1" alt=""> Praticar Lewis</button>
+      <button class="btn" data-nav="structural"><img class="pix-icon" data-icon="flask" data-scale="1" alt=""> Praticar Estrutural</button>
       <button class="btn" id="btn-sound"><img class="pix-icon" data-icon="soundOn" data-scale="1" alt=""> Som: Ligado</button>
       <button class="btn" id="btn-effects3d"><img class="pix-icon" data-icon="galaxy" data-scale="1" alt=""> Efeitos 3D: Ligado</button>
     </nav>
@@ -148,8 +150,76 @@
 </section>
 
 <!-- ============================================================
-     SCREEN: JOGO
+     SCREEN: PRATICAR LEWIS (construtor de fórmulas, modo livre)
 ============================================================ -->
+<section id="screen-lewis" class="screen" role="application" aria-label="Praticar Fórmulas de Lewis">
+  <div class="starfield" aria-hidden="true"></div>
+  <div class="panel lewis-panel">
+    <h2 class="panel-title"><img class="pix-icon" data-icon="flask" data-scale="2" alt=""> Praticar Fórmula de Lewis</h2>
+    <p class="galaxy-sub">Monte a estrutura completa em 6 etapas: elétrons são PONTOS, nunca traços.</p>
+
+    <div class="lewis-layout">
+      <div class="lewis-main">
+        <div id="lewis-mol-chips" class="lewis-mol-chips" role="tablist" aria-label="Moléculas"></div>
+        <div class="lewis-stage" id="lewis-stage">
+          <canvas id="lewis-canvas" width="760" height="480"></canvas>
+        </div>
+      </div>
+      <div class="lewis-side">
+        <div class="lewis-score-line">
+          <span class="hud-label">PONTOS</span>
+          <span id="lewis-score">0 pts</span>
+        </div>
+        <div class="lewis-step" id="lewis-step">ETAPA 1 / 6</div>
+        <p class="lewis-instruction" id="lewis-instruction"></p>
+        <div class="lewis-tray" id="lewis-tray" role="listbox" aria-label="Elementos"></div>
+        <p class="lewis-dica" id="lewis-dica"></p>
+        <p class="lewis-msg" id="lewis-msg" hidden></p>
+        <div class="lewis-buttons">
+          <button class="btn" id="btn-lewis-reset"><img class="pix-icon" data-icon="cross" data-scale="1" alt=""> Recomeçar</button>
+          <button class="btn" id="btn-lewis-refresh">↻ Refazer etapa</button>
+          <button class="btn btn-primary" id="btn-lewis-confirm"><img class="pix-icon" data-icon="check" data-scale="1" alt=""> Confirmar etapa</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-back" data-nav="menu">← Menu</button>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN: PRATICAR FÓRMULA ESTRUTURAL (construtor de traços)
+============================================================ -->
+<section id="screen-structural" class="screen" role="application" aria-label="Praticar Fórmulas Estruturais">
+  <div class="starfield" aria-hidden="true"></div>
+  <div class="panel lewis-panel">
+    <h2 class="panel-title"><img class="pix-icon" data-icon="flask" data-scale="2" alt=""> Praticar Fórmula Estrutural</h2>
+    <p class="galaxy-sub">Ligações covalentes são TRAÇOS: — simples, = dupla, ≡ tripla. Nunca pontos de elétrons.</p>
+
+    <div class="lewis-layout">
+      <div class="lewis-main">
+        <div id="structural-mol-chips" class="lewis-mol-chips" role="tablist" aria-label="Moléculas"></div>
+        <div class="lewis-stage" id="structural-stage">
+          <canvas id="structural-canvas" width="760" height="480"></canvas>
+        </div>
+      </div>
+      <div class="lewis-side">
+        <p class="lewis-instruction" id="structural-instruction"></p>
+        <div class="lewis-tray" id="structural-tray" role="listbox" aria-label="Elementos"></div>
+        <p class="lewis-dica" id="structural-dica"></p>
+        <p class="lewis-msg" id="structural-msg" hidden></p>
+        <div class="lewis-buttons">
+          <button class="btn" id="btn-structural-reset"><img class="pix-icon" data-icon="cross" data-scale="1" alt=""> Recomeçar</button>
+          <button class="btn btn-primary" id="btn-structural-check"><img class="pix-icon" data-icon="check" data-scale="1" alt=""> Conferir resposta</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-back" data-nav="menu">← Menu</button>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN: JOGO
+=========================================================== -->
 <section id="screen-game" class="screen" role="application" aria-label="Jogo">
   <div class="game-wrapper">
     <div id="hud" class="hud" aria-hidden="true">
@@ -405,5 +475,7 @@
 <script src="questions.js"></script>
 <script src="script.js"></script>
 <script src="exercises.js"></script>
+<script src="lewis_builder.js"></script>
+<script src="structural_builder.js"></script>
 </body>
 </html>

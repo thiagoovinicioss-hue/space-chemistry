@@ -7114,6 +7114,10 @@ function showScreen(name) {
   if (name === 'wardrobe') renderWardrobe();
   if (name === 'achievements') renderAchievements();
   if (name === 'menu') updateSoundButton();
+  if (name === 'lewis' && window.LewisBuilder) LewisBuilder.enter();
+  if (name !== 'lewis' && window.LewisBuilder && LewisBuilder.current) LewisBuilder.exit();
+  if (name === 'structural' && window.StructuralBuilder) StructuralBuilder.enter();
+  if (name !== 'structural' && window.StructuralBuilder && StructuralBuilder.current) StructuralBuilder.exit();
 
   updateTouchUI();
   updateRotateHint();
