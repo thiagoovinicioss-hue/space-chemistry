@@ -1864,7 +1864,7 @@ const LEVELS = [
       { type: 'green', x: 15, y: 12 }
     ],
     npcs: [
-      { type: 'robot', name: 'Guardião Antigo', x: 9, y: 16,
+      { type: 'guardian', name: 'Guardião Antigo', x: 9, y: 16,
         lines: [
           'Sou o Guardião das Fornalhas, viajante. Há milênios esta forja unia metais e ametais.',
           'Os lagos azuis são energia iônica pura. Atravesse-os pelas pontes de cristal.',
@@ -1914,7 +1914,7 @@ const LEVELS = [
       { type: 'purple', x: 22, y: 8, opens: [26, 8] }
     ],
     npcs: [
-      { type: 'sage', name: 'Sábia da Nébula', x: 13, y: 19,
+      { type: 'sageNebula', name: 'Sábia da Nébula', x: 13, y: 19,
         lines: [
           'As plantas desta nébula compartilham elétrons para sobreviver — como os ametais!',
           'Os cogumelos brilhantes quebram fácil. Espreite o que escondem...',
@@ -1971,7 +1971,7 @@ const LEVELS = [
       { type: 'robot', x: 15, y: 11 }
     ],
     npcs: [
-      { type: 'robot', name: 'Capataz Ferrov', x: 15, y: 18,
+      { type: 'foreman', name: 'Capataz Ferrov', x: 15, y: 18,
         lines: [
           'Bem-vindo às fundições de Ferravil. Aqui o metal reina — como o mar de elétrons!',
           'As esteiras transportam sucata. Não deixe que elas te empurrem para fora.',
@@ -2030,7 +2030,7 @@ const LEVELS = [
       { type: 'crystal', x: 22, y: 8, opens: [25, 7] }
     ],
     npcs: [
-      { type: 'sage', name: 'Astrônomo do Núcleo', x: 15, y: 18,
+      { type: 'astronomer', name: 'Astrônomo do Núcleo', x: 15, y: 18,
         lines: [
           'O Núcleo Cósmico guarda a energia de toda a galáxia.',
           'Classifique as ligações nos portais: iônica, covalente e metálica.',
@@ -3789,6 +3789,52 @@ const DIALOG_CONFIG = {
     palette: { S: '#35d0a0', W: '#ffffff', D: '#0c1226', s: '#1d5a3e', V: '#7ff5ff', w: '#0c1226' },
     eyes: [{ row: 5, col: 3, w: 6, h: 2 }],
     mouth: { row: 7, col: 4, w: 4 }
+  },
+
+  /* --- Personagens de diálogo dos planetas (um config por personagem) --- */
+
+  /* Planeta Iônico: Guardião Antigo (robô, viseira azul) */
+  guardian: {
+    sprite: SPRITES.robot,
+    scale: 6,
+    name: 'Guardião Antigo',
+    caption: 'Guardião das Fornalhas',
+    palette: { H: '#4a5a6e', G: '#9fb0d8', h: '#2b3554', V: '#3aa0ff', w: '#0c1226' },
+    eyes: [{ row: 4, col: 3, w: 6, h: 2 }],
+    mouth: { row: 8, col: 3, w: 6 }
+  },
+
+  /* Planeta Metálico: Capataz Ferrov (robô, viseira cobre/ferrugem) */
+  foreman: {
+    sprite: SPRITES.robot,
+    scale: 6,
+    name: 'Capataz Ferrov',
+    caption: 'Capataz das Fundições',
+    palette: { H: '#8a5a30', G: '#e8b26a', h: '#5a3218', V: '#ff7a3d', w: '#2a1608' },
+    eyes: [{ row: 4, col: 3, w: 6, h: 2 }],
+    mouth: { row: 8, col: 3, w: 6 }
+  },
+
+  /* Planeta Covalente: Sábia da Nébula (sábio, verde) */
+  sageNebula: {
+    sprite: SPRITES.alienSage,
+    scale: 6,
+    name: 'Sábia da Nébula',
+    caption: 'Sábia da Nébula',
+    palette: { S: '#35d0a0', W: '#ffffff', D: '#0c1226', s: '#1d5a3e', V: '#7ff5ff', w: '#0c1226' },
+    eyes: [{ row: 5, col: 3, w: 6, h: 2 }],
+    mouth: { row: 7, col: 4, w: 4 }
+  },
+
+  /* Planeta Final: Astrônomo do Núcleo (sábio, violeta cósmico) */
+  astronomer: {
+    sprite: SPRITES.alienSage,
+    scale: 6,
+    name: 'Astrônomo do Núcleo',
+    caption: 'Astrônomo do Núcleo',
+    palette: { S: '#c8a2ff', W: '#ffffff', D: '#0c1226', s: '#5a3a8a', V: '#8dffea', w: '#0c1226' },
+    eyes: [{ row: 5, col: 3, w: 6, h: 2 }],
+    mouth: { row: 7, col: 4, w: 4 }
   }
 };
 
@@ -5002,17 +5048,14 @@ function drawNpcs() {
   const t = performance.now() / 1000;
   const p = Game.player;
   for (const n of lv.npcs) {
+    const conf = DIALOG_CONFIG[n.type] || DIALOG_CONFIG.alien;
     const sc = 2;
-    const sp = n.type === 'robot' ? SPRITES.robot :
-      n.type === 'sage' ? SPRITES.alienSage : SPRITES.alien;
+    const sp = conf.sprite;
     const sz = spriteSize(sp, sc);
     const bob = Math.sin(t * 2 + n.t) * 2;
     const dx = Math.round(n.x - camX);
     const dy = Math.round(n.y - camY + bob);
-    const pal = n.type === 'robot' ? { G: '#9fb0d8', V: '#3aa0ff', W: '#0c1226' } :
-      n.type === 'sage' ? { G: '#6b5f55', V: '#35d0a0', W: '#0c1226' } :
-      { G: '#3aa06e', V: '#7ff5ff', W: '#0c1226' };
-    drawSprite(ctx, sp, dx - sz.w / 2, dy - sz.h, sc, pal);
+    drawSprite(ctx, sp, dx - sz.w / 2, dy - sz.h, sc, conf.palette);
 
     /* Nome do habitante */
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
