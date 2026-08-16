@@ -1853,7 +1853,7 @@ const LEVELS = [
       K: [[14, 6], [4, 15]],
       Br: [[11, 21], [4, 21]]
     },
-    hazards: [[12, 3], [21, 10], [16, 13], [3, 8], [24, 7], [7, 15]],
+    hazards: [[11, 4], [21, 10], [16, 13], [22, 16], [24, 7], [7, 15]],
     charges: [[5, 6], [9, 8], [17, 6], [22, 9], [8, 11], [20, 11], [13, 9], [18, 17], [6, 18], [22, 20], [9, 22], [20, 22], [15, 18], [6, 10]],
     recipes: ['NaCl', 'MgO', 'KBr'],
     objective: 'Monte os compostos iônicos',
@@ -1885,7 +1885,7 @@ const LEVELS = [
     id: 'covalent', name: 'Planeta Covalente', theme: 'covalent',
     intro: 'Nébula é feita de gases. Aqui, AMETAL + AMETAL COMPARTILHAM elétrons. Monte as moléculas no Montador Molecular e limpe a atmosfera.',
     radius: 14,
-    spawn: { x: 15, y: 27 }, machine: { x: 15, y: 15, label: 'Montador Molecular', type: 'assembler' },
+    spawn: { x: 15, y: 27 }, machine: { x: 16, y: 15, label: 'Montador Molecular', type: 'assembler' },
     standby: { x: 2, y: 12 },
     walls: [
       [3, 7, 4, 8], [26, 7, 27, 8],
@@ -1896,13 +1896,14 @@ const LEVELS = [
     breakables: [[11, 5], [8, 13], [19, 20], [10, 20]],
     lakes: [[8, 9, 10, 9], [20, 9, 22, 9], [15, 12, 15, 16]],
     bridges: [[9, 9], [21, 9], [15, 14]],
+    pipes: [[16, 15, 16, 12], [16, 15, 16, 19], [16, 15, 8, 13], [16, 15, 22, 13]],
     crystals: {
       H: [[7, 5], [9, 6], [21, 6], [10, 14], [20, 13], [12, 20], [4, 17]],
       O: [[7, 12], [13, 5], [23, 6], [15, 17], [26, 8]],
       C: [[19, 4], [19, 20]],
       N: [[6, 9], [13, 13]]
     },
-    hazards: [[4, 13], [21, 3], [10, 9], [25, 12], [15, 14]],
+    hazards: [[4, 13], [21, 3], [18, 12], [25, 12], [14, 12]],
     charges: [[6, 7], [9, 12], [17, 10], [23, 10], [7, 16], [18, 14], [12, 9], [20, 17], [14, 22], [10, 19], [11, 5], [8, 13], [10, 20]],
     critters: [[9, 13], [16, 8], [21, 11], [8, 18], [19, 16], [12, 17]],
     recipes: ['H2O', 'CO2', 'NH3'],
@@ -1958,9 +1959,9 @@ const LEVELS = [
       Au: [[23, 5], [22, 13]],
       Al: [[23, 4], [24, 10], [12, 21], [24, 15]]
     },
-    hazards: [[12, 3], [21, 3], [15, 14], [3, 10]],
+    hazards: [[17, 5], [20, 4], [10, 12], [3, 10]],
     traps: [{ x: 12, y: 12, w: 4, h: 1 }],
-    charges: [[6, 8], [12, 10], [18, 10], [23, 8], [8, 15], [14, 12], [16, 12], [20, 15], [9, 19], [19, 21], [6, 20], [24, 19], [15, 21], [11, 24]],
+    charges: [[6, 8], [12, 10], [18, 10], [23, 8], [8, 15], [13, 11], [16, 12], [20, 15], [9, 19], [19, 21], [6, 20], [24, 19], [15, 21], [11, 24]],
     recipes: ['CU', 'FE', 'AU'],
     objective: 'Alimente o núcleo com os metais certos',
     planetColor: '#ffd166',
@@ -1992,9 +1993,9 @@ const LEVELS = [
     intro: 'O Núcleo Cósmico precisa que você aplique TUDO que aprendeu. Classifique as ligações nos portais e restaure a galáxia!',
     radius: 14,
     spawn: { x: 15, y: 27 }, machine: { x: 15, y: 15, label: 'Reator da Galáxia', type: 'reactor' },
-    standby: { x: 15, y: 12 },
+    standby: { x: 15, y: 10 },
     walls: [
-      [3, 3, 5, 5], [25, 3, 27, 5],
+      [4, 7, 5, 9], [24, 7, 25, 9],
       [6, 5, 8, 5], [22, 5, 24, 5],
       [4, 19, 6, 19], [4, 23, 6, 23], [4, 19, 4, 23], [6, 19, 6, 23],
       [24, 19, 26, 19], [24, 23, 26, 23], [24, 19, 24, 23], [26, 19, 26, 23]
@@ -2007,12 +2008,12 @@ const LEVELS = [
       { x: 21, y: 8, w: 2, h: 2, type: 'covalent' }
     ],
     crystals: {
-      Na: [[5, 4], [9, 17]],
-      Cl: [[25, 4], [20, 13]],
+      Na: [[5, 7], [9, 17]],
+      Cl: [[25, 7], [20, 13]],
       O: [[15, 16], [13, 6]],
       H: [[5, 13], [21, 17]]
     },
-    hazards: [[8, 10], [11, 14], [21, 11], [25, 12], [17, 15]],
+    hazards: [[8, 10], [11, 14], [21, 11], [25, 12], [22, 13]],
     traps: [{ x: 12, y: 12, w: 4, h: 1 }],
     charges: [[7, 9], [11, 11], [19, 11], [23, 9], [8, 15], [22, 15], [10, 18], [20, 18], [13, 22], [17, 22], [13, 23], [17, 23], [15, 21], [6, 12], [25, 21]],
     recipes: ['NaCl'],
@@ -2025,8 +2026,8 @@ const LEVELS = [
       { formula: 'NH₃', bond: 'covalent', learn: 'N e H são ametais que compartilham elétrons. NH₃ é ligação COVALENTE.' }
     ],
     enemies: [
-      { type: 'crystal', x: 8, y: 8, opens: [5, 4] },
-      { type: 'crystal', x: 22, y: 8, opens: [25, 4] }
+      { type: 'crystal', x: 8, y: 8, opens: [5, 7] },
+      { type: 'crystal', x: 22, y: 8, opens: [25, 7] }
     ],
     npcs: [
       { type: 'sage', name: 'Astrônomo do Núcleo', x: 15, y: 18,
