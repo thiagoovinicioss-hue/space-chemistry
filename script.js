@@ -1154,6 +1154,12 @@ const SPRITES = {
   }
 };
 
+/* ---- Imagens do professor (substituem o sprite grid no diálogo e na sala de aula) ---- */
+const PROF_IMG_CLOSED = new Image();
+const PROF_IMG_OPEN   = new Image();
+PROF_IMG_CLOSED.src = 'assets/images/prof_closed.png';
+PROF_IMG_OPEN.src   = 'assets/images/prof_open.png';
+
 /* Cores do astronauta dependentes dos cosméticos equipados */
 function astronautPalette(helmet, suit) {
   return {
@@ -3896,14 +3902,31 @@ function drawDialogPortrait(d) {
   g.clearRect(0, 0, c.width, c.height);
 
   const conf = d.npc;
+  const bob = Math.sin(d.idleT * 2.2) * 1.5;
+
+  /* Professor: usar imagens reais (boca aberta/fechada) */
+  if (conf.sprite === SPRITES.scientist) {
+    const mouthOpen = d.talking && Math.sin(d.mouthT * 8) > 0.2;
+    const img = mouthOpen ? PROF_IMG_OPEN : PROF_IMG_CLOSED;
+    if (img.complete && img.naturalWidth > 0) {
+      const aspect = img.naturalWidth / img.naturalHeight;
+      const drawW = c.width;
+      const drawH = Math.round(drawW / aspect);
+      const drawX = 0;
+      const drawY = Math.round((c.height - drawH) / 2 + bob);
+      g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight,
+                  drawX, drawY, drawW, drawH);
+    }
+    return;
+  }
+
+  /* Demais personagens: sprite pixel-art original */
   const px = conf.scale;
   const sz = spriteSize(conf.sprite, px);
-  const bob = Math.sin(d.idleT * 2.2) * 1.5;
   const x = Math.round((c.width - sz.w) / 2);
   const y = Math.round((c.height - sz.h) / 2 + bob);
   drawSprite(g, conf.sprite, x, y, px, conf.palette);
 
-  /* Piscada: cobre os olhos com a cor da pele */
   if (d.blinking > 0 && conf.eyes) {
     g.fillStyle = conf.palette.s;
     for (const eye of conf.eyes) {
@@ -3911,7 +3934,6 @@ function drawDialogPortrait(d) {
     }
   }
 
-  /* Boca: abre e fecha enquanto o texto é digitado */
   if (d.talking && conf.mouth) {
     const open = Math.abs(Math.sin(d.mouthT * 8));
     const mw = Math.round(conf.mouth.w * px * (0.8 + open * 0.4));
@@ -6918,12 +6940,22 @@ function drawClassroom() {
   ctx.fillRect(330, 250, 90, 34);
   ctx.fillStyle = '#5a3a1a';
   ctx.fillRect(330, 250, 90, 8);
-  /* Professor perto da mesa */
-  const pal = { h: '#7a4a22', G: '#3aa0ff', s: '#ffd9a8', S: '#eef2ff', B: '#2b6f9e', w: '#2b3554' };
+  /* Professor perto da mesa (imagem real) */
   const bob = Math.sin(c.t * 2) * 1.5;
-  const sc = 4;
-  const sz = spriteSize(SPRITES.scientist, sc);
-  drawSprite(ctx, SPRITES.scientist, 372 - sz.w / 2, 232 - sz.h / 2 + bob, sc, pal);
+  if (PROF_IMG_CLOSED.complete && PROF_IMG_CLOSED.naturalWidth > 0) {
+    const img = PROF_IMG_CLOSED;
+    const aspect = img.naturalWidth / img.naturalHeight;
+    const drawW = 80;
+    const drawH = Math.round(drawW / aspect);
+    ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight,
+                  372 - drawW / 2, 232 - drawH / 2 + bob, drawW, drawH);
+  } else {
+    /* Fallback: sprite pixel-art antigo */
+    const pal = { h: '#7a4a22', G: '#3aa0ff', s: '#ffd9a8', S: '#eef2ff', B: '#2b6f9e', w: '#2b3554' };
+    const sc = 4;
+    const sz = spriteSize(SPRITES.scientist, sc);
+    drawSprite(ctx, SPRITES.scientist, 372 - sz.w / 2, 232 - sz.h / 2 + bob, sc, pal);
+  }
 
   /* Armários (lockers) na parede à direita */
   drawLockers();
