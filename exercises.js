@@ -1415,20 +1415,16 @@
     /* ===== Fase 3 — Planeta Metálico ===== */
     [
       {
-        type: 'drag',
-        instruction: 'Arraste cada substância para a ligação correta.',
-        items: [
-          { id: 'nacl', label: 'NaCl', color: '#ff9df2' },
-          { id: 'co2', label: 'CO₂', color: '#7ff5ff' },
-          { id: 'au', label: 'Au', color: '#ffd166' }
+        type: 'choice',
+        instruction: 'Classifique: NaCl é ligação ___, CO₂ é ligação ___ e Au (ouro puro) é ligação ___.',
+        opts: [
+          'Iônica, Covalente, Metálica',
+          'Covalente, Iônica, Metálica',
+          'Metálica, Covalente, Iônica',
+          'Iônica, Metálica, Covalente'
         ],
-        slots: [
-          { id: 'ionic', label: 'IÔNICA (metal + ametal)' },
-          { id: 'covalent', label: 'COVALENTE (ametal + ametal)' },
-          { id: 'metallic', label: 'METÁLICA (metal puro)' }
-        ],
-        answerKey: { nacl: 'ionic', co2: 'covalent', au: 'metallic' },
-        explain: 'NaCl: metal + ametal = iônica. CO₂: ametal + ametal = covalente. Au: metal puro = metálica (mar de elétrons).',
+        ans: 0,
+        explain: 'NaCl: metal (Na) + ametal (Cl) = iônica. CO₂: ametal (C) + ametal (O) = covalente. Au: metal puro = metálica (mar de elétrons).',
         pts: 100
       },
       {
