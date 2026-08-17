@@ -64,8 +64,8 @@ const QUESTIONS = [
     cat: 'ionic',
     q: 'Analise as afirmativas e selecione a sequência correta de verdadeiro (V) e falso (F):\nI - O pesquisador norte-americano considerado o pai da ligação química é o Newton Lewis.\nII - Um átomo atinge estabilidade quando possui 2 ou 8 elétrons na camada de valência.\nIII - Ligações iônicas ocorrem entre metais e ametais, com resolução por fórmula estrutural e esquema de orbitais.',
     opts: ['v, v, f', 'f, v, v', 'f, v, f', 'v, v, v'],
-    ans: 1,
-    why: 'I é FALSO (a afirmação sobre o nome é imprecisa); II é VERDADEIRO (regra do octeto); III é VERDADEIRO (metal + ametal).'
+    ans: 2,
+    why: 'I é FALSO (o pesquisador é Gilbert N. Lewis, não Newton Lewis); II é VERDADEIRO (regra do octeto/dueto); III é FALSO — embora iônica ocorra entre metal + ametal, fórmula estrutural e esquema de orbitais não representam ligações iônicas (são usados para covalentes).'
   },
   {
     id: 'ion4',

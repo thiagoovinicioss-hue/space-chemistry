@@ -1206,16 +1206,18 @@
       },
       collect: function (x) {
         return x.state.cells.map(function (c) {
-          return c.reduce(function (s, v) { return s + (v ? 1 : 0); }, 0);
+          return c.slice();
         });
       },
       grade: function (item, ans) {
         if (!ans || ans.length !== item.orbitals.length) return false;
-        /* contagens + regra de Pauli (preencher célula esquerda antes da direita) */
         return item.orbitals.every(function (orb, oi) {
-          var cells = x.state.cells[oi];
-          if (ans[oi] !== orb.answer) return false;
-          for (var b = 0; b < orb.boxes; b++) {
+          var cells = ans[oi];
+          if (!cells) return false;
+          var total = cells.reduce(function (s, v) { return s + (v ? 1 : 0); }, 0);
+          if (total !== orb.answer) return false;
+          var boxes = orb.boxes || 1;
+          for (var b = 0; b < boxes; b++) {
             if (cells[b * 2 + 1] && !cells[b * 2]) return false;
           }
           return true;

@@ -44,6 +44,7 @@
   ------------------------------------------------------------------ */
   var MOLECULES = {
     H2: {
+      id: 'H2',
       formula: 'H₂',
       name: 'Gás Hidrogênio',
       tip: 'Cada H precisa de 1 elétron: compartilham 1 par.',
@@ -55,6 +56,7 @@
       outerLone: { E: { N: 0, S: 0, E: 0, W: 0 } }
     },
     Cl2: {
+      id: 'Cl2',
       formula: 'Cl₂',
       name: 'Gás Cloro',
       tip: 'Cada Cl tem 7 elétrons de valência e compartilha 1.',
@@ -66,6 +68,7 @@
       outerLone: { E: { N: 2, S: 2, E: 2, W: 0 } }
     },
     H2O: {
+      id: 'H2O',
       formula: 'H₂O',
       name: 'Água',
       tip: 'O oxigênio tem 6 elétrons de valência e compartilha 2.',
@@ -80,6 +83,7 @@
       }
     },
     NH3: {
+      id: 'NH3',
       formula: 'NH₃',
       name: 'Amônia',
       tip: 'O nitrogênio tem 5 elétrons de valência e compartilha 3.',
@@ -95,6 +99,7 @@
       }
     },
     CH4: {
+      id: 'CH4',
       formula: 'CH₄',
       name: 'Metano',
       tip: 'O carbono tem 4 elétrons de valência e compartilha 4.',
@@ -115,6 +120,7 @@
       }
     },
     CO2: {
+      id: 'CO2',
       formula: 'CO₂',
       name: 'Gás Carbônico',
       tip: 'Ligação dupla: o carbono compartilha 2 pares com cada oxigênio.',
@@ -129,6 +135,7 @@
       }
     },
     O2: {
+      id: 'O2',
       formula: 'O₂',
       name: 'Gás Oxigênio',
       tip: 'Ligação dupla: cada O compartilha 2 elétrons e guarda 2 pares.',
@@ -140,6 +147,7 @@
       outerLone: { E: { N: 2, S: 2, E: 0, W: 0 } }
     },
     N2: {
+      id: 'N2',
       formula: 'N₂',
       name: 'Gás Nitrogênio',
       tip: 'Ligação tripla: cada N compartilha 3 elétrons e guarda 1 par.',
