@@ -7187,6 +7187,7 @@ document.querySelectorAll('.screen').forEach(s => { screens[s.id.replace('screen
 function showScreen(name) {
   if (Game.screen === 'game' && name !== 'game') {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (typeof Effects3D !== 'undefined' && Effects3D.detach) Effects3D.detach();
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = screens[name];

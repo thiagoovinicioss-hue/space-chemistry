@@ -1557,6 +1557,7 @@
       var theme = readLevelTheme();
       if (theme) {
         if (activeTheme !== theme) {
+          if (activePlanet) activePlanet.visible = false;
           activeTheme = theme;
           activePlanet = ensurePlanet(theme);
         }
@@ -1700,6 +1701,29 @@
       black.a = 0; black.target = 0; black.speed = 1000;
       if (blackScreen) blackScreen.material.opacity = 0;
       renderer.setClearColor(0x000000, 0);
+    },
+    detach: function () {
+      if (cin) {
+        cin.planet.visible = false;
+        cinShip.visible = false;
+        cinExhaust.visible = false;
+        cinAtmo.visible = false;
+        cinFlash.visible = false;
+        cin = null;
+        cinPaused = false;
+      }
+      if (activePlanet) activePlanet.visible = false;
+      activePlanet = null;
+      activeTheme = '';
+      activePhase = '';
+      phaseAge = 0;
+      black.a = 0; black.target = 0; black.speed = 1000;
+      if (blackScreen) blackScreen.material.opacity = 0;
+      renderer.setClearColor(0x000000, 0);
+      var keys = Object.keys(planetCache);
+      for (var i = 0; i < keys.length; i++) planetCache[keys[i]].visible = false;
+      hideReturnFleet();
+      detachCanvas();
     }
   };
 })();
