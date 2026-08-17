@@ -61,7 +61,7 @@ const ARRIVAL_DUR = 2.2;
 const DIALOGUES = {
   0: [
     'Bem-vindo à Estação Orbital, recruta!',
-    'Eu sou o Prof. Lewis. A galáxia perdeu toda a sua energia química.',
+    'Eu sou o Prof. Sérgio. A galáxia perdeu toda a sua energia química.',
     'Sua missão: explorar cada planeta e restaurar as ligações entre os átomos.',
     'Colete os cristais (elementos) pelo mapa e monte o composto na Máquina de Fusão.',
     'Alguns blocos são quebráveis: aproxime-se e aperte ESPAÇO (ou golpeie com o sabre J).',
@@ -1103,7 +1103,7 @@ const SPRITES = {
     ]
   },
 
-  /* Cientista "Prof. Lewis" (12 x 14 px) */
+  /* Cientista "Prof. Sérgio" (12 x 14 px) */
   scientist: {
     grid: [
       '....hhhh....',
@@ -3763,7 +3763,7 @@ const DIALOG_CONFIG = {
   scientist: {
     sprite: SPRITES.scientist,
     scale: 6,
-    name: 'Prof. Lewis',
+    name: 'Prof. Sérgio',
     caption: 'Orientador da Missão',
     palette: { h: '#7a4a22', G: '#3aa0ff', s: '#ffd9a8', S: '#eef2ff', B: '#2b6f9e', w: '#2b3554' },
     eyes: [{ row: 8, col: 3, w: 6, h: 2 }],
