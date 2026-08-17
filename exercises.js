@@ -1375,15 +1375,10 @@
     /* ===== Fase 2 — Planeta Covalente ===== */
     [
       {
-        type: 'structure',
-        instruction: 'Monte a molécula de ÁGUA (H₂O): coloque o oxigênio no centro e os hidrogênios nas pontas.',
-        anchors: [
-          { x: 0.5, y: 0.55, el: 'O', label: 'O' },
-          { x: 0.22, y: 0.32, el: 'H', label: 'H' },
-          { x: 0.78, y: 0.32, el: 'H', label: 'H' }
-        ],
-        bonds: [[0, 1], [0, 2]],
-        tray: ['H', 'O'],
+        type: 'choice',
+        instruction: 'Na molécula de ÁGUA (H₂O), o oxigênio está no centro ligado a 2 hidrogênios. Que tipo de ligação mantém a molécula?',
+        opts: ['Iônica', 'Covalente', 'Metálica', 'De hidrogênio'],
+        ans: 1,
         explain: 'Na água, o O (central) compartilha elétrons com 2 hidrogênios. Ametal + ametal compartilham elétrons: ligação covalente.',
         pts: 100
       },
@@ -1478,17 +1473,11 @@
     /* ===== Fase 4 — Planeta Final (revisão geral) ===== */
     [
       {
-        type: 'structure',
-        instruction: 'Monte a rede do cloreto de sódio: cátions Na⁺ e ânions Cl⁻ devem se alternar.',
-        anchors: [
-          { x: 0.3, y: 0.32, el: 'Na', label: 'Na' },
-          { x: 0.7, y: 0.32, el: 'Cl', label: 'Cl' },
-          { x: 0.3, y: 0.7, el: 'Cl', label: 'Cl' },
-          { x: 0.7, y: 0.7, el: 'Na', label: 'Na' }
-        ],
-        bonds: [[0, 1], [0, 2], [1, 3], [2, 3]],
-        tray: ['Na', 'Cl'],
-        explain: 'No retículo iônico, Na⁺ e Cl⁻ se alternam: cada cátion se rodeia de ânions e vice-versa, formando uma rede cristalina.',
+        type: 'choice',
+        instruction: 'No cloreto de sódio (NaCl), os íons Na⁺ e Cl⁻ se alternam formando uma rede cristalina. Que tipo de ligação forma essa rede?',
+        opts: ['Covalente', 'Metálica', 'Iônica', 'De hidrogênio'],
+        ans: 2,
+        explain: 'No retículo iônico, Na⁺ e Cl⁻ se alternam: cada cátion se rodeia de ânions e vice-versa, formando uma rede cristalina por atração eletrostática.',
         pts: 100
       },
       {
