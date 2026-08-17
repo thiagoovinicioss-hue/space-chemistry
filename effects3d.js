@@ -1687,6 +1687,19 @@
     cinematic: playCinematic,
     fadeBlack: function (a, dur) { setBlack(a, dur || 0.3); },
     isCinematic: function () { return !!cin; },
-    setPaused: function (v) { cinPaused = !!v; }
+    setPaused: function (v) { cinPaused = !!v; },
+    cancelCinematic: function () {
+      if (!cin) return;
+      cin.planet.visible = false;
+      cinShip.visible = false;
+      cinExhaust.visible = false;
+      cinAtmo.visible = false;
+      cinFlash.visible = false;
+      cin = null;
+      cinPaused = false;
+      black.a = 0; black.target = 0; black.speed = 1000;
+      if (blackScreen) blackScreen.material.opacity = 0;
+      renderer.setClearColor(0x000000, 0);
+    }
   };
 })();

@@ -5206,6 +5206,7 @@ function missionDone(equip) {
 /* Transição de partida: preparação, decolagem e câmera afastando do planeta 3D
    antes de entrar na viagem espacial 2D (a mecânica da viagem é preservada). */
 function startDeparture() {
+  if (!Game.level) return;
   Game.phase = 'departure';
   Game.locked = true;
   if (window.Effects3D && Effects3D.supported() && Effects3D.isEnabled()) {
@@ -5226,6 +5227,7 @@ function startDeparture() {
 const TR_DEST = { x: VIEW_W - 120, y: 64, r: 46 };
 
 function startTravel() {
+  if (!Game.level) return;
   Game.phase = 'travel';
   Game.locked = true;
   /* Fase real: esconde o "carregando" antigo e desenha tudo no canvas */
@@ -5376,7 +5378,7 @@ function updateTravel(dt) {
 /* Colisão nave ↔ planeta: a nave voa até o planeta e o fade acontece sozinho */
 function startTravelArrive() {
   const tr = Game.travel;
-  if (tr.arriving || tr.cinematic) return;
+  if (!tr || tr.arriving || tr.cinematic) return;
   const nextLv = LEVELS[tr.nextIdx];
 
   /* Chegada cinematográfica em 3D: planeta cresce, nave se aproxima, entra na
@@ -5968,6 +5970,7 @@ function updateTravelFill() {
 
 function finishTravel() {
   const tr = Game.travel;
+  if (!tr) return;
   const tw = document.getElementById('travel-wrap');
   if (tw) tw.hidden = true;
   Game.travel = null;
@@ -7182,6 +7185,9 @@ const screens = {};
 document.querySelectorAll('.screen').forEach(s => { screens[s.id.replace('screen-', '')] = s; });
 
 function showScreen(name) {
+  if (Game.screen === 'game' && name !== 'game') {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = screens[name];
   if (el) el.classList.add('active');
@@ -7241,7 +7247,12 @@ function exitToMenu() {
   Game.credits = null;
   Game.fade = null;
   Game.locked = false;
+  Game.phase = null;
+  Game.travel = null;
   pauseShown = false;
+  if (typeof Effects3D !== 'undefined' && Effects3D.isCinematic()) {
+    Effects3D.cancelCinematic();
+  }
   document.getElementById('pause').hidden = true;
   document.getElementById('feedback').hidden = true;
   document.getElementById('reward').hidden = true;
