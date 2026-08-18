@@ -1017,11 +1017,13 @@
         ctx.fillStyle = 'rgba(10,16,48,0.9)';
         ctx.fillRect(0, 0, W, H);
 
-        var d = item.donor, a = item.acceptor;
-        var dx = W * 0.3, dy = H * 0.52, ax = W * 0.7, ay = H * 0.52;
+        var d = item.donor;
+        var accs = item.acceptors || [item.acceptor];
+        var dx = W * 0.3, dy = H * 0.52;
         var E = (typeof ELEMENTS !== 'undefined') ? ELEMENTS : {};
         var s = x.state;
         var dragging = s.dragging !== null && s.dragging !== undefined;
+        var isMulti = accs.length > 1;
 
         /* doador */
         drawElemDot(ctx, d.el, dx, dy, 26);
@@ -1033,7 +1035,7 @@
         ctx.fillText(d.label || (E[d.el] ? E[d.el].name : d.el) + ' (metal)', dx, dy + 52);
         ctx.restore();
 
-        /* seta de direção: do elétron selecionado/arrastado até o ametal */
+        /* seta de direção: do elétron selecionado/arrastado até o ametal mais próximo */
         var arrowFrom = null;
         if (dragging && s.dragPos) {
           arrowFrom = s.dragPos;
@@ -1041,16 +1043,20 @@
           arrowFrom = { x: s.donorDots[s.selected].x, y: s.donorDots[s.selected].y };
         }
         if (arrowFrom && s.moved.indexOf(s.selected) < 0) {
-          drawTransferArrow(ctx, arrowFrom.x, arrowFrom.y, ax, ay);
+          var arrowTarget = isMulti ? s.nearestAccept : { x: W * 0.7, y: H * 0.52 };
+          if (arrowTarget) drawTransferArrow(ctx, arrowFrom.x, arrowFrom.y, arrowTarget.x, arrowTarget.y);
         }
         /* anel no ametal indicando onde soltar */
         if (dragging || (s.selected !== null && s.selected !== undefined)) {
-          ctx.save();
-          ctx.strokeStyle = dragging ? 'rgba(93,255,166,0.7)' : 'rgba(255,209,102,0.45)';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([6, 5]);
-          ctx.beginPath(); ctx.arc(ax, ay, TRANSFER_DROP_R - 4, 0, Math.PI * 2); ctx.stroke();
-          ctx.restore();
+          var ringTarget = isMulti ? s.nearestAccept : { x: W * 0.7, y: H * 0.52 };
+          if (ringTarget) {
+            ctx.save();
+            ctx.strokeStyle = dragging ? 'rgba(93,255,166,0.7)' : 'rgba(255,209,102,0.45)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 5]);
+            ctx.beginPath(); ctx.arc(ringTarget.x, ringTarget.y, TRANSFER_DROP_R - 4, 0, Math.PI * 2); ctx.stroke();
+            ctx.restore();
+          }
         }
 
         var donorN = x.state.max;
@@ -1090,34 +1096,75 @@
         }
         x.state.donorDots = donorDots;
 
-        /* aceitador */
-        drawElemDot(ctx, a.el, ax, ay, 26);
-        ctx.save();
-        ctx.fillStyle = '#9fb0d8';
-        ctx.font = '11px "Press Start 2P", monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(a.label || (E[a.el] ? E[a.el].name : a.el) + ' (ametal)', ax, ay + 52);
-        ctx.restore();
-        var accN = (a.valence || 7) + item.need;
-        for (var j = 0; j < accN; j++) {
-          var ang = -Math.PI / 2 + (Math.PI * 2 * j) / accN;
-          var extra = j >= (a.valence || 7);
-          var px2 = ax + Math.cos(ang) * 40, py2 = ay + Math.sin(ang) * 40;
-          ctx.save();
-          ctx.fillStyle = extra ? '#5dffa6' : '#7f8fff';
-          ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.arc(px2, py2, extra ? 9 : 6.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-          if (extra) {
-            ctx.fillStyle = '#0a1030';
-            ctx.font = '8px monospace';
+        /* aceitador(es) */
+        var accPositions = [];
+        if (isMulti) {
+          var gap = Math.min(80, (H - 60) / (accs.length - 1 || 1));
+          var startY = H / 2 - ((accs.length - 1) * gap) / 2;
+          accs.forEach(function (a, idx) {
+            var ax2 = W * 0.7, ay2 = startY + idx * gap;
+            accPositions.push({ x: ax2, y: ay2 });
+            drawElemDot(ctx, a.el, ax2, ay2, 22);
+            ctx.save();
+            ctx.fillStyle = '#9fb0d8';
+            ctx.font = '9px "Press Start 2P", monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('e−', px2, py2 + 1);
-          }
+            ctx.fillText(a.label || (E[a.el] ? E[a.el].name : a.el) + ' (ametal)', ax2, ay2 + 38);
+            ctx.restore();
+            var accN = (a.valence || 7) + 1;
+            for (var j = 0; j < accN; j++) {
+              var ang = -Math.PI / 2 + (Math.PI * 2 * j) / accN;
+              var extra = j >= (a.valence || 7);
+              var px2 = ax2 + Math.cos(ang) * 32, py2 = ay2 + Math.sin(ang) * 32;
+              ctx.save();
+              ctx.fillStyle = extra ? '#5dffa6' : '#7f8fff';
+              ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+              ctx.lineWidth = 1.5;
+              ctx.beginPath(); ctx.arc(px2, py2, extra ? 8 : 5.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+              if (extra) {
+                ctx.fillStyle = '#0a1030';
+                ctx.font = '7px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('e−', px2, py2 + 1);
+              }
+              ctx.restore();
+            }
+          });
+        } else {
+          var a = accs[0];
+          var ax2 = W * 0.7, ay2 = H * 0.52;
+          accPositions.push({ x: ax2, y: ay2 });
+          drawElemDot(ctx, a.el, ax2, ay2, 26);
+          ctx.save();
+          ctx.fillStyle = '#9fb0d8';
+          ctx.font = '11px "Press Start 2P", monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(a.label || (E[a.el] ? E[a.el].name : a.el) + ' (ametal)', ax2, ay2 + 52);
           ctx.restore();
+          var accN2 = (a.valence || 7) + item.need;
+          for (var j2 = 0; j2 < accN2; j2++) {
+            var ang2 = -Math.PI / 2 + (Math.PI * 2 * j2) / accN2;
+            var extra2 = j2 >= (a.valence || 7);
+            var px3 = ax2 + Math.cos(ang2) * 40, py3 = ay2 + Math.sin(ang2) * 40;
+            ctx.save();
+            ctx.fillStyle = extra2 ? '#5dffa6' : '#7f8fff';
+            ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.arc(px3, py3, extra2 ? 9 : 6.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            if (extra2) {
+              ctx.fillStyle = '#0a1030';
+              ctx.font = '8px monospace';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('e−', px3, py3 + 1);
+            }
+            ctx.restore();
+          }
         }
+        x.state.accPositions = accPositions;
 
         /* rótulo de progresso */
         ctx.save();
@@ -1130,7 +1177,11 @@
       },
       collect: function (x) { return x.state.moved; },
       grade: function (item, ans) {
-        return Array.isArray(ans) && ans.length === item.need;
+        if (!Array.isArray(ans)) return false;
+        if (item.acceptors) {
+          return ans.length === item.need;
+        }
+        return ans.length === item.need;
       },
       clear: function (x) {
         x.state.moved = [];
@@ -1434,41 +1485,53 @@
         pts: 100
       },
       {
-        type: 'electrons',
-        instruction: 'Distribua os elétrons do SÓDIO (Z = 11) nas camadas corretas.',
-        symbol: 'Na', z: 11,
-        shells: [
-          { label: 'K', max: 2, answer: 2 },
-          { label: 'L', max: 8, answer: 8 },
-          { label: 'M', max: 8, answer: 1 }
+        type: 'transfer',
+        instruction: 'Transfira os elétrons que o ALUMÍNIO (metal) dá para os átomos de BROMO (ametais) na ligação iônica.',
+        donor: { el: 'Al', valence: 3, label: 'Alumínio (metal)' },
+        acceptors: [
+          { el: 'Br', valence: 7, label: 'Bromo (ametal)' },
+          { el: 'Br', valence: 7, label: 'Bromo (ametal)' },
+          { el: 'Br', valence: 7, label: 'Bromo (ametal)' }
         ],
-        explain: 'O sódio tem 11 elétrons: 2 (K), 8 (L) e 1 (M). O elétron isolado da camada M é o que ele doa na ligação iônica.',
+        need: 3,
+        explain: 'Correto! O alumínio perde três elétrons e forma Al³⁺, enquanto cada átomo de bromo recebe um elétron e forma Br⁻. Assim, eles formam o composto iônico AlBr₃.',
         pts: 100
       },
       {
         type: 'choice',
-        instruction: 'Na ligação iônica do cloreto de sódio (NaCl), o que acontece com os elétrons?',
-        opts: [
-          'São compartilhados igualmente entre os átomos',
-          'O sódio doa 1 elétron e o cloro recebe',
-          'Não há troca de elétrons',
-          'O cloro doa 1 elétron ao sódio'
-        ],
-        ans: 1,
-        explain: 'Metal (Na) doa elétrons; ametal (Cl) recebe. Com cargas opostas, Na⁺ e Cl⁻ se atraem fortemente.',
+        instruction: 'Analise as afirmações abaixo e assinale a alternativa que apresenta a sequência correta de verdadeiro (V) e falso (F).\n\nI. A ligação iônica ocorre pela transferência de elétrons entre um metal e um ametal.\n\nII. Na ligação iônica, o metal perde elétrons e se transforma em cátion, enquanto o ametal ganha elétrons e se transforma em ânion.\n\nIII. O composto H₂O é um exemplo de ligação iônica.',
+        opts: ['V, V, F', 'V, F, V', 'F, V, F', 'V, V, V'],
+        ans: 0,
+        explain: 'Correto! Na ligação iônica, ocorre transferência de elétrons: o metal forma um cátion e o ametal forma um ânion. H₂O possui ligações covalentes.',
         pts: 100
       },
       {
-        type: 'chalkboard',
-        scene: 'ionic',
-        title: 'Ligação iônica — Na e Cl',
-        instruction: 'Pinte com o GIZ AZUL o metal (Na) que DOA elétrons e com o GIZ VERMELHO o ametal (Cl) que RECEBE.',
-        defaultChalk: 'blue',
-        regions: [
-          { x: 0.3, y: 0.56, r: 0.12, color: '#4a9aff' },
-          { x: 0.7, y: 0.56, r: 0.12, color: '#ff5d6c' }
+        type: 'choice',
+        instruction: 'Analise as afirmações e assinale a sequência correta:\n\nI. O NaCl é formado por ligação iônica.\n\nII. Na ligação iônica os átomos compartilham elétrons para ficarem estáveis.\n\nIII. A ligação iônica acontece entre átomos do grupo dos metais e dos ametais.',
+        opts: ['V, F, V', 'V, V, F', 'F, V, V', 'V, V, V'],
+        ans: 0,
+        explain: 'Correto! O NaCl possui ligação iônica, formada pela transferência de elétrons entre um metal e um ametal.',
+        pts: 100
+      },
+      {
+        type: 'choice',
+        instruction: 'A ligação iônica é caracterizada por:',
+        opts: [
+          'Compartilhamento de elétrons entre dois ametais.',
+          'Transferência de elétrons entre metal e ametal, formando cátions e ânions.',
+          'Formação de um mar de elétrons livres.',
+          'Atração entre átomos neutros sem perda ou ganho de elétrons.'
         ],
-        explain: 'O sódio (metal) doa 1 elétron; o cloro (ametal) recebe. Formam-se Na⁺ e Cl⁻, que se atraem: a ligação iônica.',
+        ans: 1,
+        explain: 'Correto! Na ligação iônica, ocorre transferência de elétrons entre um metal e um ametal, formando cátions e ânions.',
+        pts: 100
+      },
+      {
+        type: 'choice',
+        instruction: 'Qual dos compostos abaixo é formado por ligação iônica?',
+        opts: ['CO₂', 'H₂O', 'NaCl', 'O₂'],
+        ans: 2,
+        explain: 'Correto! O NaCl é formado por sódio, um metal, e cloro, um ametal, formando uma ligação iônica.',
         pts: 100
       }
     ],
@@ -1986,6 +2049,15 @@
       var s = this.x.state;
       if (s.dragging === null || s.dragging === undefined) return;
       s.dragPos = { x: p.x, y: p.y };
+      var accs = item.acceptors || [item.acceptor];
+      if (accs.length > 1 && s.accPositions) {
+        var best = null, bestD = Infinity;
+        for (var k = 0; k < s.accPositions.length; k++) {
+          var dd = dist(p.x, p.y, s.accPositions[k].x, s.accPositions[k].y);
+          if (dd < bestD) { bestD = dd; best = s.accPositions[k]; }
+        }
+        s.nearestAccept = best;
+      }
       this.refresh();
     },
 
@@ -1995,11 +2067,20 @@
       if (s.dragging !== null && s.dragging !== undefined) {
         var i = s.dragging;
         var home = (s.donorDots || [])[i];
-        var ax = this.x.W * 0.7, ay = this.x.H * 0.52;
-        var onDrop = dist(p.x, p.y, ax, ay) < TRANSFER_DROP_R;
+        var accs = item.acceptors || [item.acceptor];
+        var onDrop = false;
+        if (accs.length > 1 && s.accPositions) {
+          for (var k = 0; k < s.accPositions.length; k++) {
+            if (dist(p.x, p.y, s.accPositions[k].x, s.accPositions[k].y) < TRANSFER_DROP_R) { onDrop = true; break; }
+          }
+        } else {
+          var ax = this.x.W * 0.7, ay = this.x.H * 0.52;
+          onDrop = dist(p.x, p.y, ax, ay) < TRANSFER_DROP_R;
+        }
         var onHome = home && dist(p.x, p.y, home.x, home.y) < TRANSFER_HIT_R;
         s.dragging = null;
         s.dragPos = null;
+        s.nearestAccept = null;
         if (onDrop || onHome) {
           if (s.moved.indexOf(i) < 0) s.moved.push(i);
           s.selected = null;

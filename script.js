@@ -5116,25 +5116,42 @@ function drawHearts() {
   for (const h of lv.hearts) {
     if (h.taken) continue;
     h.t += 0.04;
-    const cx = h.x - camX, cy = h.y - camY + Math.sin(h.t * 2) * 3;
-    const pulse = 1 + Math.sin(h.t * 3) * 0.15;
+    const cx = h.x - camX, cy = h.y - camY + Math.sin(h.t * 2) * 4;
+    const pulse = 1 + Math.sin(h.t * 3) * 0.18;
+    const glowR = 14 + Math.sin(h.t * 2.5) * 3;
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.scale(pulse, pulse);
+    /* glow externo pulsante */
     ctx.shadowColor = '#ff5d6c';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = glowR;
+    ctx.fillStyle = 'rgba(255,93,108,0.18)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    /* coração */
+    ctx.scale(pulse, pulse);
+    const s = 8;
+    ctx.shadowColor = '#ff5d6c';
+    ctx.shadowBlur = 12;
     ctx.fillStyle = '#ff5d6c';
-    const s = 5;
     ctx.beginPath();
     ctx.moveTo(0, s * 0.3);
     ctx.bezierCurveTo(-s, -s * 0.3, -s, -s, 0, -s * 0.5);
     ctx.bezierCurveTo(s, -s, s, -s * 0.3, 0, s * 0.3);
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    /* brilho interno */
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.beginPath();
-    ctx.arc(-1.5, -2.5, 1.5, 0, Math.PI * 2);
+    ctx.arc(-2.2, -3.2, 2, 0, Math.PI * 2);
     ctx.fill();
+    /* anel orbital sutil */
+    ctx.strokeStyle = 'rgba(255,93,108,0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(0, 0, 11 + Math.sin(h.t * 1.8) * 2, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.restore();
   }
 }
@@ -7524,6 +7541,17 @@ function renderWardrobe() {
     sub.className = unlocked ? (equipped ? 'item-owner' : 'item-sub') : 'item-locked-hint';
     sub.innerHTML = equipped ? pixIcon('check', 1) + ' Equipado' : (unlocked ? item.cat : pixIcon('lock', 1) + ' ' + unlockReason(item.id));
     card.appendChild(sub);
+    if (wardrobeCat === 'suits' && item.maxHearts && unlocked) {
+      const hearts = document.createElement('div');
+      hearts.className = 'item-sub';
+      hearts.style.color = '#ff5d6c';
+      hearts.style.fontSize = '9px';
+      hearts.style.marginTop = '2px';
+      var heartsHtml = '';
+      for (var hi = 0; hi < item.maxHearts; hi++) heartsHtml += pixIcon('heart', 1);
+      hearts.innerHTML = heartsHtml + ' ' + item.maxHearts + ' vidas';
+      card.appendChild(hearts);
+    }
     if (unlocked) {
       card.addEventListener('click', () => {
         Save.data.equipped[saveKey] = item.id;
@@ -7559,8 +7587,12 @@ function drawWardrobePreview() {
     drawSprite(g, suitOverlay, ox, oy, 4, pal);
   }
   const info = document.getElementById('wardrobe-info');
+  var heartsStr = '';
+  if (eqS.maxHearts) {
+    heartsStr = '<br>Vidas: ' + pixIcon('heart', 1) + ' ' + eqS.maxHearts;
+  }
   info.innerHTML = '<strong>' + eqS.name + '</strong><br>Capacete: ' + eqH.name +
-    '<br>Nave: ' + getEquippedItem('ship').name + '<br>Rastro: ' + getEquippedItem('trail').name;
+    '<br>Nave: ' + getEquippedItem('ship').name + '<br>Rastro: ' + getEquippedItem('trail').name + heartsStr;
 }
 
 /* Ícone do item (usado no vestiário e no popup de recompensa) */
