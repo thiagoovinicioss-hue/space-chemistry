@@ -444,6 +444,42 @@
       hint: function () { return 'Escolha uma alternativa e toque em CONFIRMAR.'; }
     },
 
+    /* ============ 1B. RESPOSTA DIGITADA ============ */
+    'text-input': {
+      name: 'Resposta digitada',
+      icon: 'brain',
+      build: function (x, item) {
+        var wrap = document.createElement('div');
+        wrap.style.textAlign = 'center';
+        var inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'exercise-text-input';
+        inp.placeholder = item.placeholder || 'Digite sua resposta aqui...';
+        inp.autocomplete = 'off';
+        inp.spellcheck = false;
+        inp.addEventListener('input', function () {
+          x.state.text = inp.value;
+          Exercise.clearFeedback();
+        });
+        inp.addEventListener('keydown', function (e) { e.stopPropagation(); });
+        wrap.appendChild(inp);
+        x.body.appendChild(wrap);
+        x.state.text = '';
+        x.state.inputEl = inp;
+        setTimeout(function () { inp.focus(); }, 60);
+      },
+      collect: function (x) { return x.state.text || ''; },
+      grade: function (item, ans) {
+        var norm = (ans || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        return norm === item.answer;
+      },
+      clear: function (x) {
+        x.state.text = '';
+        if (x.state.inputEl) x.state.inputEl.value = '';
+      },
+      hint: function () { return 'Digite sua resposta no campo de texto e toque em CONFIRMAR.'; }
+    },
+
     /* ============ 2. ARRASTAR E SOLTAR ============ */
     drag: {
       name: 'Arrastar e soltar',
@@ -1280,43 +1316,51 @@
      DADOS POR FASE (modular: edite estes arrays para novos desafios)
   ------------------------------------------------------------------ */
   var EXERCISE_LEVELS = [
-    /* ===== Fase 0 — Estação Orbital (tutorial, geral) ===== */
+    /* ===== Fase 0 — Estação Orbital (introdução às ligações químicas) ===== */
     [
       {
+        type: 'text-input',
+        instruction: 'Primeiramente, quem é o químico do século XX considerado o pai da Ligação Química?',
+        placeholder: 'Digite o nome do cientista...',
+        answer: 'linus pauling',
+        explain: 'Linus Pauling foi um dos grandes nomes do estudo das ligações químicas.',
+        pts: 100
+      },
+      {
         type: 'choice',
-        instruction: 'Para ficar estável, um átomo geralmente busca quantos elétrons na camada de valência (regra do octeto)?',
-        opts: ['2 elétrons', '8 elétrons', '18 elétrons', '32 elétrons'],
-        ans: 1,
-        explain: 'A regra do octeto: os átomos tendem a ficar com 8 elétrons na camada de valência (apenas 2 para o H). Por isso eles se ligam: doando, recebendo ou compartilhando elétrons.',
-        pts: 100
-      },
-      {
-        type: 'electrons',
-        instruction: 'Distribua os elétrons do átomo de OXIGÊNIO (Z = 8) nas camadas corretas.',
-        symbol: 'O', z: 8,
-        shells: [
-          { label: 'K', max: 2, answer: 2 },
-          { label: 'L', max: 8, answer: 6 }
+        instruction: 'Além disso, um cientista chamado Gilbert Newton Lewis fez uma teoria que determina quantos elétrons um átomo deve ter na camada de valência para ficar estável. Qual o nome da teoria? Quantos elétrons o átomo deve ter?',
+        opts: [
+          'Teoria do Octeto. Deve ter 8 elétrons ou 2 (para o Hidrogênio) para ficar estável.',
+          'Teoria da Relatividade. A quantidade é relativa, varia entre cada elemento.',
+          'Teoria do Octeto. Deve ter 80 elétrons.',
+          'Teoria da Evolução Química. A quantidade de elétrons evolui de acordo com o elemento.'
         ],
-        explain: 'O oxigênio tem 8 elétrons: 2 na camada K e 6 na camada L. Faltam 2 elétrons para completar a L — por isso o oxigênio precisa de 2 elétrons para ficar estável.',
+        ans: 0,
+        explain: 'A Teoria do Octeto explica a busca por uma configuração estável na camada de valência. Para muitos átomos, isso corresponde a 8 elétrons; o hidrogênio é uma exceção importante e busca 2.',
         pts: 100
       },
       {
-        type: 'lewis',
-        instruction: 'Monte a fórmula de Lewis do OXIGÊNIO distribuindo seus 6 elétrons de valência nos 4 lados.',
-        symbol: 'O', valence: 6, answerKey: [2, 2, 1, 1],
-        explain: 'Os 6 elétrons de valência do O: cada lado recebe 1 elétron primeiro; quando os lados acabam, eles formam pares. Ficam 2 pares e 2 elétrons livres.',
+        type: 'choice',
+        instruction: 'Além disso, existem 3 tipos diferentes de ligações químicas, que ocorrem entre grupos distintos de elementos. Ametal com Ametal ou Hidrogênio:',
+        opts: ['Iônica', 'Covalente', 'Metálica'],
+        ans: 1,
+        explain: 'Ligações covalentes geralmente ocorrem entre ametais, envolvendo o compartilhamento de elétrons.',
         pts: 100
       },
       {
-        type: 'chalkboard',
-        scene: 'atom',
-        atom: 'O', valence: 6,
-        title: 'Camada de valência — O',
-        instruction: 'Contorne com o GIZ AZUL os elétrons da camada de valência do oxigênio (a área tracejada ao redor do átomo).',
-        defaultChalk: 'blue',
-        regions: [{ x: 0.5, y: 0.58, r: 0.16, color: '#4a9aff' }],
-        explain: 'O oxigênio (Z = 8) tem 6 elétrons na camada de valência (2s² 2p⁴). Faltam 2 para completar o octeto — por isso ele se liga a outros átomos.',
+        type: 'choice',
+        instruction: 'Metal com Ametal:',
+        opts: ['Iônica', 'Covalente', 'Metálica'],
+        ans: 0,
+        explain: 'Ligações iônicas geralmente ocorrem entre metais e ametais, envolvendo transferência de elétrons.',
+        pts: 100
+      },
+      {
+        type: 'choice',
+        instruction: 'Entre metais:',
+        opts: ['Iônica', 'Covalente', 'Metálica'],
+        ans: 2,
+        explain: 'A ligação metálica ocorre entre átomos de metais, com elétrons deslocalizados que podem se movimentar pelo material.',
         pts: 100
       }
     ],
@@ -1746,12 +1790,36 @@
         Save.data.exerciseBest[idx] = Game.exerciseStats.score;
         Save.save();
       }
-      if (typeof showMission === 'function') showMission();
+      /* Sincroniza stats dos exercícios para o painel de missão */
+      Game.quizStats = { correct: Game.exerciseStats.correct, total: Game.exerciseStats.total };
+      /* Fase 0: mostra diálogo de encerramento do Sérgio antes da missão */
+      if (idx === 0 && typeof openDialog === 'function') {
+        openDialog({
+          lines: [
+            'Ótimo! Agora posso deixar você começar a explorar a galáxia com esse conhecimento básico! Boa sorte, recruta!'
+          ],
+          onEnd: function () {
+            if (typeof showMission === 'function') showMission();
+          }
+        });
+      } else {
+        if (typeof showMission === 'function') showMission();
+      }
     },
 
     /* --- teclado --- */
     onKey: function (e) {
       if (!this.session || this.answered && document.getElementById('btn-ex-next').hidden) return;
+      var item = this.session[this.idx];
+      /* Questões de texto digitado: não interceptar teclas (input próprio) */
+      if (item && item.type === 'text-input') {
+        var nextBtn2 = document.getElementById('btn-ex-next');
+        if ((e.code === 'Enter' || e.code === 'Space') && !nextBtn2.hidden) {
+          e.preventDefault();
+          nextBtn2.click();
+        }
+        return;
+      }
       var nextBtn = document.getElementById('btn-ex-next');
       if (e.code === 'Enter' || e.code === 'Space') {
         e.preventDefault();
@@ -1759,7 +1827,6 @@
         this.confirm();
         return;
       }
-      var item = this.session[this.idx];
       if (item && item.type === 'choice') {
         var map = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3 };
         if (e.code in map) this.selectChoice(map[e.code]);

@@ -989,6 +989,23 @@ h3 .pix-icon { margin-right: 4px; }
 }
 .exercise-micro-hint { color: var(--text-dim); font-size: 11.5px; margin-top: 6px; text-align: center; }
 
+/* resposta digitada */
+.exercise-text-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bg-panel-2);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+.exercise-text-input::placeholder { color: var(--text-dim); opacity: 0.6; }
+.exercise-text-input:focus { border-color: var(--accent); }
+
 /* múltipla escolha */
 .exercise-opts { display: flex; flex-direction: column; gap: 10px; }
 .exercise-opt {
