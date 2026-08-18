@@ -1723,6 +1723,8 @@ const SUIT_OVERLAYS = {
 };
 
 const CATS = ['helmets', 'suits', 'ships', 'trails'];
+const CAT_TO_SAVE = { helmets: 'helmet', suits: 'suit', ships: 'ship', trails: 'trail' };
+const SAVE_TO_CAT = { helmet: 'helmets', suit: 'suits', ship: 'ships', trail: 'trails' };
 function allCosmetics() {
   return CATS.flatMap(c => COSMETICS[c].map(it => ({ ...it, catName: c })));
 }
@@ -2108,6 +2110,14 @@ const Save = {
       const raw = localStorage.getItem(SAVE_KEY);
       if (raw) {
         this.data = Object.assign(this.defaults(), JSON.parse(raw));
+        /* Migrate: old saves may have plural keys in equipped (helmets→helmet) */
+        const eq = this.data.equipped;
+        for (const [plural, singular] of Object.entries(CAT_TO_SAVE)) {
+          if (eq[plural] && !eq[singular]) {
+            eq[singular] = eq[plural];
+            delete eq[plural];
+          }
+        }
         return;
       }
     } catch (e) { /* armazenamento indisponível */ }
@@ -5172,7 +5182,7 @@ function missionDone(equip) {
     const cat = pendingMissionItem.catName ||
       CATS.find(c => COSMETICS[c].some(i => i.id === pendingMissionItem.id));
     if (cat) {
-      Save.data.equipped[cat] = pendingMissionItem.id;
+      Save.data.equipped[CAT_TO_SAVE[cat]] = pendingMissionItem.id;
       Save.save();
     }
   }
@@ -7422,7 +7432,8 @@ function renderWardrobe() {
   grid.innerHTML = '';
   COSMETICS[wardrobeCat].forEach(item => {
     const unlocked = isUnlocked(item.id);
-    const equipped = Save.data.equipped[wardrobeCat] === item.id;
+    const saveKey = CAT_TO_SAVE[wardrobeCat];
+    const equipped = Save.data.equipped[saveKey] === item.id;
     const card = document.createElement('button');
     card.className = 'item-card' + (equipped ? ' equipped' : '') + (unlocked ? '' : ' locked');
     card.disabled = !unlocked;
@@ -7442,7 +7453,7 @@ function renderWardrobe() {
     card.appendChild(sub);
     if (unlocked) {
       card.addEventListener('click', () => {
-        Save.data.equipped[wardrobeCat] = item.id;
+        Save.data.equipped[saveKey] = item.id;
         Save.save();
         AudioSys.sfx('click');
         renderWardrobe();
@@ -8237,7 +8248,7 @@ if (dialogBoxEl) {
 document.getElementById('btn-equip-now').addEventListener('click', () => {
   if (pendingRewardItem) {
     const cat = pendingRewardItem.catName || CATS.find(c => COSMETICS[c].some(i => i.id === pendingRewardItem.id));
-    Save.data.equipped[cat] = pendingRewardItem.id;
+    Save.data.equipped[CAT_TO_SAVE[cat]] = pendingRewardItem.id;
     Save.save();
   }
   document.getElementById('reward').hidden = true;
