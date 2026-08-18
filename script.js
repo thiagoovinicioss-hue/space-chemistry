@@ -7357,8 +7357,9 @@ function getEquippedItem(catKey) {
 }
 
 function getMaxLives() {
+  if (!Save.data) return MAX_LIVES;
   const suit = getEquippedItem('suit');
-  return suit.maxHearts || 3;
+  return suit.maxHearts || MAX_LIVES;
 }
 
 function isUnlocked(id) {
