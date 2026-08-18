@@ -9,13 +9,13 @@
   'use strict';
 
   var NUCLEUS_COLORS = [
-    0xff6b6b, 0x6bcfff, 0xffa06b, 0x6bffa0, 0xc06bff,
-    0xffe06b, 0x6bffff, 0xff6bc0, 0xa0ff6b, 0x6ba0ff
+    0xff1a1a, 0x00b4ff, 0xff6600, 0x00ff44, 0xaa00ff,
+    0xffcc00, 0x00ffdd, 0xff0088, 0x66ff00, 0x3366ff
   ];
 
   var SHELL_COLORS = [
-    0x00e5ff, 0xff80d5, 0x69f0ae, 0xffd740,
-    0xff5252, 0x64ffda, 0xb388ff, 0xffab40
+    0x00ccff, 0xff00aa, 0x00ff66, 0xffaa00,
+    0xff2222, 0x00ffcc, 0x8800ff, 0xff6600
   ];
 
   /* ---------- helpers ---------- */
@@ -115,7 +115,7 @@
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       this.renderer.setClearColor(0x000000, 0);
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      this.renderer.toneMappingExposure = 1.2;
+      this.renderer.toneMappingExposure = 1.5;
       this.container.appendChild(this.renderer.domElement);
 
       /* Lights — multi-source for proper 3D shading */
@@ -136,6 +136,25 @@
       var rim = new THREE.DirectionalLight(0xffddaa, 0.35);
       rim.position.set(0, 2, -5);
       this.scene.add(rim);
+
+      /* Environment map for metallic reflections */
+      var pmremGen = new THREE.PMREMGenerator(this.renderer);
+      pmremGen.compileEquirectangularShader();
+      var envScene = new THREE.Scene();
+      envScene.background = new THREE.Color(0x111122);
+      /* Add colored lights to the env scene for reflections */
+      var envLight1 = new THREE.PointLight(0x4488ff, 2, 50);
+      envLight1.position.set(10, 5, 10);
+      envScene.add(envLight1);
+      var envLight2 = new THREE.PointLight(0xff4488, 1.5, 50);
+      envLight2.position.set(-10, -3, -5);
+      envScene.add(envLight2);
+      var envLight3 = new THREE.PointLight(0x44ff88, 1, 50);
+      envLight3.position.set(0, 10, -10);
+      envScene.add(envLight3);
+      this.envMap = pmremGen.fromScene(envScene, 0.04).texture;
+      this.scene.environment = this.envMap;
+      pmremGen.dispose();
 
       /* Atom group */
       this.atomGroup = new THREE.Group();
@@ -255,12 +274,12 @@
       var nucSize = Math.max(0.18, Math.min(0.45, 0.14 + numShells * 0.025));
 
       var nucGeo = new THREE.SphereGeometry(nucSize, 64, 64);
-      var nucMat = new THREE.MeshPhongMaterial({
+      var nucMat = new THREE.MeshStandardMaterial({
         color: nucColor,
         emissive: nucColor,
-        emissiveIntensity: 0.9,
-        shininess: 120,
-        specular: 0x444444
+        emissiveIntensity: 0.8,
+        metalness: 0.9,
+        roughness: 0.1
       });
       this.atomGroup.add(new THREE.Mesh(nucGeo, nucMat));
 
@@ -292,8 +311,8 @@
 
       /* --- Electron shells --- */
       this.shells = [];
-      var baseRadius = 0.8;
-      var shellSpacing = numShells <= 2 ? 0.7 : Math.max(0.38, Math.min(0.65, 2.2 / numShells));
+      var baseRadius = 1.0;
+      var shellSpacing = numShells <= 2 ? 0.85 : Math.max(0.5, Math.min(0.85, 3.0 / numShells));
 
       for (var s = 0; s < numShells; s++) {
         var count = shells[s];
@@ -306,20 +325,21 @@
         /* orbitContainer: precesses around the nucleus, carries ring + electrons */
         var orbitContainer = new THREE.Group();
 
-        /* Orbit ring — tube for thickness */
-        var ringGeo = new THREE.TorusGeometry(radius, 0.012, 16, 200);
-        var ringMat = new THREE.MeshPhongMaterial({
+        /* Orbit ring — metallic torus */
+        var ringGeo = new THREE.TorusGeometry(radius, 0.015, 16, 200);
+        var ringMat = new THREE.MeshStandardMaterial({
           color: sCol,
           emissive: sCol,
           emissiveIntensity: 0.3,
           transparent: true,
-          opacity: 0.3,
-          shininess: 40,
+          opacity: 0.35,
+          metalness: 0.9,
+          roughness: 0.15,
           depthWrite: false
         });
         orbitContainer.add(new THREE.Mesh(ringGeo, ringMat));
 
-        var eSize = Math.max(0.04, Math.min(0.08, 0.09 - numShells * 0.004));
+        var eSize = Math.max(0.05, Math.min(0.09, 0.1 - numShells * 0.004));
 
         /* Electron glow texture for this shell */
         var eGlowTex = makeRadialGlowTexture(sRGB.r, sRGB.g, sRGB.b, 256);
@@ -330,14 +350,14 @@
           var ex = Math.cos(angle) * radius;
           var ey = Math.sin(angle) * radius;
 
-          /* Electron sphere */
+          /* Electron sphere — metallic */
           var eGeo = new THREE.SphereGeometry(eSize, 24, 24);
-          var eMat = new THREE.MeshPhongMaterial({
+          var eMat = new THREE.MeshStandardMaterial({
             color: sCol,
             emissive: sCol,
-            emissiveIntensity: 0.75,
-            shininess: 100,
-            specular: 0x666666
+            emissiveIntensity: 0.7,
+            metalness: 0.85,
+            roughness: 0.15
           });
           var electron = new THREE.Mesh(eGeo, eMat);
           electron.position.set(ex, ey, 0);
