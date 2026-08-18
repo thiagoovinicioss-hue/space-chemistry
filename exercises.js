@@ -480,6 +480,63 @@
       hint: function () { return 'Digite sua resposta no campo de texto e toque em CONFIRMAR.'; }
     },
 
+    /* ============ 1C. SELEÇÃO NA TABELA PERIÓDICA ============ */
+    'periodic-select': {
+      name: 'Tabela Periódica',
+      icon: 'flask',
+      build: function (x, item) {
+        var allEl = (typeof PT_ELEMENTS !== 'undefined') ? PT_ELEMENTS : [];
+        x.state.selected = {};
+        x.state.countEl = null;
+
+        var counter = document.createElement('p');
+        counter.className = 'ptsel-counter';
+        counter.textContent = 'Selecionados: 0/' + item.need;
+        x.state.countEl = counter;
+        x.body.appendChild(counter);
+
+        var grid = document.createElement('div');
+        grid.className = 'ptsel-grid';
+        allEl.forEach(function (el) {
+          var tile = document.createElement('div');
+          tile.className = 'ptsel-tile';
+          tile.dataset.sym = el.s;
+          tile.innerHTML = '<span class="ptsel-sym">' + el.s + '</span><span class="ptsel-nm">' + el.n + '</span>';
+          tile.addEventListener('click', function () {
+            if (x.state.selected[el.s]) {
+              delete x.state.selected[el.s];
+              tile.classList.remove('ptsel-tile--on');
+            } else {
+              x.state.selected[el.s] = true;
+              tile.classList.add('ptsel-tile--on');
+            }
+            var n = Object.keys(x.state.selected).length;
+            counter.textContent = 'Selecionados: ' + n + '/' + item.need;
+            Exercise.clearFeedback();
+          });
+          grid.appendChild(tile);
+        });
+        x.body.appendChild(grid);
+        Exercise.refresh();
+      },
+      collect: function (x) { return Object.keys(x.state.selected).sort(); },
+      grade: function (item, ans) {
+        if (!ans || ans.length !== item.answer.length) return false;
+        var sorted = item.answer.slice().sort();
+        for (var i = 0; i < sorted.length; i++) {
+          if (ans[i] !== sorted[i]) return false;
+        }
+        return true;
+      },
+      clear: function (x) {
+        x.state.selected = {};
+        var tiles = x.body.querySelectorAll('.ptsel-tile--on');
+        for (var i = 0; i < tiles.length; i++) tiles[i].classList.remove('ptsel-tile--on');
+        if (x.state.countEl) x.state.countEl.textContent = 'Selecionados: 0/' + (x.body.closest('.exercise-body') ? 5 : 5);
+      },
+      hint: function () { return 'Selecione os elementos na tabela e toque em CONFIRMAR.'; }
+    },
+
     /* ============ 2. ARRASTAR E SOLTAR ============ */
     drag: {
       name: 'Arrastar e soltar',
@@ -1459,53 +1516,51 @@
     /* ===== Fase 3 — Planeta Metálico ===== */
     [
       {
-        type: 'choice',
-        instruction: 'Classifique: NaCl é ligação ___, CO₂ é ligação ___ e Au (ouro puro) é ligação ___.',
-        opts: [
-          'Iônica, Covalente, Metálica',
-          'Covalente, Iônica, Metálica',
-          'Metálica, Covalente, Iônica',
-          'Iônica, Metálica, Covalente'
-        ],
-        ans: 0,
-        explain: 'NaCl: metal (Na) + ametal (Cl) = iônica. CO₂: ametal (C) + ametal (O) = covalente. Au: metal puro = metálica (mar de elétrons).',
-        pts: 100
-      },
-      {
-        type: 'draw',
-        instruction: 'Pinte o MAR DE ELÉTRONS: cubra as áreas tracejadas entre os cátions de ferro.',
-        bg: 'sea',
-        color: '#ffd166',
-        regions: [
-          { x: 0.36, y: 0.5, r: 0.15, color: '#ffd166' },
-          { x: 0.64, y: 0.5, r: 0.15, color: '#ffd166' },
-          { x: 0.5, y: 0.28, r: 0.13, color: '#ffd166' },
-          { x: 0.5, y: 0.72, r: 0.13, color: '#ffd166' }
-        ],
-        explain: 'Nos metais, os elétrons de valência ficam livres e deslocalizados entre os cátions — o "mar de elétrons". É isso que conduz eletricidade e calor.',
+        type: 'periodic-select',
+        instruction: 'Alguns metais possuem pontos de fusão muito próximos da temperatura ambiente. Selecione os 5 metais que podem se apresentar líquidos em temperaturas próximas da temperatura ambiente.',
+        need: 5,
+        answer: ['Cs', 'Ga', 'Rb', 'Fr', 'Hg'],
+        explain: 'Correto! Césio, gálio, rubídio, frâncio e mercúrio possuem pontos de fusão muito baixos quando comparados à maioria dos metais, ficando próximos da temperatura ambiente.',
+        explainWrong: 'Quase! Os elementos procurados eram Césio, Gálio, Rubídio, Frâncio e Mercúrio.',
         pts: 100
       },
       {
         type: 'choice',
-        instruction: 'Por que os metais conduzem eletricidade mesmo no estado sólido?',
+        instruction: 'Se um metal for colocado em um trefilador, o que acontecerá com ele?',
         opts: [
-          'Porque têm elétrons livres (mar de elétrons)',
-          'Porque formam grandes moléculas',
-          'Porque os átomos se movem livremente',
-          'Na verdade, os metais não conduzem'
+          'Ele se transformará em um líquido, pois a pressão do trefilador diminui o ponto de fusão do metal.',
+          'Ele se tornará um fio, devido à característica da ductilidade, devido ao seu mar de elétrons que realinha os cátions e os protege.',
+          'Ele se quebrará imediatamente, pois os cátions metálicos não conseguem mudar de posição quando recebem uma força externa.',
+          'Ele se tornará um fio porque os elétrons livres abandonam completamente o metal durante a deformação.'
         ],
-        ans: 0,
-        explain: 'Os elétrons de valência dos metais estão livres e móveis (mar de elétrons), conduzindo corrente elétrica mesmo sólidos.',
+        ans: 1,
+        explain: 'Correto! A ductilidade é a capacidade de um metal sofrer deformação e ser transformado em fios sem se romper facilmente.',
         pts: 100
       },
       {
-        type: 'chalkboard',
-        scene: 'metal',
-        title: 'Metais — mar de elétrons',
-        instruction: 'Pinte com o GIZ VERMELHO o MAR DE ELÉTRONS: a região tracejada entre os cátions de ferro por onde os elétrons fluem.',
-        defaultChalk: 'red',
-        regions: [{ x: 0.5, y: 0.72, r: 0.16, color: '#ff5d6c' }],
-        explain: 'Nos metais os elétrons de valência ficam deslocalizados entre os cátions — o "mar de elétrons" que conduz corrente e calor.',
+        type: 'choice',
+        instruction: 'Suponhamos que alguém coloque um pedaço de metal sobre uma vela para aquecê-lo. Analisando cientificamente, o que estaria ocorrendo na estrutura do metal?',
+        opts: [
+          'Os cátions desapareceriam progressivamente, pois o calor transforma os prótons em elétrons.',
+          'Os elétrons livres estariam se movendo mais rapidamente, assim, com o aumento da energia cinética, ocorre o aumento da energia térmica.',
+          'O metal perderia todos os seus elétrons livres imediatamente, interrompendo completamente a ligação metálica.',
+          'Os elétrons livres deixariam completamente o metal, fazendo com que os átomos perdessem sua estrutura metálica.'
+        ],
+        ans: 1,
+        explain: 'Correto! Ao receber energia térmica, aumenta a energia cinética das partículas, fazendo com que os elétrons e a estrutura do metal apresentem maior agitação.',
+        pts: 100
+      },
+      {
+        type: 'choice',
+        instruction: 'Analise as afirmativas e selecione a sequência correta de verdadeiro e falso:\n\nI) Os metais são maleáveis pois o mar de elétrons protege os cátions uns dos outros, não permitindo que eles se afastem, como normalmente ocorre em cristais iônicos.\n\nII) Os metais são brilhantes pois seus elétrons livres absorvem a luz, saltam para camadas exteriores e se mantêm lá, sem descer de nível energético novamente.\n\nIII) Os metais costumam conduzir corrente elétrica pois os elétrons livres são deslocados pelos elétrons que estão entrando, assim se movendo por meio do metal. A quantidade de elétrons que sai e que entra é a mesma.',
+        opts: [
+          'F – F – V',
+          'V – V – F',
+          'V – F – V',
+          'F – V – V'
+        ],
+        ans: 2,
+        explain: 'Correto! O mar de elétrons ajuda a manter a estrutura metálica mesmo quando os cátions mudam de posição. A afirmação II está incorreta, enquanto a III relaciona os elétrons livres à condução elétrica.',
         pts: 100
       }
     ],
@@ -1734,9 +1789,10 @@
         this.errorFlash = 0.8;
         this.markError(item, type);
         var empty = this.isEmptyAnswer(type, ans);
+        var wrongText = item.explainWrong || ('Não é bem isso.<br><span class="explain-text">Relembre o conceito: ' + item.explain + '</span>');
         this.setFeedback(false, empty
           ? 'Ainda não respondeu!<br><span class="explain-text">' + type.hint(this.x) + '</span>'
-          : 'Não é bem isso.<br><span class="explain-text">Relembre o conceito: ' + item.explain + '</span>');
+          : wrongText);
         this.render();
       }
     },

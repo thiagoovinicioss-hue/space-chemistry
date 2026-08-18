@@ -221,4 +221,5 @@
   };
 
   window.PeriodicTable = PeriodicTable;
+  window.PT_ELEMENTS = ELEMENTS;
 })();
