@@ -1784,6 +1784,9 @@
         this.render();
       } else {
         Game.run.wrong++;
+        if (typeof damagePlayer === 'function' && Game.run.lives > 0) {
+          damagePlayer();
+        }
         AudioSys.sfx('quizWrong');
         shake(8);
         this.errorFlash = 0.8;

@@ -1454,11 +1454,11 @@ const COSMETICS = {
     { id: 'h_neon', name: 'Capacete Neon', unlock: 'ach:perfect', main: '#39ff8b', visor: '#d6ffec', cat: 'Capacete' }
   ],
   suits: [
-    { id: 's_classic', name: 'Traje Clássico', unlock: 'start', main: '#9bd0ff', cat: 'Traje' },
-    { id: 's_ionic', name: 'Traje Iônico', unlock: 'level:1', main: '#ff9df2', cat: 'Traje' },
-    { id: 's_covalent', name: 'Traje Covalente', unlock: 'ach:covalent_expert', main: '#7ff5ff', cat: 'Traje' },
-    { id: 's_metallic', name: 'Traje Metálico', unlock: 'ach:metallic_expert', main: '#ffb547', cat: 'Traje' },
-    { id: 's_galaxy', name: 'Traje Galáctico', unlock: 'level:4', main: '#c8a2ff', cat: 'Traje' }
+    { id: 's_classic', name: 'Traje Clássico', unlock: 'start', main: '#9bd0ff', cat: 'Traje', maxHearts: 3 },
+    { id: 's_ionic', name: 'Traje Iônico', unlock: 'level:1', main: '#ff9df2', cat: 'Traje', maxHearts: 4 },
+    { id: 's_covalent', name: 'Traje Covalente', unlock: 'ach:covalent_expert', main: '#7ff5ff', cat: 'Traje', maxHearts: 4 },
+    { id: 's_metallic', name: 'Traje Metálico', unlock: 'ach:metallic_expert', main: '#ffb547', cat: 'Traje', maxHearts: 5 },
+    { id: 's_galaxy', name: 'Traje Galáctico', unlock: 'level:4', main: '#c8a2ff', cat: 'Traje', maxHearts: 5 }
   ],
   ships: [
     { id: 'ship_default', name: 'Nave Padrão', unlock: 'start', main: '#2b6f9e', cat: 'Nave' },
@@ -1828,6 +1828,7 @@ const LEVELS = [
     enemies: [],
     npcs: [],
     critters: [],
+    hearts: [],
     decor: [
       { t: 'chest', x: 19, y: 14, el: 'H' },
       { t: 'switch', x: 3, y: 16, opens: [17, 15] }
@@ -1882,6 +1883,7 @@ const LEVELS = [
         reward: { type: 'score', v: 75 } }
     ],
     critters: [],
+    hearts: [[7, 10], [20, 19], [14, 22]],
     decor: [
       { t: 'chest', x: 8, y: 20, el: 'Mg' },
       { t: 'switch', x: 20, y: 17, opens: [9, 20] }
@@ -1914,6 +1916,7 @@ const LEVELS = [
     hazards: [[4, 13], [21, 3], [18, 12], [25, 12], [14, 12]],
     charges: [[6, 7], [9, 12], [17, 10], [23, 10], [7, 16], [18, 14], [12, 9], [20, 17], [14, 22], [10, 19], [11, 5], [8, 13], [10, 20]],
     critters: [[9, 13], [16, 8], [21, 11], [8, 18], [19, 16], [12, 17]],
+    hearts: [[5, 10], [18, 21], [10, 20]],
     recipes: ['H2O', 'CO2', 'NH3'],
     objective: 'Monte as moléculas covalentes',
     planetColor: '#35d0a0',
@@ -1989,6 +1992,7 @@ const LEVELS = [
         reward: { type: 'score', v: 75 } }
     ],
     critters: [],
+    hearts: [[8, 10], [18, 18], [24, 8], [10, 22]],
     decor: [
       { t: 'chest', x: 23, y: 15, el: 'Fe' },
       { t: 'switch', x: 8, y: 23, opens: [22, 15] }
@@ -2048,6 +2052,7 @@ const LEVELS = [
         reward: { type: 'score', v: 100 } }
     ],
     critters: [],
+    hearts: [[7, 13], [20, 17], [12, 21], [18, 21]],
     decor: [
       { t: 'chest', x: 5, y: 21, el: 'H' },
       { t: 'switch', x: 23, y: 20, opens: [6, 21] },
@@ -2181,7 +2186,7 @@ const Game = {
   run: {
     active: false,
     score: 0,
-    lives: MAX_LIVES,
+    lives: getMaxLives(),
     wrong: 0,
     deaths: 0,
     time: 0,
@@ -2191,7 +2196,7 @@ const Game = {
 
   resetRun() {
     this.run = {
-      active: false, score: 0, lives: MAX_LIVES, wrong: 0, deaths: 0, time: 0,
+      active: false, score: 0, lives: getMaxLives(), wrong: 0, deaths: 0, time: 0,
       atoms: 0, completed: [false, false, false, false, false]
     };
   }
@@ -2403,10 +2408,15 @@ function buildLevel(idx) {
     lines: n.lines || [], reward: n.reward || null, talked: false, t: rand(0, 6.28)
   }));
 
+  /* Corações coletáveis (+1 vida) */
+  const hearts = (lv.hearts || []).map(([x, y]) => ({
+    x: x * TILE + TILE / 2, y: y * TILE + TILE / 2, taken: false, t: rand(0, 6.28)
+  }));
+
   return {
     idx, lv, theme, g, crystals, hazards, traps, gates, machine,
     enemies, decor, breakables, lakes, bridges: (lv.bridges || []).slice(), conveyors, gears, pipes,
-    npcs, charges, critters,
+    npcs, charges, critters, hearts,
     R, cx, cy, inDisc, standby: lv.standby || { x: 2, y: 12 },
     orbs: [],            /* energia deixada pelos alienígenas derrotados */
     scientist: { x: lv.spawn.x * TILE + TILE / 2, y: lv.spawn.y * TILE + TILE / 2 },
@@ -2926,6 +2936,30 @@ function update(dt) {
       }
       AudioSys.sfx('charge');
       burst(c.x, c.y, '#7ff5ff', 6);
+    }
+  }
+
+  /* --- Corações coletáveis (+1 vida) --- */
+  for (const h of lv.hearts) {
+    if (h.taken) continue;
+    if (dist(p.x, p.y, h.x, h.y) < 26) {
+      h.taken = true;
+      const maxL = getMaxLives();
+      if (Game.run.lives < maxL) {
+        Game.run.lives++;
+        spawnFloater(h.x, h.y - 18, '+1 vida');
+        AudioSys.sfx('charge');
+        burst(h.x, h.y, '#ff5d6c', 8);
+      } else {
+        if (!Game.replay) {
+          Game.run.score += 10;
+          spawnFloater(h.x, h.y - 18, '+10');
+          updateHudScore();
+        }
+        AudioSys.sfx('charge');
+        burst(h.x, h.y, '#ff5d6c', 5);
+      }
+      updateHudLives();
     }
   }
 
@@ -3704,6 +3738,7 @@ function render() {
   drawGears();
   drawCharges();
   drawCritters();
+  drawHearts();
   drawNpcs();
   drawPlayer();
   drawOrbs();
@@ -5073,6 +5108,37 @@ function drawCritters() {
   }
 }
 
+/* ---------------- Corações coletáveis ---------------- */
+function drawHearts() {
+  const lv = Game.level;
+  if (!lv.hearts) return;
+  const t = performance.now() / 1000;
+  for (const h of lv.hearts) {
+    if (h.taken) continue;
+    h.t += 0.04;
+    const cx = h.x - camX, cy = h.y - camY + Math.sin(h.t * 2) * 3;
+    const pulse = 1 + Math.sin(h.t * 3) * 0.15;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(pulse, pulse);
+    ctx.shadowColor = '#ff5d6c';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#ff5d6c';
+    const s = 5;
+    ctx.beginPath();
+    ctx.moveTo(0, s * 0.3);
+    ctx.bezierCurveTo(-s, -s * 0.3, -s, -s, 0, -s * 0.5);
+    ctx.bezierCurveTo(s, -s, s, -s * 0.3, 0, s * 0.3);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath();
+    ctx.arc(-1.5, -2.5, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 /* ---------------- NPCs (habitantes dos planetas) ---------------- */
 function drawNpcs() {
   const lv = Game.level;
@@ -5919,7 +5985,7 @@ function drawTravelHud(tr) {
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#59d3ff';
   ctx.fillText('NAVE', 16, 21);
-  for (let i = 0; i < MAX_LIVES; i++) {
+  for (let i = 0; i < getMaxLives(); i++) {
     ctx.globalAlpha = i < Game.run.lives ? 1 : 0.22;
     drawShipPip(54 + i * 24, 21);
   }
@@ -7290,6 +7356,11 @@ function getEquippedItem(catKey) {
   return item || COSMETICS[catKey][0];
 }
 
+function getMaxLives() {
+  const suit = getEquippedItem('suit');
+  return suit.maxHearts || 3;
+}
+
 function isUnlocked(id) {
   const item = getItemById(id);
   if (!item) return false;
@@ -7348,7 +7419,8 @@ function updateHudScore() { document.getElementById('hud-score').textContent = G
 function updateHudLives() {
   const el = document.getElementById('hud-lives');
   el.innerHTML = '';
-  for (let i = 0; i < MAX_LIVES; i++) {
+  const maxL = getMaxLives();
+  for (let i = 0; i < maxL; i++) {
     const s = document.createElement('span');
     s.innerHTML = pixIcon('heart', 2);
     if (i >= Game.run.lives) s.className = 'life-off';
@@ -7759,6 +7831,7 @@ function gameOver() {
   Game.player.deadT = 1;
   document.getElementById('defeat-stats').textContent =
     'Pontuação: ' + Game.run.score + ' · Tempo: ' + fmtTime(Game.levelTime);
+  document.querySelector('.defeat-text').textContent = 'Suas ' + getMaxLives() + ' vidas acabaram.';
   document.getElementById('defeat').hidden = false;
 }
 
@@ -8302,7 +8375,7 @@ document.getElementById('btn-victory-replay').addEventListener('click', () => {
 /* Derrota */
 document.getElementById('btn-defeat-retry').addEventListener('click', () => {
   document.getElementById('defeat').hidden = true;
-  Game.run.lives = MAX_LIVES;
+  Game.run.lives = getMaxLives();
   startLevel(Game.levelIndex);
 });
 document.getElementById('btn-defeat-menu').addEventListener('click', () => {
