@@ -1477,38 +1477,34 @@
     [
       {
         type: 'choice',
-        instruction: 'Na molécula de ÁGUA (H₂O), o oxigênio está no centro ligado a 2 hidrogênios. Que tipo de ligação mantém a molécula?',
-        opts: ['Iônica', 'Covalente', 'Metálica', 'De hidrogênio'],
+        instruction: 'Sobre ligações covalentes:\nI. Ocorrem geralmente entre átomos de ametais.\nII. Envolvem o compartilhamento de elétrons.\nIII. Formam compostos que podem ser representados por fórmulas de Lewis.\nIV. Sempre envolvem a transferência completa de elétrons.\n\nAssinale a alternativa correta:',
+        opts: ['Apenas I e II', 'Apenas I, II e III', 'Apenas II e IV', 'I, II, III e IV'],
         ans: 1,
-        explain: 'Na água, o O (central) compartilha elétrons com 2 hidrogênios. Ametal + ametal compartilham elétrons: ligação covalente.',
-        pts: 100
-      },
-      {
-        type: 'lewis',
-        instruction: 'Monte a fórmula de Lewis do CARBONO distribuindo seus 4 elétrons de valência.',
-        symbol: 'C', valence: 4, answerKey: [1, 1, 1, 1],
-        explain: 'O carbono tem 4 elétrons de valência. Pela regra de Hund (aplicada aos lados), cada lado recebe 1 elétron antes de formar pares.',
+        explain: 'Correto! As ligações covalentes geralmente ocorrem entre ametais e envolvem o compartilhamento de elétrons, podendo ser representadas por estruturas de Lewis.',
         pts: 100
       },
       {
         type: 'choice',
-        instruction: 'Dois ametais (por exemplo, O e H) se ligam compartilhando elétrons. Que tipo de ligação é essa?',
-        opts: ['Iônica', 'Covalente', 'Metálica', 'De hidrogênio'],
-        ans: 1,
-        explain: 'Ametal + ametal compartilham elétrons → covalente. Metal + ametal → iônica. Metal + metal → metálica.',
+        instruction: 'Sobre os elétrons nas ligações covalentes:\nI. Os elétrons compartilhados são chamados de elétrons ligantes.\nII. Os átomos compartilham elétrons para alcançar maior estabilidade.\nIII. A camada de valência participa da formação das ligações.\nIV. Na ligação covalente, os elétrons são sempre totalmente transferidos de um átomo para outro.\n\nAssinale a alternativa correta:',
+        opts: ['I, II e III', 'I e IV', 'II e IV', 'Apenas III'],
+        ans: 0,
+        explain: 'Correto! Os elétrons compartilhados são elétrons ligantes, e a camada de valência participa das ligações. O compartilhamento ajuda os átomos a alcançar maior estabilidade.',
         pts: 100
       },
       {
-        type: 'chalkboard',
-        scene: 'covalent',
-        title: 'Ligação covalente — H₂O',
-        instruction: 'Contorne com o GIZ BRANCO os pares de elétrons COMPARTILHADOS (as ligações entre o O e cada H, nas áreas tracejadas).',
-        defaultChalk: 'white',
-        regions: [
-          { x: 0.41, y: 0.44, r: 0.06, color: '#f4f0e0' },
-          { x: 0.59, y: 0.44, r: 0.06, color: '#f4f0e0' }
-        ],
-        explain: 'O e H são ametais e compartilham elétrons em pares: cada ligação O–H é um par de elétrons compartilhado — a ligação covalente.',
+        type: 'choice',
+        instruction: 'Sobre ligações simples, duplas e triplas:\nI. Uma ligação simples possui um par de elétrons compartilhado.\nII. Uma ligação dupla possui dois pares de elétrons compartilhados.\nIII. Uma ligação tripla possui três pares de elétrons compartilhados.\nIV. A molécula de O₂ apresenta uma ligação dupla.\n\nAssinale a alternativa correta:',
+        opts: ['Apenas I e II', 'Apenas II e III', 'I, II, III e IV', 'Apenas I e IV'],
+        ans: 2,
+        explain: 'Correto! Ligações simples, duplas e triplas envolvem, respectivamente, um, dois e três pares de elétrons compartilhados. O₂ apresenta uma ligação dupla.',
+        pts: 100
+      },
+      {
+        type: 'choice',
+        instruction: 'Sobre as fórmulas de Lewis:\nI. As estruturas de Lewis representam os elétrons da camada de valência.\nII. Os pares compartilhados podem ser representados por traços.\nIII. Um traço entre dois átomos representa um par de elétrons compartilhado.\nIV. A fórmula de Lewis não permite identificar elétrons que não participam das ligações.\n\nAssinale a alternativa correta:',
+        opts: ['I e II', 'I, II e III', 'II, III e IV', 'Todas estão corretas'],
+        ans: 1,
+        explain: 'Correto! As estruturas de Lewis representam os elétrons de valência, e um traço pode representar um par de elétrons compartilhado. Elas também permitem visualizar pares de elétrons que não participam das ligações.',
         pts: 100
       }
     ],
