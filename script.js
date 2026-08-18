@@ -7555,17 +7555,36 @@ function showToast(title, desc) {
   }, 3200);
 }
 
+/* --- Toast de conquista (com brilho radiante e SFX) --- */
+let achToastTimer = null;
+function showAchievementToast(ach) {
+  const el = document.getElementById('ach-toast');
+  document.getElementById('ach-icon').textContent = '⭐';
+  document.getElementById('ach-name').textContent = ach.name;
+  document.getElementById('ach-desc').textContent = ach.desc;
+  el.hidden = false;
+  /* Restart animation by forcing reflow */
+  el.classList.remove('show');
+  void el.offsetWidth;
+  requestAnimationFrame(() => el.classList.add('show'));
+
+  AudioSys.sfx('unlock');
+
+  clearTimeout(achToastTimer);
+  achToastTimer = setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => { el.hidden = true; }, 500);
+  }, 3500);
+}
+
 function unlockAchievement(id, silent) {
   if (Save.hasAch(id)) return;
   const a = ACHIEVEMENTS.find(x => x.id === id);
   if (!a) return;
   Save.unlockAch(id);
   Game.run.score += ACH_BONUS[id] || 0;
-  if (silent) {
-    if (a.reward) Save.unlockItem(a.reward);
-  } else {
-    showToast(a.name, a.desc);
-  }
+  if (a.reward) Save.unlockItem(a.reward);
+  showAchievementToast(a);
   updateHudScore();
 }
 
