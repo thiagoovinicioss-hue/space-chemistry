@@ -286,8 +286,40 @@
       <div class="pause-stats" id="pause-stats"></div>
       <div class="pause-buttons">
         <button class="btn btn-primary" id="btn-resume"><img class="pix-icon" data-icon="arrowR" data-scale="2" alt=""> Continuar</button>
+        <button class="btn" id="btn-ptable">🔬 Tabela Periódica</button>
         <button class="btn" id="btn-restart">↻ Recomeçar Fase</button>
         <button class="btn" data-nav="menu" id="btn-exit-level"><img class="pix-icon" data-icon="door" data-scale="1" alt=""> Sair</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY: tabela periódica -->
+  <div id="periodic-table" class="overlay ptable-overlay" hidden>
+    <div class="ptable-container">
+      <div class="ptable-header">
+        <h2 class="panel-title">🔬 Tabela Periódica</h2>
+        <button class="btn" id="btn-pt-close">Fechar</button>
+      </div>
+      <div class="ptable-body">
+        <div class="ptable-left">
+          <div class="pt-grid" id="pt-grid"></div>
+          <div class="pt-legend" id="pt-legend"></div>
+        </div>
+        <div class="ptable-right">
+          <div class="pt-panel" id="pt-panel">
+            <span class="pt-pz" id="pt-pz">1</span>
+            <span class="pt-psym" id="pt-psym">H</span>
+            <span class="pt-pname" id="pt-pname">Hidrogênio</span>
+            <div class="pt-pinfo">
+              <span class="pt-pinfo-label">Distribuição eletrônica:</span>
+              <span class="pt-pinfo-value" id="pt-peconfig">1</span>
+            </div>
+            <div class="pt-pinfo">
+              <span class="pt-pinfo-label">Classificação:</span>
+              <span class="pt-pinfo-value" id="pt-pclass">Hidrogênio</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -473,6 +505,7 @@
 <script src="assets/vendor/three.min.js"></script>
 <script src="effects3d.js"></script>
 <script src="questions.js"></script>
+<script src="periodic_table.js"></script>
 <script src="script.js"></script>
 <script src="exercises.js"></script>
 <script src="lewis_builder.js"></script>

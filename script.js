@@ -7210,6 +7210,7 @@ function showScreen(name) {
   document.getElementById('feedback').hidden = true;
   document.getElementById('reward').hidden = true;
   document.getElementById('intro-card').hidden = true;
+  document.getElementById('periodic-table').hidden = true;
   hideOverhaulOverlays();
 
   window.scrollTo(0, 0);
@@ -7217,7 +7218,7 @@ function showScreen(name) {
 
 /* Esconde os overlays do ciclo novo (diálogo/fusão/quiz/missão/viagem) */
 function hideOverhaulOverlays() {
-  ['dialog', 'fusion', 'quiz', 'mission', 'results', 'credits'].forEach(id => {
+  ['dialog', 'fusion', 'quiz', 'mission', 'results', 'credits', 'periodic-table'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.hidden = true;
@@ -7260,6 +7261,7 @@ function exitToMenu() {
   document.getElementById('victory').hidden = true;
   document.getElementById('defeat').hidden = true;
   document.getElementById('intro-card').hidden = true;
+  document.getElementById('periodic-table').hidden = true;
   hideOverhaulOverlays();
   showScreen('menu');
 }
@@ -7837,6 +7839,13 @@ window.addEventListener('keydown', e => {
       if (e.code === 'Escape' || e.code === 'Space') togglePause();
       return;
     }
+    if (document.getElementById('periodic-table').hidden === false) {
+      if (e.code === 'Escape') {
+        if (typeof PeriodicTable !== 'undefined') PeriodicTable.close();
+        document.getElementById('pause').hidden = false;
+      }
+      return;
+    }
     if (Game.buildAnim) return;
 
     /* Batalha de volta para a Terra: ESPAÇO/J atiram */
@@ -8176,6 +8185,16 @@ document.getElementById('btn-restart').addEventListener('click', () => {
 document.getElementById('btn-exit-level').addEventListener('click', () => {
   pauseShown = false;
   exitToMenu();
+});
+
+/* Tabela Periódica */
+document.getElementById('btn-ptable').addEventListener('click', () => {
+  document.getElementById('pause').hidden = true;
+  if (typeof PeriodicTable !== 'undefined') PeriodicTable.open();
+});
+document.getElementById('btn-pt-close').addEventListener('click', () => {
+  if (typeof PeriodicTable !== 'undefined') PeriodicTable.close();
+  document.getElementById('pause').hidden = false;
 });
 
 /* Feedback: clicar fecha */
