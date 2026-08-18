@@ -149,6 +149,12 @@
     open: function () {
       if (!this.built) { this.build(); this.built = true; }
       this.selectedZ = 1;
+
+      /* Init 3D atom */
+      if (window.Atom3D && !Atom3D.renderer) {
+        Atom3D.init('pt-atom3d-container');
+      }
+
       this.renderPanel(BY_Z[1]);
       this.highlightSelected();
       document.getElementById('periodic-table').hidden = false;
@@ -156,6 +162,9 @@
 
     close: function () {
       document.getElementById('periodic-table').hidden = true;
+      if (window.Atom3D) {
+        Atom3D.destroy();
+      }
     },
 
     build: function () {
@@ -217,6 +226,11 @@
       document.getElementById('pt-peconfig').textContent = el.e;
       document.getElementById('pt-pclass').textContent = el.c;
       document.getElementById('pt-pclass').style.color = color;
+
+      /* Build 3D atom model */
+      if (window.Atom3D) {
+        Atom3D.buildAtom(el.z, el.e, el.c);
+      }
     }
   };
 

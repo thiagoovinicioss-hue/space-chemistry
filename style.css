@@ -1292,7 +1292,12 @@ h3 .pix-icon { margin-right: 4px; }
 .ptable-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-shrink: 0; }
 .ptable-body { display: flex; gap: 14px; flex: 1; min-height: 0; }
 .ptable-left { flex: 0 0 62%; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.ptable-right { flex: 0 0 36%; display: flex; align-items: flex-start; justify-content: center; min-width: 0; }
+.ptable-right { flex: 0 0 36%; display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
+
+/* Container 3D do átomo */
+.pt-atom3d-container { width: 100%; max-width: 280px; height: 260px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.25); cursor: grab; position: relative; overflow: hidden; }
+.pt-atom3d-container:active { cursor: grabbing; }
+.pt-atom3d-container canvas { display: block; width: 100% !important; height: 100% !important; }
 
 /* Grid da tabela: 18 colunas × 10 linhas */
 .pt-grid {
@@ -1357,7 +1362,8 @@ h3 .pix-icon { margin-right: 4px; }
 @media (max-width: 900px) {
   .ptable-body { flex-direction: column; }
   .ptable-left { flex: none; }
-  .ptable-right { flex: none; }
+  .ptable-right { flex: none; width: 100%; }
+  .pt-atom3d-container { max-width: 100%; height: 200px; }
   .pt-grid { gap: 2px; }
   .pt-z { font-size: 5px; }
   .pt-sym { font-size: 8px; }
