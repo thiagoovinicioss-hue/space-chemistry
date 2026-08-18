@@ -303,6 +303,9 @@
         var sCol = SHELL_COLORS[s % SHELL_COLORS.length];
         var sRGB = colorRGB(sCol);
 
+        /* orbitContainer: precesses around the nucleus, carries ring + electrons */
+        var orbitContainer = new THREE.Group();
+
         /* Orbit ring — tube for thickness */
         var ringGeo = new THREE.TorusGeometry(radius, 0.012, 16, 200);
         var ringMat = new THREE.MeshPhongMaterial({
@@ -314,27 +317,20 @@
           shininess: 40,
           depthWrite: false
         });
-        var ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.rotation.x = Math.PI / 2 + s * 0.32;
-        ring.rotation.z = s * 0.18;
-        this.atomGroup.add(ring);
-
-        /* Shell group */
-        var shellGroup = new THREE.Group();
-        shellGroup.rotation.x = Math.PI / 2 + s * 0.32;
-        shellGroup.rotation.z = s * 0.18;
+        orbitContainer.add(new THREE.Mesh(ringGeo, ringMat));
 
         var eSize = Math.max(0.04, Math.min(0.08, 0.09 - numShells * 0.004));
 
         /* Electron glow texture for this shell */
         var eGlowTex = makeRadialGlowTexture(sRGB.r, sRGB.g, sRGB.b, 256);
+        var electronMeshes = [];
 
         for (var ei = 0; ei < count; ei++) {
           var angle = (ei / count) * Math.PI * 2;
           var ex = Math.cos(angle) * radius;
           var ey = Math.sin(angle) * radius;
 
-          /* Electron sphere — high segment count */
+          /* Electron sphere */
           var eGeo = new THREE.SphereGeometry(eSize, 24, 24);
           var eMat = new THREE.MeshPhongMaterial({
             color: sCol,
@@ -345,6 +341,8 @@
           });
           var electron = new THREE.Mesh(eGeo, eMat);
           electron.position.set(ex, ey, 0);
+          electron.userData.isElectron = true;
+          electron.userData.baseAngle = angle;
 
           /* Inner glow sphere (volumetric) */
           var eInnerGeo = new THREE.SphereGeometry(eSize * 2.2, 16, 16);
@@ -358,7 +356,7 @@
           });
           electron.add(new THREE.Mesh(eInnerGeo, eInnerMat));
 
-          /* Outer glow sprite with proper radial texture */
+          /* Outer glow sprite */
           var eSprMat = new THREE.SpriteMaterial({
             map: eGlowTex,
             transparent: true,
@@ -370,13 +368,29 @@
           eSpr.scale.set(eSize * 5, eSize * 5, 1);
           electron.add(eSpr);
 
-          shellGroup.add(electron);
+          electronMeshes.push(electron);
+          orbitContainer.add(electron);
         }
 
-        this.atomGroup.add(shellGroup);
+        this.atomGroup.add(orbitContainer);
+
+        /* Orbital parameters — unique per shell */
         this.shells.push({
-          group: shellGroup,
-          speed: (0.5 + s * 0.25) * (s % 2 === 0 ? 1 : -1)
+          container: orbitContainer,
+          electronMeshes: electronMeshes,
+          /* Precession: orbit plane wobbles around nucleus */
+          precessSpeedX: (0.15 + s * 0.08) * [1, -1, 1, -1, 1, -1, 1, -1][s % 8],
+          precessSpeedY: (0.1 + s * 0.06) * [1, 1, -1, -1, 1, 1, -1, -1][s % 8],
+          /* Initial tilt angles */
+          tiltA: [0.4, 1.1, 0.15, 1.6, 0.8, 1.35, 0.55, 1.9][s % 8],
+          tiltB: [0.7, 0.25, 1.4, 0.9, 1.7, 0.45, 1.1, 0.35][s % 8],
+          /* Electron spin within the orbital plane */
+          spinSpeed: (0.6 + s * 0.3) * [1, -1, 1, -1, 1, -1, 1, -1][s % 8],
+          /* Phase offset so orbits don't start synchronized */
+          phase: s * 1.3,
+          /* Electron rotation axis (Z for spin within plane, but we tilt the whole container) */
+          radius: radius,
+          count: count
         });
       }
 
@@ -423,17 +437,29 @@
         this.rotVelX += (0.001 - this.rotVelX) * 0.015;
       }
 
-      /* Atom rotation */
+      /* Atom rotation (user drag + auto spin) */
       this.atomGroup.rotation.y += this.rotVelY;
       this.atomGroup.rotation.x += this.rotVelX;
-
-      /* Clamp X rotation */
       this.atomGroup.rotation.x = Math.max(-Math.PI * 0.4, Math.min(Math.PI * 0.4, this.atomGroup.rotation.x));
 
-      /* Electron orbit rotation */
+      /* Orbital animation */
+      var t = performance.now() * 0.001;
       for (var i = 0; i < this.shells.length; i++) {
-        var shell = this.shells[i];
-        shell.group.rotation.z += shell.speed * 0.012;
+        var sh = this.shells[i];
+
+        /* Precession: orbit plane wobbles around nucleus via Lissajous */
+        var px = sh.tiltA + Math.sin(t * sh.precessSpeedX + sh.phase) * 0.5;
+        var py = Math.cos(t * sh.precessSpeedY + sh.phase) * 0.6;
+        var pz = sh.tiltB + Math.sin(t * sh.precessSpeedX * 0.7 + sh.phase + 2.0) * 0.35;
+        sh.container.rotation.set(px, py, pz);
+
+        /* Electron spin: move each electron along its orbit path */
+        var eMeshes = sh.electronMeshes;
+        for (var e = 0; e < eMeshes.length; e++) {
+          var orbitAngle = eMeshes[e].userData.baseAngle + t * sh.spinSpeed;
+          eMeshes[e].position.x = Math.cos(orbitAngle) * sh.radius;
+          eMeshes[e].position.y = Math.sin(orbitAngle) * sh.radius;
+        }
       }
 
       this.renderer.render(this.scene, this.camera);
