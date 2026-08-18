@@ -485,6 +485,11 @@ h3 .pix-icon { margin-right: 4px; }
   background: linear-gradient(180deg, rgba(10,16,38,0.95), rgba(7,11,29,0.85));
   border-bottom: 2px solid var(--border);
   font-family: var(--font-mono);
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 21;
 }
 .hud-left, .hud-right { display: flex; align-items: center; gap: 14px; }
 .hud-label { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
@@ -1099,8 +1104,8 @@ h3 .pix-icon { margin-right: 4px; }
 
 /* -------- Tabela Periódica Simplificada (exercise) -------- */
 .ptsel-counter { text-align: center; font-size: 1rem; color: var(--accent); margin-bottom: 8px; font-weight: 600; }
-.ptsel-grid { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; max-height: 400px; overflow-y: auto; padding: 4px; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; background: rgba(0,0,0,0.15); }
-.ptsel-tile { width: 64px; height: 42px; border: 2px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(255,255,255,0.04); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.15s; user-select: none; }
+.ptsel-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-height: 400px; overflow-y: auto; padding: 10px; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; background: rgba(0,0,0,0.15); }
+.ptsel-tile { width: 72px; height: 48px; border: 2px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(255,255,255,0.04); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.15s; user-select: none; }
 .ptsel-tile:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
 .ptsel-tile--on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px rgba(255,209,102,0.4); }
 .ptsel-tile--on:hover { background: #ffb833; }
@@ -1212,6 +1217,8 @@ h3 .pix-icon { margin-right: 4px; }
   animation: fade-in 0.25s ease;
 }
 .overlay[hidden] { display: none; }
+#defeat { z-index: 30; }
+#pause { z-index: 35; }
 
 .intro-panel { max-width: 560px; }
 .intro-planet {

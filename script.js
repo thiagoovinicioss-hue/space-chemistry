@@ -7862,6 +7862,17 @@ function gameOver() {
   AudioSys.sfx('error');
   Game.locked = true;
   Game.player.deadT = 1;
+  /* Interrompe exercícios e questionário se estiverem abertos */
+  document.getElementById('exercise').hidden = true;
+  document.getElementById('quiz').hidden = true;
+  if (typeof Exercise !== 'undefined' && Exercise.session) {
+    Exercise.session = null;
+    Exercise.idx = 0;
+  }
+  if (typeof Quiz !== 'undefined' && Quiz.pool) {
+    Quiz.pool = [];
+    Quiz.idx = 0;
+  }
   document.getElementById('defeat-stats').textContent =
     'Pontuação: ' + Game.run.score + ' · Tempo: ' + fmtTime(Game.levelTime);
   document.querySelector('.defeat-text').textContent = 'Suas ' + getMaxLives() + ' vidas acabaram.';
@@ -7888,6 +7899,8 @@ function togglePause() {
       'Vidas: <strong>' + Game.run.lives + '</strong>';
   }
 }
+/* Pausa é permitida mesmo durante exercícios/questionário — o overlay
+   de pausa ficou com z-index maior (35) para cobrir exercise/quiz. */
 
 /* =====================================================================
    14. LOOP PRINCIPAL E INICIALIZAÇÃO
