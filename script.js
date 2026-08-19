@@ -1160,6 +1160,18 @@ const PROF_IMG_OPEN   = new Image();
 PROF_IMG_CLOSED.src = 'assets/images/prof_closed.png';
 PROF_IMG_OPEN.src   = 'assets/images/prof_open.png';
 
+/* ---- Imagens de perfil (retrato no diálogo) ---- */
+const PROF_PERFIL_CLOSED = new Image();
+const PROF_PERFIL_OPEN   = new Image();
+PROF_PERFIL_CLOSED.src = 'assets/images/fotodeperfilprofessorbocafechada.jpeg';
+PROF_PERFIL_OPEN.src   = 'assets/images/fotodeperfilprofessorbocaaberta.jpeg';
+
+/* ---- Imagens de corpo (fundo da sala de aula) ---- */
+const PROF_CORPO_CLOSED = new Image();
+const PROF_CORPO_OPEN   = new Image();
+PROF_CORPO_CLOSED.src = 'assets/images/fotodecorpointeiroprofessorbocafechada.jpeg';
+PROF_CORPO_OPEN.src   = 'assets/images/fotodecorpointeiroprofessordebocaaberta.jpeg';
+
 /* Cores do astronauta dependentes dos cosméticos equipados */
 function astronautPalette(helmet, suit) {
   return {
@@ -3950,10 +3962,10 @@ function drawDialogPortrait(d) {
   const conf = d.npc;
   const bob = Math.sin(d.idleT * 2.2) * 1.5;
 
-  /* Professor: usar imagens reais (boca aberta/fechada) */
+  /* Professor: usar imagens de perfil (boca aberta/fechada) */
   if (conf.sprite === SPRITES.scientist) {
     const mouthOpen = d.talking && Math.sin(d.mouthT * 8) > 0.2;
-    const img = mouthOpen ? PROF_IMG_OPEN : PROF_IMG_CLOSED;
+    const img = mouthOpen ? PROF_PERFIL_OPEN : PROF_PERFIL_CLOSED;
     if (img.complete && img.naturalWidth > 0) {
       const aspect = img.naturalWidth / img.naturalHeight;
       const drawW = c.width;
@@ -7038,9 +7050,18 @@ function drawClassroom() {
   ctx.fillRect(330, 250, 90, 34);
   ctx.fillStyle = '#5a3a1a';
   ctx.fillRect(330, 250, 90, 8);
-  /* Professor perto da mesa (imagem real) */
+  /* Professor perto da mesa (imagem real — corpo sincronizado com diálogo) */
   const bob = Math.sin(c.t * 2) * 1.5;
-  if (PROF_IMG_CLOSED.complete && PROF_IMG_CLOSED.naturalWidth > 0) {
+  const profMouthOpen = Game.dialog && Game.dialog.talking && Math.sin(Game.dialog.mouthT * 8) > 0.2;
+  const profBody = profMouthOpen ? PROF_CORPO_OPEN : PROF_CORPO_CLOSED;
+  if (profBody.complete && profBody.naturalWidth > 0) {
+    const img = profBody;
+    const aspect = img.naturalWidth / img.naturalHeight;
+    const drawW = 80;
+    const drawH = Math.round(drawW / aspect);
+    ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight,
+                  372 - drawW / 2, 232 - drawH / 2 + bob, drawW, drawH);
+  } else if (PROF_IMG_CLOSED.complete && PROF_IMG_CLOSED.naturalWidth > 0) {
     const img = PROF_IMG_CLOSED;
     const aspect = img.naturalWidth / img.naturalHeight;
     const drawW = 80;
