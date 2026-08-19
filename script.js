@@ -1415,7 +1415,8 @@ const ELEMENTS = {
   Cu: { symbol: 'Cu', name: 'Cobre', color: '#ff9d5d', type: 'metal', valence: 1, ion: 'Cu⁺' },
   Fe: { symbol: 'Fe', name: 'Ferro', color: '#b0b6c4', type: 'metal', valence: 2, ion: 'Fe²⁺' },
   Au: { symbol: 'Au', name: 'Ouro', color: '#ffd166', type: 'metal', valence: 1, ion: 'Au⁺' },
-  Al: { symbol: 'Al', name: 'Alumínio', color: '#c8f0ff', type: 'metal', valence: 3, ion: 'Al³⁺' }
+  Al: { symbol: 'Al', name: 'Alumínio', color: '#c8f0ff', type: 'metal', valence: 3, ion: 'Al³⁺' },
+  Cr: { symbol: 'Cr', name: 'Cromo', color: '#b0b6c4', type: 'metal', valence: 4, ion: 'Cr⁴⁺' }
 };
 
 /* --- Temas visuais por planeta (superfícies circulares) ---

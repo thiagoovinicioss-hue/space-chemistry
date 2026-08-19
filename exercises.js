@@ -773,7 +773,7 @@
             ctx.textBaseline = 'middle';
             ctx.fillText(a.label || (E[a.el] ? E[a.el].name : a.el) + ' (ametal)', ax2, ay2 + 38);
             ctx.restore();
-            var accN = (a.valence || 7) + 1;
+            var accN = (a.valence || 7) + (a.accepts || 1);
             for (var j = 0; j < accN; j++) {
               var ang = -Math.PI / 2 + (Math.PI * 2 * j) / accN;
               var extra = j >= (a.valence || 7);
@@ -1214,6 +1214,36 @@
         acceptor: { el: 'Cl', valence: 7, label: 'Cloro (ametal)' },
         need: 1,
         explain: 'O K doa 1 elétron ao Cl: formam-se K⁺ e Cl⁻, uma ligação iônica como o NaCl.',
+        pts: 100
+      },
+      {
+        type: 'choice',
+        instruction: 'Respectivamente, qual o metal mais maleável e o metal mais dúctil?',
+        opts: ['Prata e Cobre.', 'Cobre e Ouro.', 'Alumínio e Prata.', 'Ouro e Platina.'],
+        ans: 3,
+        explain: 'Correto! O ouro se destaca por sua maleabilidade, enquanto a platina apresenta grande ductilidade.',
+        explainWrong: 'Maleabilidade é a capacidade de formar lâminas (ouro é o mais maleável), e ductilidade é a capacidade de formar fios (platina é a mais dúctil).',
+        pts: 100
+      },
+      {
+        type: 'transfer',
+        instruction: 'Transfira os elétrons do CROMO (metal) para os dois átomos de OXIGÊNIO (ametal) para formar CrO₂.',
+        donor: { el: 'Cr', valence: 4, label: 'Cromo (metal)' },
+        acceptors: [
+          { el: 'O', valence: 6, label: 'Oxigênio (ametal)', accepts: 2 },
+          { el: 'O', valence: 6, label: 'Oxigênio (ametal)', accepts: 2 }
+        ],
+        need: 4,
+        explain: 'Correto! O cromo fornece quatro elétrons, enquanto os dois átomos de oxigênio recebem dois elétrons cada, formando CrO₂.',
+        pts: 100
+      },
+      {
+        type: 'choice',
+        instruction: 'Para formar uma molécula de dióxido de silício (SiO₂), sabendo que o Si e o O são ametais e, portanto, realizam ligação covalente, quantos átomos de cada elemento são necessários?',
+        opts: ['Precisaria de dois Si e um O.', 'Precisaria de um Si e dois O.', 'Precisaria de dois Si e dois O.', 'Precisaria de um Si e um O.'],
+        ans: 1,
+        explain: 'Correto! O silício e o oxigênio são ametais e formam uma ligação covalente. A proporção é de 1 átomo de Si para 2 átomos de O, formando SiO₂.',
+        explainWrong: 'Quase! Si e O são ametais, portanto formam uma ligação covalente. A proporção em SiO₂ é de 1 átomo de Si para 2 átomos de O.',
         pts: 100
       }
     ]
