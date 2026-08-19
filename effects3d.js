@@ -1437,12 +1437,16 @@
     if (!c) { detachCanvas(); return; }
     if (renderer.domElement.parentNode !== c) {
       c.appendChild(renderer.domElement);
+      c.style.display = '';
       fitToContainer(c);
     }
   }
   function detachCanvas() {
     var el = renderer.domElement;
-    if (el.parentNode) el.parentNode.removeChild(el);
+    if (el.parentNode) {
+      el.parentNode.style.display = 'none';
+      el.parentNode.removeChild(el);
+    }
   }
 
   function applyContent(content) {
@@ -1551,7 +1555,10 @@
     var containerId = containerFor(content, screen);
     if (containerId) attachCanvas(containerId);
     else detachCanvas();
-    if (content === 'none' || !renderer.domElement.parentNode) return;
+    if (content === 'none' || !renderer.domElement.parentNode) {
+      if (content === 'none') applyContent('none');
+      return;
+    }
     applyContent(content);
     if (content === 'game') {
       var theme = readLevelTheme();
