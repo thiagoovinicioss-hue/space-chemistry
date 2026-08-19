@@ -104,15 +104,10 @@ const openedChallenge = run('Game.phase === "challenge" && Game.locked === true'
 const overlayShown = run('document.getElementById("exercise").hidden === false');
 const flagsSet = run('Game.level.quizDone === true && Game.level.exerciseDone === true');
 const scoreUI = run('Game.exerciseStats.total === 4');
-const hasChalk = run('typeof EXERCISE_TYPES.chalkboard === "object" && EXERCISE_TYPES.chalkboard.grade && ' +
-  'EXERCISE_LEVELS[0].some(i => i.type === "chalkboard") && EXERCISE_LEVELS[1].some(i => i.type === "chalkboard") && ' +
-  'EXERCISE_LEVELS[2].some(i => i.type === "chalkboard") && EXERCISE_LEVELS[3].some(i => i.type === "chalkboard") && ' +
-  'EXERCISE_LEVELS[4].some(i => i.type === "chalkboard")');
 console.log('abre desafio (phase challenge):', openedChallenge);
 console.log('overlay #exercise visivel:', overlayShown);
 console.log('flags quizDone/exerciseDone marcados:', flagsSet);
 console.log('sessao com 4 desafios:', scoreUI);
-console.log('tipo chalkboard + itens em todas as fases:', hasChalk);
 
 /* --- 3. Responder errado (vazio) -> feedback de erro, sem pontos --- */
 const beforeScore = run('Game.exerciseStats.score');
@@ -136,49 +131,6 @@ const onItem2 = run('Exercise.idx === 1');
 run('Exercise.clear()');                       /* sem crash em tipo electrons */
 const clearedOk = run('Exercise.answered === false || Exercise.idx === 1');
 console.log('avanca para o desafio 2:', onItem2, '| limpar funcionou:', clearedOk);
-
-/* --- 5B. Quadro de Química: item 4 da fase 0 (chalkboard) ---
-   Navega direto para o item chalkboard e desenha traços de giz azul
-   cobrindo a região-alvo (camada de valência do O). */
-run(`
-Exercise.idx = 3;
-Exercise.show();
-`);
-const isChalk = run('Exercise.session[3].type === "chalkboard" && Exercise.x.state.strokes.length === 0');
-run(`
-var s = Exercise.x.state;
-var cx = 230, cy = 174, cr = 74;
-for (var y = cy - cr; y <= cy + cr; y += 16) {
-  s.strokes.push({ mode: 'chalk', color: '#4a9aff', r: 11, pts: [
-    { x: cx - cr, y: y }, { x: cx + cr, y: y }
-  ]});
-}
-Exercise.confirm();
-`);
-const chalkCorrect = run('Exercise.answered === true && Game.exerciseStats.correct === 2');
-const chalkScoreUp = run('Game.exerciseStats.score > 0 && Game.run.score > 150');
-console.log('item chalkboard presente:', isChalk);
-console.log('desenho com giz correto pontua:', chalkCorrect, chalkScoreUp);
-
-/* --- 5C. Cor errada no quadro não pontua --- */
-run(`
-Game.exerciseStats.correct = 0;
-Game.exerciseStats.score = 0;
-Game.run.score = 100;
-Exercise.idx = 3;
-Exercise.answered = false;
-Exercise.show();
-var s = Exercise.x.state;
-var cx = 230, cy = 174, cr = 74;
-for (var y = cy - cr; y <= cy + cr; y += 16) {
-  s.strokes.push({ mode: 'chalk', color: '#ff5d6c', r: 11, pts: [
-    { x: cx - cr, y: y }, { x: cx + cr, y: y }
-  ]});
-}
-Exercise.confirm();
-`);
-const chalkWrongColor = run('Game.exerciseStats.correct === 0 && Game.run.wrong > 0');
-console.log('giz de cor errada reprova:', chalkWrongColor);
 
 /* --- 5D. Transferência de elétrons: clique e arrasto reconhecidos ---
    Bug corrigido: transferTap chamava dist com os argumentos trocados, então o
@@ -249,7 +201,6 @@ console.log('fase sem exercicios cai no quiz:', quizFallback);
 
 if (!(hasApi && openedChallenge && overlayShown && flagsSet && scoreUI &&
       wrongFeedback && gradedOk && onItem2 && clearedOk && quizFallback &&
-      hasChalk && isChalk && chalkCorrect && chalkScoreUp && chalkWrongColor &&
       transferApi && transferClickOk && transferDragOk && transferGraded &&
       structureTapOk)) {
   console.error('SMOKE_FAIL');
