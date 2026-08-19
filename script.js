@@ -7888,6 +7888,7 @@ function togglePause() {
   if (document.getElementById('victory').hidden === false) return;
   if (document.getElementById('defeat').hidden === false) return;
   if (document.getElementById('reward').hidden === false) return;
+  if (Game.phase === 'departure' || Game.phase === 'travel' || Game.phase === 'arrival' || Game.phase === 'return') return;
 
   pauseShown = !pauseShown;
   if (window.Effects3D && Effects3D.setPaused) Effects3D.setPaused(pauseShown);
