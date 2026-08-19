@@ -1444,7 +1444,7 @@ const THEMES = {
     accent: '#c8a2ff', planet: '#7a4ad0', rim: '#c8a2ff' }
 };
 
-/* --- Cosmeticos (somente visuais, nunca vantagens) --- */
+/* --- Cosmeticos (alguns trajes concedem corações extras) --- */
 const COSMETICS = {
   helmets: [
     { id: 'h_classic', name: 'Capacete Clássico', unlock: 'start', main: '#2b6f9e', visor: '#7ff5ff', cat: 'Capacete' },
