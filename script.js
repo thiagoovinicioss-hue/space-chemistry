@@ -1163,14 +1163,14 @@ PROF_IMG_OPEN.src   = 'assets/images/prof_open.png';
 /* ---- Imagens de perfil (retrato no diálogo) ---- */
 const PROF_PERFIL_CLOSED = new Image();
 const PROF_PERFIL_OPEN   = new Image();
-PROF_PERFIL_CLOSED.src = 'assets/images/fotodeperfilprofessorbocafechada.jpeg';
-PROF_PERFIL_OPEN.src   = 'assets/images/fotodeperfilprofessorbocaaberta.jpeg';
+PROF_PERFIL_CLOSED.src = 'assets/images/prof_perfil_closed.png';
+PROF_PERFIL_OPEN.src   = 'assets/images/prof_perfil_open.png';
 
 /* ---- Imagens de corpo (fundo da sala de aula) ---- */
 const PROF_CORPO_CLOSED = new Image();
 const PROF_CORPO_OPEN   = new Image();
-PROF_CORPO_CLOSED.src = 'assets/images/fotodecorpointeiroprofessorbocafechada.jpeg';
-PROF_CORPO_OPEN.src   = 'assets/images/fotodecorpointeiroprofessordebocaaberta.jpeg';
+PROF_CORPO_CLOSED.src = 'assets/images/prof_corpo_closed.png';
+PROF_CORPO_OPEN.src   = 'assets/images/prof_corpo_open.png';
 
 /* Cores do astronauta dependentes dos cosméticos equipados */
 function astronautPalette(helmet, suit) {
