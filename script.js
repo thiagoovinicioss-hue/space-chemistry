@@ -6344,7 +6344,7 @@ function killReturnEnemy(e) {
   r.killed++;
   AudioSys.sfx('boom');
   /* Clarão central + anéis de choque + estilhaços da fuselagem */
-  spawnShipDebris(e.x, e.y, e.color, e.big ? 16 : 10);
+  spawnShipDebris(e.x, e.y, e.color, e.big ? 22 : 14);
   spawnShipDebris(e.x, e.y, '#ffd166', e.big ? 8 : 5);
   burst(e.x, e.y, e.color, 24);
   burst(e.x, e.y, '#ffd166', 10);
@@ -6390,7 +6390,7 @@ function spawnReturnEnemy() {
   const y = rand(60, VIEW_H - 60);
   r.enemies.push({
     x: VIEW_W + 40, y: y, baseY: y,
-    r: big ? 22 : 15, hp: big ? 3 : 1, maxHp: big ? 3 : 1, speed: big ? 42 : 72,
+    r: big ? 30 : 20, hp: big ? 3 : 1, maxHp: big ? 3 : 1, speed: big ? 42 : 72,
     t: rand(0, 6), shotCd: rand(0.6, 1.6), dead: false, deadT: 0,
     color: big ? '#ff5d6c' : '#ff9df2',
     big, dir: chance(0.5) ? 1 : -1, pid: rand(0, 6.28),
@@ -6727,8 +6727,8 @@ function drawReturnScene() {
 
     /* Motor: partículas de chama sempre (rastro visível em qualquer modo) */
     if (chance(0.6)) {
-      emitParticle(e.x + (e.big ? 16 : 12), e.y + rand(-4, 4), rand(50, 100), rand(-10, 10), '#ff8a5d', 0.22, 2);
-      if (chance(0.4)) emitParticle(e.x + (e.big ? 14 : 10), e.y + rand(-4, 4), rand(30, 70), rand(-6, 6), '#ffe14d', 0.14, 2);
+      emitParticle(e.x + (e.big ? 22 : 16), e.y + rand(-5, 5), rand(50, 100), rand(-10, 10), '#ff8a5d', 0.22, 2);
+      if (chance(0.4)) emitParticle(e.x + (e.big ? 20 : 14), e.y + rand(-5, 5), rand(30, 70), rand(-6, 6), '#ffe14d', 0.14, 2);
     }
 
     if (!fx3d) {
@@ -6736,7 +6736,7 @@ function drawReturnScene() {
       ctx.rotate(Math.atan2(-(e.vy || 0), -(e.vx || 0)) + Math.sin(e.t * 4) * 0.18 + (e.dodgeT > 0 ? Math.sin(e.t * 40) * 0.22 : 0));
       ctx.scale(-1, 1);
       const pal = { G: e.color, V: '#ff8a5d', W: '#0c1226', D: '#22285e', L: '#6eace6', F: '#ff5d6c', R: '#c0392b', Y: '#ffe14d' };
-      const sc = e.big ? 3 : 2;
+      const sc = e.big ? 4 : 3;
       const sz = spriteSize(SPRITES.ship, sc);
       /* Núcleo pulsante das naves grandes (reator) */
       if (e.big) {
@@ -6764,10 +6764,11 @@ function drawReturnScene() {
     ctx.restore();
     /* Vida de naves grandes */
     if (e.big && e.hp < e.maxHp) {
+      const hbW = 32;
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.fillRect(e.x - 12, e.y - e.r - 10, 24, 4);
+      ctx.fillRect(e.x - hbW / 2, e.y - e.r - 12, hbW, 5);
       ctx.fillStyle = e.color;
-      ctx.fillRect(e.x - 12, e.y - e.r - 10, 24 * clamp(e.hp / e.maxHp, 0, 1), 4);
+      ctx.fillRect(e.x - hbW / 2, e.y - e.r - 12, hbW * clamp(e.hp / e.maxHp, 0, 1), 5);
     }
   }
 
@@ -6879,8 +6880,8 @@ function drawReturnScene() {
 /* Chama tremeluzente do motor das naves inimigas (dentro do frame 2D,
    com o nariz apontando para a esquerda, então o motor fica à direita) */
 function drawEnemyEngine(e, sc) {
-  const fl = e.big ? 9 : 7;
-  const fw = e.big ? 4 : 3;
+  const fl = e.big ? 12 : 9;
+  const fw = e.big ? 5 : 4;
   const l = fl * (0.7 + Math.random() * 0.5);
   ctx.save();
   ctx.fillStyle = 'rgba(255,138,93,0.85)';
@@ -6905,7 +6906,7 @@ function drawEnemyEngine(e, sc) {
    continuam em 2D. */
 function drawReturnEnemyDeath(e) {
   const pr = clamp(e.deadT / RETURN_DEATH_DUR, 0, 1);
-  const sc = e.big ? 3 : 2;
+  const sc = e.big ? 4 : 3;
   const fx3d = !!(window.Effects3D && Effects3D.isEnabled());
   if (!fx3d) {
     ctx.save();
