@@ -55,6 +55,13 @@ check('quadro: --font-clean usa fontes modernas de sistema',
   !!rootClean && /Segoe UI|Inter|system-ui|Roboto/.test(rootClean[0]));
 check('diagramas: rótulos com a fonte limpa', fs.readFileSync(__dirname + '/classroom.js', 'utf8').includes('FONT_CLEAN'));
 
+/* balão do professor: liquid glass e elevado */
+const bubbleCss = css.slice(css.indexOf('.speech-bubble {'), css.indexOf('.bubble-tail'));
+check('balão: liquid glass (vidro com blur translúcido)',
+  bubbleCss.includes('backdrop-filter: blur') && bubbleCss.includes('rgba(255,255,255') && bubbleCss.includes('inset 0 1px 0'));
+const speechColCss = css.slice(css.indexOf('.speech-col {'), css.indexOf('.speech-bubble {'));
+check('balão: posição mais acima que o centro', /top:\s*4[0-9]%|top:\s*[0-3]?[0-9]%/.test(speechColCss));
+
 /* ---------- 2. Sandbox DOM (estilo smoke_test_return) ---------- */
 function makeGradient() { return { addColorStop() {} }; }
 function makeCtx() {

@@ -2020,10 +2020,11 @@ h3 .pix-icon { margin-right: 4px; }
 
 /* --- Fala do professor: flutuante SOBRE o quadro, à esquerda dele ---
    Não participa do layout flex: o quadro continua ocupando toda a
-   largura e a fala apenas aparece por cima, sem reduzir nada. */
+   largura e a fala apenas aparece por cima, sem reduzir nada.
+   Posição elevada (acima do centro) para acompanhar o rosto. */
 .speech-col {
   position: absolute;
-  top: 50%;
+  top: 42%;
   right: calc(clamp(110px, 13vw, 170px) + 6px);
   transform: translateY(-50%);
   width: clamp(215px, 25vw, 330px);
@@ -2033,29 +2034,46 @@ h3 .pix-icon { margin-right: 4px; }
   flex-direction: column;
   justify-content: center;
 }
+
+/* Balão estilo Liquid Glass (Apple): vidro translúcido com desfoque
+   do fundo, brilho especular no topo, borda luminosa e sombra suave */
 .speech-bubble {
   position: relative;
-  background: rgba(244, 248, 255, 0.97);
-  color: #14204a;
-  border-radius: 14px;
-  border-bottom-right-radius: 4px;
-  padding: 14px 15px 12px;
+  color: #101c40;
+  border-radius: 22px;
+  padding: 16px 17px 14px;
   font-size: clamp(13px, 1.45vw, 16px);
   line-height: 1.55;
   letter-spacing: 0.01em;
-  box-shadow: 0 8px 22px rgba(0,0,0,0.45), 0 0 0 2px rgba(255,255,255,0.35) inset;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.68) 0%, rgba(255,255,255,0.34) 42%, rgba(168,199,255,0.36) 100%),
+    radial-gradient(130% 100% at 18% 0%, rgba(255,255,255,0.42), rgba(255,255,255,0) 55%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.55);
+  box-shadow:
+    0 12px 32px rgba(0,0,0,0.38),
+    0 2px 8px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.75),
+    inset 0 -1px 1px rgba(255,255,255,0.28),
+    inset 0 0 20px rgba(255,255,255,0.14);
+  text-shadow: 0 1px 2px rgba(255,255,255,0.35);
   overflow-y: auto;
   max-height: min(52vh, 340px);
 }
 .speech-bubble p { min-height: 3em; }
 .bubble-tail {
   position: absolute;
-  right: -11px;
-  top: 28px;
-  width: 0; height: 0;
-  border-top: 10px solid transparent;
-  border-bottom: 10px solid transparent;
-  border-left: 12px solid rgba(244, 248, 255, 0.97);
+  right: -8px;
+  top: 26px;
+  width: 17px; height: 17px;
+  transform: rotate(45deg);
+  border-bottom-right-radius: 5px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.66), rgba(178,206,255,0.42));
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-right: 1px solid rgba(255,255,255,0.6);
+  border-bottom: 1px solid rgba(255,255,255,0.6);
 }
 
 /* --- Caixa de treinamento (Ligações Covalentes) --- */
