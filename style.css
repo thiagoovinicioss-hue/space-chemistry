@@ -2516,19 +2516,21 @@ h3 .pix-icon { margin-right: 4px; }
     -3px 7px 18px rgba(3, 6, 20, 0.38);
 }
 
-/* Cortina branca da transição entre telas (acionada pelo menu_glass.js) */
+/* Cortina branca da transição entre telas (acionada pelo menu_glass.js)
+   Suave e discreta: branco levemente azulado, pico de ~82% de opacidade
+   (a tela nova ainda desponta atrás) e curvas lentas na entrada/saída */
 #glass-fade {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: #ffffff;
+  background: radial-gradient(120% 120% at 50% 40%, #f8faff 0%, #eef3fd 100%);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.42s cubic-bezier(0.3, 0, 0.4, 1);
+  transition: opacity 0.55s cubic-bezier(0.33, 0, 0.35, 1);
 }
 #glass-fade.show {
-  opacity: 1;
-  transition: opacity 0.24s ease-in;
+  opacity: 0.82;
+  transition: opacity 0.34s cubic-bezier(0.4, 0, 0.35, 1);
 }
 @media (prefers-reduced-motion: reduce) {
   #glass-fade { transition: none; }

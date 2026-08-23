@@ -150,7 +150,7 @@
     ' #btn-cls-back, #btn-lewis-back, #btn-structural-back';
   var NAV_EXCLUDE = { 'btn-sound': 1, 'btn-fullscreen-menu': 1, 'btn-effects3d': 1 };
   var PRESS_MS = 210;
-  var FADE_IN_MS = 250;
+  var FADE_IN_MS = 340;
   var HOLD_MS = 90;
   var fadeEl = null;
 
