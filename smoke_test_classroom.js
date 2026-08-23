@@ -33,7 +33,8 @@ check('aula: quadro negro + Prof. Sérgio (prof_corpo)', classScreen.includes('b
 check('aula: treinamento Lewis/Estrutural dentro da sala', classScreen.includes('btn-open-lewis') && classScreen.includes('btn-open-structural'));
 check('aula: botões Anterior/Pular/Próximo/Voltar para Conteúdo',
   ['btn-cls-prev', 'btn-cls-skip', 'btn-cls-next', 'btn-cls-back'].every(id => classScreen.includes(id)));
-check('index: classroom.js carregado', html.includes('<script src="classroom.js"></script>'));
+check('index: classroom.js carregado (com cache-busting)', /<script src="classroom\.js\?v=/.test(html));
+check('index: style.css com cache-busting', /rel="stylesheet" href="style\.css\?v=/.test(html));
 
 /* fala à esquerda do professor (bolha fora do bloco dele, antes dele) */
 const speechPos = classScreen.indexOf('id="cls-speech-wrap"');
@@ -56,10 +57,13 @@ check('quadro: --font-clean usa fontes modernas de sistema',
 check('diagramas: rótulos com a fonte limpa', fs.readFileSync(__dirname + '/classroom.js', 'utf8').includes('FONT_CLEAN'));
 
 /* balão do professor: liquid glass e elevado */
-const bubbleCss = css.slice(css.indexOf('.speech-bubble {'), css.indexOf('.bubble-tail'));
+const bubbleCss = css.slice(css.indexOf('.speech-bubble {'), css.indexOf('/* sem suporte'));
 check('balão: liquid glass (vidro com blur translúcido)',
   bubbleCss.includes('backdrop-filter: blur') && bubbleCss.includes('rgba(255,255,255') && bubbleCss.includes('inset 0 1px 0'));
-const speechColCss = css.slice(css.indexOf('.speech-col {'), css.indexOf('.speech-bubble {'));
+check('balão: translúcido de verdade (sem branco sólido)',
+  !bubbleCss.match(/rgba\(2\d\d,\s*2\d\d,\s*2\d\d,\s*0\.9/) && /rgba\(255,255,255,0\.(1|2|3|4)/.test(bubbleCss));
+check('balão: fallback para navegadores sem backdrop-filter', css.includes('@supports not ((backdrop-filter'));
+const speechColCss = css.slice(css.indexOf('.speech-col {'), css.indexOf('/* Balão estilo'));
 check('balão: posição mais acima que o centro', /top:\s*4[0-9]%|top:\s*[0-3]?[0-9]%/.test(speechColCss));
 
 /* ---------- 2. Sandbox DOM (estilo smoke_test_return) ---------- */

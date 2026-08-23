@@ -2021,10 +2021,10 @@ h3 .pix-icon { margin-right: 4px; }
 /* --- Fala do professor: flutuante SOBRE o quadro, à esquerda dele ---
    Não participa do layout flex: o quadro continua ocupando toda a
    largura e a fala apenas aparece por cima, sem reduzir nada.
-   Posição elevada (acima do centro) para acompanhar o rosto. */
+   Posição elevada (bem acima do centro) para acompanhar o rosto. */
 .speech-col {
   position: absolute;
-  top: 42%;
+  top: 36%;
   right: calc(clamp(110px, 13vw, 170px) + 6px);
   transform: translateY(-50%);
   width: clamp(215px, 25vw, 330px);
@@ -2035,31 +2035,39 @@ h3 .pix-icon { margin-right: 4px; }
   justify-content: center;
 }
 
-/* Balão estilo Liquid Glass (Apple): vidro translúcido com desfoque
-   do fundo, brilho especular no topo, borda luminosa e sombra suave */
+/* Balão estilo Liquid Glass (Apple): vidro bem translúcido — dá para
+   ver o quadro por trás — com desfoque do fundo, brilho especular,
+   borda luminosa e sombras internas suaves */
 .speech-bubble {
   position: relative;
-  color: #101c40;
-  border-radius: 22px;
+  color: #0b1636;
+  border-radius: 24px;
   padding: 16px 17px 14px;
   font-size: clamp(13px, 1.45vw, 16px);
   line-height: 1.55;
   letter-spacing: 0.01em;
   background:
-    linear-gradient(135deg, rgba(255,255,255,0.68) 0%, rgba(255,255,255,0.34) 42%, rgba(168,199,255,0.36) 100%),
-    radial-gradient(130% 100% at 18% 0%, rgba(255,255,255,0.42), rgba(255,255,255,0) 55%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255,255,255,0.55);
+    linear-gradient(135deg, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.14) 45%, rgba(168,199,255,0.18) 100%),
+    radial-gradient(130% 100% at 18% 0%, rgba(255,255,255,0.26), rgba(255,255,255,0) 55%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border: 1px solid rgba(255,255,255,0.5);
   box-shadow:
     0 12px 32px rgba(0,0,0,0.38),
     0 2px 8px rgba(0,0,0,0.22),
-    inset 0 1px 0 rgba(255,255,255,0.75),
-    inset 0 -1px 1px rgba(255,255,255,0.28),
-    inset 0 0 20px rgba(255,255,255,0.14);
-  text-shadow: 0 1px 2px rgba(255,255,255,0.35);
+    inset 0 1px 0 rgba(255,255,255,0.7),
+    inset 0 -1px 1px rgba(255,255,255,0.22),
+    inset 0 0 20px rgba(255,255,255,0.10);
+  text-shadow: 0 1px 3px rgba(255,255,255,0.55);
   overflow-y: auto;
   max-height: min(52vh, 340px);
+}
+/* sem suporte a backdrop-filter: um pouco mais opaco para manter leitura */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .speech-bubble {
+    background:
+      linear-gradient(135deg, rgba(240,246,255,0.88), rgba(214,228,255,0.78));
+  }
 }
 .speech-bubble p { min-height: 3em; }
 .bubble-tail {
@@ -2069,11 +2077,11 @@ h3 .pix-icon { margin-right: 4px; }
   width: 17px; height: 17px;
   transform: rotate(45deg);
   border-bottom-right-radius: 5px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.66), rgba(178,206,255,0.42));
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  backdrop-filter: blur(16px) saturate(180%);
-  border-right: 1px solid rgba(255,255,255,0.6);
-  border-bottom: 1px solid rgba(255,255,255,0.6);
+  background: linear-gradient(135deg, rgba(255,255,255,0.38), rgba(178,206,255,0.20));
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border-right: 1px solid rgba(255,255,255,0.55);
+  border-bottom: 1px solid rgba(255,255,255,0.55);
 }
 
 /* --- Caixa de treinamento (Ligações Covalentes) --- */
