@@ -259,16 +259,19 @@ h3 .pix-icon { margin-right: 4px; }
 }
 .btn-back:hover { color: var(--text); }
 
-/* ---------------- Botões do MENU em Liquid Glass (bloco de vidro real) ----------------
-   Vidro translúcido com desfoque do fundo, reflexo diagonal que desliza
-   no hover, brilho especular no topo e borda luminosa — como um bloco
-   de vidro fosco de verdade. Texto na fonte limpa, espaçado e legível. */
+/* ------- Botões do MENU em Liquid Glass 3D (blocos de vidro reais) -------
+   Cada botão é um bloco retangular de vidro com espessura: face frontal
+   translúcida, parede lateral direita visível ao girar e brilho especular.
+   No hover/toque o bloco avança em direção à câmera e gira levemente para
+   a esquerda, revelando sua projeção 3D — iluminação de vidro fosco Apple. */
 .menu-buttons {
-  gap: 16px;
+  gap: 18px;
+  perspective: 1100px;
+  perspective-origin: 50% 38%;
 }
 .menu-buttons .btn {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   padding: 16px 28px;
   min-height: 54px;
   font-family: var(--font-clean);
@@ -277,113 +280,181 @@ h3 .pix-icon { margin-right: 4px; }
   line-height: 1.35;
   letter-spacing: 0.4px;
   color: #f5f9ff;
-  text-shadow: 0 1px 2px rgba(8, 16, 44, 0.6), 0 0 14px rgba(130, 185, 255, 0.28);
+  text-shadow: 0 1px 2px rgba(8, 16, 44, 0.55);
+  cursor: pointer;
+
+  /* face frontal: vidro claro e incolor + faixa de refração interna */
   background:
-    linear-gradient(135deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.10) 42%, rgba(150,185,255,0.15) 100%),
-    radial-gradient(140% 110% at 20% 0%, rgba(255,255,255,0.26), rgba(255,255,255,0) 55%);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
-  backdrop-filter: blur(14px) saturate(160%);
-  border: 1px solid rgba(255,255,255,0.42);
-  border-bottom-color: rgba(255,255,255,0.26);
-  border-radius: 16px;
+    linear-gradient(112deg,
+      rgba(255,255,255,0)    24%,
+      rgba(255,255,255,0.12) 34%,
+      rgba(255,255,255,0.30) 42%,
+      rgba(255,255,255,0.08) 52%,
+      rgba(255,255,255,0)    62%),
+    linear-gradient(180deg,
+      rgba(255,255,255,0.22) 0%,
+      rgba(255,255,255,0.05) 30%,
+      rgba(150,182,235,0.10) 72%,
+      rgba(196,218,252,0.16) 100%),
+    radial-gradient(130% 105% at 12% -8%, rgba(255,255,255,0.36), rgba(255,255,255,0) 46%);
+  -webkit-backdrop-filter: blur(9px) saturate(135%);
+  backdrop-filter: blur(9px) saturate(135%);
+  border: 1px solid rgba(255,255,255,0.32);
+  border-top-color: rgba(255,255,255,0.52);
+  border-left-color: rgba(255,255,255,0.48);
+  border-radius: 14px;
+
+  /* volume de vidro grosso + sombra projetada deslocada (luz vinda da frente-esquerda) */
   box-shadow:
-    0 10px 26px rgba(4,8,30,0.45),
-    0 2px 6px rgba(4,8,30,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.62),
-    inset 0 -1px 1px rgba(255,255,255,0.20),
-    inset 0 0 24px rgba(160,200,255,0.10);
-  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    inset 0 -10px 18px rgba(15, 30, 70, 0.16),
+    inset 0 10px 14px rgba(255, 255, 255, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 1px 0 0 rgba(255, 255, 255, 0.35),
+    -4px 10px 24px rgba(3, 7, 24, 0.45),
+    -1px 3px 8px rgba(3, 7, 24, 0.35);
+
+  transform: translateZ(0);
+  transform-style: preserve-3d;
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.22s ease,
+    background-position 0.35s ease,
+    border-color 0.22s ease;
+  will-change: transform;
 }
-/* faixa de refração interna do vidro (fica entre o fundo e o texto) */
+
+/* parede lateral direita = ESPESSURA do bloco (revelada ao girar) */
 .menu-buttons .btn::before {
   content: "";
   position: absolute;
-  top: -60%;
-  bottom: -60%;
-  left: 10%;
-  width: 36%;
-  z-index: -1;
-  transform: rotate(16deg);
-  background: linear-gradient(90deg,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0.10) 38%,
-    rgba(255,255,255,0.26) 50%,
-    rgba(255,255,255,0.10) 62%,
-    rgba(255,255,255,0) 100%);
-  transition: left 0.35s ease;
+  top: 4%;
+  bottom: 4%;
+  right: -9px;
+  width: 9px;
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(180deg,
+    rgba(214, 234, 255, 0.34) 0%,
+    rgba(160, 195, 245, 0.16) 45%,
+    rgba(70, 105, 170, 0.22) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-left: none;
+  transform-origin: left center;
+  transform: rotateY(84deg);
+  opacity: 0.55;
+  transition: transform 0.25s ease, opacity 0.25s ease;
   pointer-events: none;
 }
-/* lâmina de luz superior do bloco */
+/* lâmina de luz especular na parte alta da face */
 .menu-buttons .btn::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 34%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 30%);
   pointer-events: none;
 }
-.menu-buttons .btn:hover {
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.16) 42%, rgba(158,192,255,0.20) 100%),
-    radial-gradient(140% 110% at 20% 0%, rgba(255,255,255,0.32), rgba(255,255,255,0) 55%);
-  border-color: rgba(255,255,255,0.62);
-  transform: translateY(-2px);
-  box-shadow:
-    0 16px 34px rgba(4,8,30,0.5),
-    0 3px 8px rgba(4,8,30,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.78),
-    inset 0 -1px 1px rgba(255,255,255,0.26),
-    inset 0 0 26px rgba(170,210,255,0.16),
-    0 0 20px rgba(89,211,255,0.22);
-}
-.menu-buttons .btn:hover::before { left: 58%; }
-.menu-buttons .btn:active {
-  transform: translateY(1px) scale(0.995);
-  box-shadow:
-    0 5px 14px rgba(4,8,30,0.45),
-    inset 0 1px 0 rgba(255,255,255,0.5),
-    inset 0 0 18px rgba(150,195,255,0.12);
-}
+.menu-buttons .btn > * { position: relative; z-index: 2; }
+
+/* hover / foco: avança para frente e gira para a ESQUERDA,
+   mostrando profundidade e a parede de vidro lateral */
+.menu-buttons .btn:hover,
 .menu-buttons .btn:focus-visible {
-  outline: 2px solid rgba(255,255,255,0.75);
-  outline-offset: 3px;
+  transform: translateX(-6px) translateZ(16px) rotateY(-8deg) rotateX(1.5deg);
+  border-left-color: rgba(255, 255, 255, 0.65);
+  background-position: 30px 0, 0 0, 0 0;
+  box-shadow:
+    inset 0 -12px 20px rgba(15, 30, 70, 0.18),
+    inset 0 10px 16px rgba(255, 255, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 1px 0 0 rgba(255, 255, 255, 0.5),
+    -10px 18px 34px rgba(3, 7, 24, 0.55),
+    -3px 5px 12px rgba(3, 7, 24, 0.40),
+    0 0 24px rgba(89, 211, 255, 0.16);
 }
+.menu-buttons .btn:hover::before,
+.menu-buttons .btn:focus-visible::before {
+  transform: rotateY(58deg);
+  opacity: 1;
+}
+.menu-buttons .btn:active {
+  transform: translateX(-3px) translateZ(6px) rotateY(-4deg);
+  box-shadow:
+    inset 0 -8px 14px rgba(15, 30, 70, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    -5px 9px 18px rgba(3, 7, 24, 0.5);
+}
+/* toque: o mesmo movimento 3D ao pressionar */
+@media (hover: none) {
+  .menu-buttons .btn:active {
+    transform: translateX(-6px) translateZ(16px) rotateY(-8deg) rotateX(1.5deg);
+  }
+  .menu-buttons .btn:active::before {
+    transform: rotateY(58deg);
+    opacity: 1;
+  }
+}
+/* acessibilidade: sem movimento para quem prefere */
+@media (prefers-reduced-motion: reduce) {
+  .menu-buttons .btn,
+  .menu-buttons .btn::before {
+    transition: none;
+  }
+  .menu-buttons .btn:hover,
+  .menu-buttons .btn:focus-visible {
+    transform: none;
+  }
+}
+
 /* botão principal: vidro azulado com brilho próprio */
 .menu-buttons .btn-primary {
   color: #ffffff;
   background:
-    linear-gradient(135deg, rgba(126,193,255,0.46) 0%, rgba(84,142,240,0.30) 45%, rgba(46,98,205,0.36) 100%),
-    radial-gradient(140% 110% at 20% 0%, rgba(255,255,255,0.30), rgba(255,255,255,0) 55%);
-  border-color: rgba(170,218,255,0.58);
+    linear-gradient(112deg,
+      rgba(255,255,255,0)    24%,
+      rgba(255,255,255,0.14) 34%,
+      rgba(255,255,255,0.32) 42%,
+      rgba(255,255,255,0.09) 52%,
+      rgba(255,255,255,0)    62%),
+    linear-gradient(180deg,
+      rgba(140, 200, 255, 0.34) 0%,
+      rgba(96, 152, 240, 0.20) 30%,
+      rgba(58, 108, 205, 0.24) 72%,
+      rgba(120, 175, 250, 0.26) 100%),
+    radial-gradient(130% 105% at 12% -8%, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0) 46%);
+  border-top-color: rgba(190, 228, 255, 0.6);
+  border-left-color: rgba(170, 218, 255, 0.55);
+  text-shadow: 0 1px 2px rgba(6, 20, 52, 0.6), 0 0 14px rgba(160, 220, 255, 0.35);
   box-shadow:
-    0 10px 26px rgba(4,8,30,0.5),
-    0 2px 6px rgba(4,8,30,0.35),
-    0 0 22px rgba(89,211,255,0.28),
-    inset 0 1px 0 rgba(255,255,255,0.7),
-    inset 0 -1px 1px rgba(255,255,255,0.24),
-    inset 0 0 26px rgba(140,200,255,0.18);
-  text-shadow: 0 1px 2px rgba(6, 20, 52, 0.65), 0 0 16px rgba(160,220,255,0.4);
+    inset 0 -10px 18px rgba(10, 28, 70, 0.22),
+    inset 0 10px 14px rgba(255, 255, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 1px 0 0 rgba(255, 255, 255, 0.4),
+    -4px 10px 24px rgba(3, 7, 24, 0.5),
+    0 0 22px rgba(89, 211, 255, 0.24);
 }
 .menu-buttons .btn-primary:hover {
-  background:
-    linear-gradient(135deg, rgba(146,206,255,0.56) 0%, rgba(102,156,250,0.38) 45%, rgba(58,112,222,0.42) 100%),
-    radial-gradient(140% 110% at 20% 0%, rgba(255,255,255,0.36), rgba(255,255,255,0) 55%);
-  border-color: rgba(190,228,255,0.75);
+  background-position: 30px 0, 0 0, 0 0;
   box-shadow:
-    0 16px 34px rgba(4,8,30,0.55),
-    0 0 30px rgba(89,211,255,0.4),
-    inset 0 1px 0 rgba(255,255,255,0.85),
-    inset 0 0 30px rgba(150,208,255,0.24);
+    inset 0 -12px 20px rgba(10, 28, 70, 0.24),
+    inset 0 10px 16px rgba(255, 255, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 1px 0 0 rgba(255, 255, 255, 0.55),
+    -10px 18px 34px rgba(3, 7, 24, 0.55),
+    0 0 30px rgba(89, 211, 255, 0.34);
 }
-/* fallback: navegadores sem backdrop-filter ficam um pouco mais opacos */
+
+/* fallback: navegadores sem backdrop-filter ficam mais opacos (mesma 3D) */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .menu-buttons .btn {
     background:
-      linear-gradient(135deg, rgba(64,86,150,0.92), rgba(38,56,110,0.9));
+      linear-gradient(112deg, rgba(255,255,255,0.06) 34%, rgba(255,255,255,0.16) 42%, rgba(255,255,255,0.04) 52%, rgba(255,255,255,0) 62%),
+      linear-gradient(180deg, rgba(84, 106, 168, 0.94), rgba(52, 74, 130, 0.92));
   }
   .menu-buttons .btn-primary {
-    background: linear-gradient(135deg, rgba(66,128,214,0.95), rgba(38,80,168,0.93));
+    background:
+      linear-gradient(112deg, rgba(255,255,255,0.08) 34%, rgba(255,255,255,0.18) 42%, rgba(255,255,255,0.05) 52%, rgba(255,255,255,0) 62%),
+      linear-gradient(180deg, rgba(78, 138, 222, 0.95), rgba(44, 88, 178, 0.93));
   }
 }
 @media (max-width: 640px) {

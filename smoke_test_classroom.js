@@ -65,11 +65,16 @@ check('balão: translúcido de verdade (sem branco sólido)',
 check('balão: fallback para navegadores sem backdrop-filter', css.includes('@supports not ((backdrop-filter'));
 
 /* botões do menu em liquid glass */
-const mBtnCss = css.slice(css.indexOf('.menu-buttons .btn {'), css.indexOf('/* ---------------- Painéis'));
+const mBtnCss = css.slice(css.indexOf('.menu-buttons {'), css.indexOf('/* ---------------- Painéis'));
 check('menu: botões em vidro líquido (blur + borda luminosa + brilho interno)',
   mBtnCss.includes('.menu-buttons .btn {') &&
   /backdrop-filter: blur\(\d+px\) saturate/.test(mBtnCss) &&
-  mBtnCss.includes('inset 0 1px 0 rgba(255,255,255'));
+  /inset 0 1px 0 rgba\(255,\s*255,\s*255/.test(mBtnCss));
+check('menu: blocos com profundidade 3D (perspectiva + giro para a esquerda)',
+  /perspective:\s*\d+px/.test(mBtnCss) && /rotateY\(-\d+deg\)/.test(mBtnCss) &&
+  mBtnCss.includes('.menu-buttons .btn::before') && /rotateY\(\d+deg\)/.test(mBtnCss));
+check('menu: toque e acessibilidade (hover:none e reduced-motion)',
+  mBtnCss.includes('@media (hover: none)') && mBtnCss.includes('@media (prefers-reduced-motion: reduce)'));
 check('menu: reflexo de refração que desliza no hover',
   mBtnCss.includes('.menu-buttons .btn::before') && mBtnCss.includes(':hover::before'));
 check('menu: variante azulada do botão principal', mBtnCss.includes('.menu-buttons .btn-primary'));
