@@ -1,5 +1,5 @@
 'use strict';
-/* Teste de fumaça: Conteúdo de Ligações (menu + sala de aula do Prof. Lewis)
+/* Teste de fumaça: Conteúdo de Ligações (menu + sala de aula do Prof. Sérgio)
    - Menu principal sem "Praticar Lewis"/"Praticar Estrutural"
    - "Conteúdo de Ligações" após "Conquistas"
    - 3 aulas fiéis aos PDFs (iônica, covalente, metálica)
@@ -29,7 +29,7 @@ check('bonds: 3 cartões (ionica/covalente/metalica)',
   bondsScreen.includes('data-bond="ionica"') && bondsScreen.includes('data-bond="covalente"') && bondsScreen.includes('data-bond="metalica"'));
 check('bonds: botão Voltar para o menu', bondsScreen.includes('data-nav="menu"'));
 const classScreen = html.slice(html.indexOf('id="screen-classroom"'), html.indexOf('SCREEN: JOGO'));
-check('aula: quadro negro + Prof. Lewis (prof_corpo)', classScreen.includes('blackboard') && classScreen.includes('prof_corpo_closed.png'));
+check('aula: quadro negro + Prof. Sérgio (prof_corpo)', classScreen.includes('blackboard') && classScreen.includes('prof_corpo_closed.png'));
 check('aula: treinamento Lewis/Estrutural dentro da sala', classScreen.includes('btn-open-lewis') && classScreen.includes('btn-open-structural'));
 check('aula: botões Anterior/Pular/Próximo/Voltar para Conteúdo',
   ['btn-cls-prev', 'btn-cls-skip', 'btn-cls-next', 'btn-cls-back'].every(id => classScreen.includes(id)));

@@ -1,6 +1,6 @@
 /* ============================================================
    SPACE CHEMISTRY: MISSION BONDS — classroom.js
-   Sala de aula interativa: Prof. Lewis + quadro negro.
+   Sala de aula interativa: Prof. Sérgio + quadro negro.
 
    Fonte do conteúdo (preservada fielmente):
    - "Aula 05-Ligações Quimicas-Iônica- 9 anos"
@@ -22,7 +22,7 @@ profImgs.open.src = PROF_OPEN_SRC;
 /* ============================================================
    DADOS DAS AULAS
    board.lines  -> texto do quadro (fiel aos slides dos PDFs)
-   say[]        -> fala do Prof. Lewis para cada linha
+   say[]        -> fala do Prof. Sérgio para cada linha
    diagram      -> animação desenhada no quadro
 ============================================================ */
 
