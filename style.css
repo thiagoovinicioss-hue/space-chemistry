@@ -2018,18 +2018,24 @@ h3 .pix-icon { margin-right: 4px; }
   text-shadow: 0 0 6px rgba(255,157,242,0.5);
 }
 
-/* --- Fala do professor: coluna própria, à ESQUERDA do professor --- */
+/* --- Fala do professor: flutuante SOBRE o quadro, à esquerda dele ---
+   Não participa do layout flex: o quadro continua ocupando toda a
+   largura e a fala apenas aparece por cima, sem reduzir nada. */
 .speech-col {
-  flex: 0 1 clamp(200px, 25vw, 330px);
+  position: absolute;
+  top: 50%;
+  right: calc(clamp(110px, 13vw, 170px) + 6px);
+  transform: translateY(-50%);
+  width: clamp(215px, 25vw, 330px);
+  max-width: min(46%, 360px);
+  z-index: 6;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-width: 0;
-  min-height: 0;
 }
 .speech-bubble {
   position: relative;
-  background: #f4f8ff;
+  background: rgba(244, 248, 255, 0.97);
   color: #14204a;
   border-radius: 14px;
   border-bottom-right-radius: 4px;
@@ -2037,9 +2043,9 @@ h3 .pix-icon { margin-right: 4px; }
   font-size: clamp(13px, 1.45vw, 16px);
   line-height: 1.55;
   letter-spacing: 0.01em;
-  box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.45), 0 0 0 2px rgba(255,255,255,0.35) inset;
   overflow-y: auto;
-  max-height: min(44vh, 320px);
+  max-height: min(52vh, 340px);
 }
 .speech-bubble p { min-height: 3em; }
 .bubble-tail {
@@ -2049,7 +2055,7 @@ h3 .pix-icon { margin-right: 4px; }
   width: 0; height: 0;
   border-top: 10px solid transparent;
   border-bottom: 10px solid transparent;
-  border-left: 12px solid #f4f8ff;
+  border-left: 12px solid rgba(244, 248, 255, 0.97);
 }
 
 /* --- Caixa de treinamento (Ligações Covalentes) --- */
@@ -2095,8 +2101,11 @@ h3 .pix-icon { margin-right: 4px; }
   .classroom-board-frame { order: 1; }
   .speech-col {
     order: 2;
-    flex: 1 1 auto;
+    position: static;
+    transform: none;
+    width: auto;
     max-width: none;
+    margin: 0 auto;
   }
   .speech-bubble { max-height: none; }
   .bubble-tail { display: none; }

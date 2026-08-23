@@ -1156,7 +1156,7 @@ function renderSlide(instant) {
 
   sl.lines.forEach((ln, i) => {
     const li = document.createElement('li');
-    li.textContent = ln.t;
+    li.textContent = lineText(ln);
     if (sl.hl && sl.hl[i]) li.classList.add(sl.hl[i]);
     li.dataset.i = String(i);
     els.lines.appendChild(li);
@@ -1184,12 +1184,15 @@ function renderSlide(instant) {
   }
 }
 
+/* linhas podem ser strings puras ou objetos {t, ...} */
+function lineText(ln) { return typeof ln === 'string' ? ln : (ln && ln.t) || ''; }
+
 function revealNextLine() {
   const sl = slide();
   S.reveal++;
   const li = els.lines.children[S.reveal];
   li.classList.add('show');
-  startTyping(li, sl.lines[S.reveal].t, 40);
+  startTyping(li, lineText(sl.lines[S.reveal]), 40);
   setSpeech(sl.say[S.reveal] || '');
   if (S.reveal === 0) showDiagram(sl.diagram);
   if (typeof AudioSys !== 'undefined' && AudioSys.sfx) AudioSys.sfx('chalk');
@@ -1267,11 +1270,15 @@ function loop(ts) {
 
   const sl = slide();
 
-  /* título terminou e ainda há linhas a revelar? mostra dica */
-  if (!typingBoard && S.reveal === -1 && !sl._introDone) {
-    sl._introDone = true;
-    els.hint.hidden = false;
-    els.hint.textContent = '[ESPAÇO] ▸ começar';
+  /* escrita automática: o conteúdo aparece no quadro sem precisar clicar.
+     O título digita, depois cada linha é escrita sozinha com uma pausa
+     curta entre elas, como um professor escrevendo no quadro. */
+  if (!typingBoard && !speeching && !sl._doneShown && S.reveal < sl.lines.length - 1) {
+    S.autoT = (S.autoT || 0) + dt;
+    const pause = S.reveal === -1 ? 0.4 : 0.6;
+    if (S.autoT >= pause) { S.autoT = 0; revealNextLine(); }
+  } else {
+    S.autoT = 0;
   }
 
   /* todas as linhas do quadro reveladas? finaliza o quadro */
@@ -1283,21 +1290,27 @@ function loop(ts) {
   S.raf = requestAnimationFrame(loop);
 }
 
+/* completa o quadro inteiro na hora: usado pelo ESPAÇO/Próximo */
+function completeSlideNow() {
+  const sl = slide();
+  finishTyping();
+  finishSpeech();
+  while (S.reveal < sl.lines.length - 1) {
+    S.reveal++;
+    const li = els.lines.children[S.reveal];
+    li.classList.add('show');
+    li.textContent = lineText(sl.lines[S.reveal]);
+  }
+  if (sl.diagram && S.diagName !== sl.diagram) showDiagram(sl.diagram);
+}
+
 /* ---------- navegação ---------- */
 function advance() {
-  const typing = !!S.typing || (S.speechFull && S.speechPos < S.speechFull.length);
-  if (typing) {
-    finishTyping();
-    finishSpeech();
-    return;
-  }
-  if (S.reveal === -1) {
-    /* revela primeira linha */
-    revealNextLine();
-    return;
-  }
-  if (S.reveal < slide().lines.length - 1) {
-    revealNextLine();
+  const sl = slide();
+  const busy = !!S.typing || (S.speechFull && S.speechPos < S.speechFull.length);
+  /* ainda há algo sendo escrito ou linhas faltando? mostra tudo de uma vez */
+  if (busy || S.reveal < sl.lines.length - 1 || S.reveal === -1) {
+    completeSlideNow();
     return;
   }
   if (S.idx < slideCount() - 1) {
@@ -1308,8 +1321,8 @@ function advance() {
 function goSlide(i, instant) {
   S.idx = i;
   S.resume[S.bond] = i;
+  S.autoT = 0;
   const sl = slide();
-  delete sl._introDone;
   delete sl._doneShown;
   renderSlide(!!instant);
 }

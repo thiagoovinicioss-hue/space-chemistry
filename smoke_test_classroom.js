@@ -189,6 +189,19 @@ run('(function(){ const d=window.Classroom._dbg; for (let i=0;i<400;i++) d.advan
 check('apresentação chega ao último quadro', run('window.Classroom._dbg.S.idx') === run('window.Classroom._dbg.LESSONS[window.Classroom._dbg.S.bond].slides.length - 1'));
 check('progresso exibido (QUADRO n/N)', /QUADRO \d+\/\d+/.test(elsById['cls-progress'].textContent));
 
+/* o CONTEÚDO aparece escrito no quadro sozinho, sem nenhum clique */
+run('(function(){ const d=window.Classroom._dbg; d.goSlide(0,false); })()');
+pumpFrames(30);
+const linesEl = elsById['cls-board-lines'];
+check('escrita automática: linhas do quadro visíveis sem interação',
+  linesEl.children.length > 0 && linesEl.children.every(li => li.classList.contains('show') && li.textContent.length > 0));
+check('título do quadro escrito por completo',
+  elsById['cls-board-title'].textContent.length > 0 &&
+  elsById['cls-board-title'].textContent === run('window.Classroom._dbg.LESSONS[window.Classroom._dbg.S.bond].slides[0].title'));
+check('fala preenchida durante a aula', elsById['cls-speech'].textContent.length > 0);
+check('dica de próximo quadro após a escrita automática',
+  elsById['cls-hint'].hidden === false && /próximo quadro/.test(elsById['cls-hint'].textContent));
+
 /* conteúdo fiel dos PDFs */
 const allText = run('JSON.stringify(window.Classroom._dbg.LESSONS)');
 [
