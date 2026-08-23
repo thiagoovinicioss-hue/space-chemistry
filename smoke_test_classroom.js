@@ -85,6 +85,9 @@ check('menu: retorno suave após tirar o mouse',
   mBtnCss.includes('.is-returning') && mBtnCss.includes('cubic-bezier(0.16, 1, 0.3, 1)'));
 check('menu: realismo do vidro (ruído fosco, dispersão e rim light)',
   /feTurbulence/.test(mBtnCss) && mBtnCss.includes('brightness(1.06)') && mBtnCss.includes('outline-offset: -3px'));
+check('menu: sem halo de luz externa nem faixa deslizante',
+  !mBtnCss.includes('rgba(89, 211, 255') && !mBtnCss.includes('248deg') &&
+  !mBtnCss.includes('background-position: -30px'));
 check('menu: acessibilidade (reduced-motion no CSS e no JS)',
   mBtnCss.includes('@media (prefers-reduced-motion: reduce)') &&
   fs.readFileSync(__dirname + '/menu_glass.js', 'utf8').includes('prefers-reduced-motion'));

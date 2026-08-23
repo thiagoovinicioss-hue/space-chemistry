@@ -284,14 +284,8 @@ h3 .pix-icon { margin-right: 4px; }
   text-shadow: 0 1px 2px rgba(8, 16, 44, 0.55);
   cursor: pointer;
 
-  /* face frontal: refração deslizante + corpo + hotspot + ruído fosco */
+  /* face frontal: corpo do vidro + hotspot suave + ruído fosco */
   background:
-    linear-gradient(248deg,
-      rgba(255,255,255,0)    24%,
-      rgba(255,255,255,0.12) 33%,
-      rgba(255,255,255,0.30) 41%,
-      rgba(255,255,255,0.08) 51%,
-      rgba(255,255,255,0)    62%),
     linear-gradient(15deg,
       rgba(210,228,252,0.13) 0%,
       rgba(255,255,255,0.05) 16%,
@@ -325,10 +319,9 @@ h3 .pix-icon { margin-right: 4px; }
              rotateX(var(--mg-rx, 0deg)) rotateY(var(--mg-ry, 0deg));
   transform-style: preserve-3d;
   transition:
-    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.5s ease,
-    border-color 0.4s ease,
-    background-position 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.55s ease,
+    border-color 0.45s ease;
   will-change: transform;
 }
 
@@ -384,7 +377,6 @@ h3 .pix-icon { margin-right: 4px; }
 .menu-buttons .btn.is-lit {
   border-top-color: rgba(255, 248, 242, 0.72);
   border-right-color: rgba(216, 240, 255, 0.75);
-  background-position: -30px 0, 0 0, 0 0, 0 0, 0 0;
   box-shadow:
     inset 0 -12px 20px rgba(15, 30, 70, 0.19),
     inset 0 10px 16px rgba(255, 255, 255, 0.16),
@@ -392,8 +384,7 @@ h3 .pix-icon { margin-right: 4px; }
     inset -1px 0 0 rgba(255, 255, 255, 0.55),
     0 2px 3px rgba(3, 6, 20, 0.4),
     -7px 14px 26px rgba(3, 7, 24, 0.46),
-    -14px 30px 60px rgba(3, 7, 24, 0.40),
-    0 0 26px rgba(89, 211, 255, 0.14);
+    -14px 30px 60px rgba(3, 7, 24, 0.40);
 }
 
 /* SALTO DE ENTRADA por zona — variáveis definidas no pointerdown/enter:
@@ -403,19 +394,19 @@ h3 .pix-icon { margin-right: 4px; }
     transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg);
   }
   34% {
-    transform: translate3d(calc(var(--jx, 0px) * 1.35), -7px, var(--jz, 32px))
-               rotateX(calc(var(--jrx, 1.4deg) * 1.5))
-               rotateY(calc(var(--jry, 0deg) * 1.3));
+    transform: translate3d(calc(var(--jx, 0px) * 1.25), -3.5px, var(--jz, 24px))
+               rotateX(calc(var(--jrx, 1.1deg) * 1.35))
+               rotateY(calc(var(--jry, 0deg) * 1.22));
   }
   62% {
-    transform: translate3d(calc(var(--jx, 0px) * 0.7), -1px, calc(var(--jz, 32px) * 0.72))
-               rotateX(calc(var(--jrx, 1.4deg) * 0.7))
-               rotateY(calc(var(--jry, 0deg) * 0.75));
+    transform: translate3d(calc(var(--jx, 0px) * 0.75), -0.5px, calc(var(--jz, 24px) * 0.8))
+               rotateX(calc(var(--jrx, 1.1deg) * 0.82))
+               rotateY(calc(var(--jry, 0deg) * 0.84));
   }
-  82% {
-    transform: translate3d(var(--jx, 0px), 0px, calc(var(--jz, 32px) * 1.06))
-               rotateX(var(--jrx, 1.4deg))
-               rotateY(calc(var(--jry, 0deg) * 1.08));
+  84% {
+    transform: translate3d(var(--jx, 0px), 0px, calc(var(--jz, 24px) * 1.05))
+               rotateX(var(--jrx, 1.1deg))
+               rotateY(calc(var(--jry, 0deg) * 1.06));
   }
   100% {
     transform: translate3d(var(--mg-x, 0px), var(--mg-y, 0px), var(--mg-z, 0px))
@@ -423,21 +414,20 @@ h3 .pix-icon { margin-right: 4px; }
   }
 }
 .menu-buttons .btn.is-jumping {
-  animation: menu-glass-jump 0.68s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+  animation: menu-glass-jump 0.8s cubic-bezier(0.33, 0.75, 0.35, 1) both;
 }
 /* retorno ao repouso: mola longa e muito suave */
 .menu-buttons .btn.is-returning {
   transition:
-    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.75s ease,
-    border-color 0.6s ease,
-    background-position 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    transform 1.05s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.85s ease,
+    border-color 0.7s ease;
 }
 .menu-buttons .btn.is-returning::before,
 .menu-buttons .btn.is-returning::after {
   transition:
-    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.7s ease;
+    transform 1.05s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.85s ease;
 }
 
 /* teclado: contorno visível sem depender do movimento */
@@ -462,12 +452,6 @@ h3 .pix-icon { margin-right: 4px; }
 .menu-buttons .btn-primary {
   color: #ffffff;
   background:
-    linear-gradient(248deg,
-      rgba(255,255,255,0)    24%,
-      rgba(255,255,255,0.14) 33%,
-      rgba(255,255,255,0.32) 41%,
-      rgba(255,255,255,0.09) 51%,
-      rgba(255,255,255,0)    62%),
     linear-gradient(15deg,
       rgba(170, 212, 255, 0.15) 0%,
       rgba(255,255,255,0.05) 16%,
@@ -488,8 +472,7 @@ h3 .pix-icon { margin-right: 4px; }
     inset 0 1px 0 rgba(255, 255, 255, 0.62),
     inset -1px 0 0 rgba(255, 255, 255, 0.45),
     0 1px 2px rgba(3, 6, 20, 0.45),
-    -4px 9px 18px rgba(3, 7, 24, 0.42),
-    0 0 22px rgba(89, 211, 255, 0.22);
+    -4px 9px 18px rgba(3, 7, 24, 0.42);
 }
 .menu-buttons .btn-primary.is-lit {
   box-shadow:
@@ -498,20 +481,17 @@ h3 .pix-icon { margin-right: 4px; }
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
     inset -1px 0 0 rgba(255, 255, 255, 0.58),
     0 2px 3px rgba(3, 6, 20, 0.4),
-    -7px 14px 26px rgba(3, 7, 24, 0.48),
-    0 0 30px rgba(89, 211, 255, 0.3);
+    -7px 14px 26px rgba(3, 7, 24, 0.48);
 }
 
 /* fallback: navegadores sem backdrop-filter ficam mais opacos (mesma 3D) */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .menu-buttons .btn {
     background:
-      linear-gradient(248deg, rgba(255,255,255,0.05) 33%, rgba(255,255,255,0.16) 41%, rgba(255,255,255,0.03) 51%, rgba(255,255,255,0) 62%),
       linear-gradient(180deg, rgba(84, 106, 168, 0.94), rgba(52, 74, 130, 0.92));
   }
   .menu-buttons .btn-primary {
     background:
-      linear-gradient(248deg, rgba(255,255,255,0.07) 33%, rgba(255,255,255,0.18) 41%, rgba(255,255,255,0.04) 51%, rgba(255,255,255,0) 62%),
       linear-gradient(180deg, rgba(78, 138, 222, 0.95), rgba(44, 88, 178, 0.93));
   }
 }

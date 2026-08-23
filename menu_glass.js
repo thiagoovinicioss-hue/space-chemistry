@@ -15,10 +15,10 @@
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (REDUCED) return;
 
-  var MAX_RY = 8;    /* giro horizontal máximo acompanhando o ponteiro */
-  var MAX_RX = 5;    /* giro vertical máximo */
-  var REST_Z = 18;   /* profundidade em repouso sob o ponteiro */
-  var JUMP_Z = 34;   /* profundidade do ápice do salto */
+  var MAX_RY = 5;    /* giro horizontal máximo acompanhando o ponteiro */
+  var MAX_RX = 3;    /* giro vertical máximo */
+  var REST_Z = 13;   /* profundidade em repouso sob o ponteiro */
+  var JUMP_Z = 23;   /* profundidade do ápice do salto */
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
@@ -47,8 +47,8 @@
       var rx = -p.ny * 2 * MAX_RX;         /* ponteiro acima  => topo recua */
       var wl = clamp(ry / MAX_RY, 0, 1);
       var wr = clamp(-ry / MAX_RY, 0, 1);
-      var mx = Math.abs(p.nx) > 0.12 ? (p.nx > 0 ? 4 : -4) : 0;
-      var my = p.ny * 6;
+      var mx = Math.abs(p.nx) > 0.12 ? (p.nx > 0 ? 2.5 : -2.5) : 0;
+      var my = p.ny * 4;
       return {
         '--mg-ry': ry.toFixed(2) + 'deg',
         '--mg-rx': rx.toFixed(2) + 'deg',
@@ -65,11 +65,11 @@
       btn.classList.remove('is-returning');
       var r = btn.getBoundingClientRect();
       var nx = (e.clientX - r.left) / r.width - 0.5;
-      var jv = { '--jz': JUMP_Z + 'px', '--jx': '0px', '--jry': '0deg', '--jrx': '1.4deg' };
+      var jv = { '--jz': JUMP_Z + 'px', '--jx': '0px', '--jry': '0deg', '--jrx': '1.1deg' };
       if (nx >= 0.33) {           /* entrada pela DIREITA: revela parede esquerda */
-        jv['--jry'] = '13deg';  jv['--jx'] = '5px';  jv['--jrx'] = '2.2deg';
+        jv['--jry'] = '7deg';   jv['--jx'] = '3px';  jv['--jrx'] = '1.6deg';
       } else if (nx <= -0.33) {   /* entrada pela ESQUERDA: revela parede direita */
-        jv['--jry'] = '-13deg'; jv['--jx'] = '-5px'; jv['--jrx'] = '2.2deg';
+        jv['--jry'] = '-7deg';  jv['--jx'] = '-3px'; jv['--jrx'] = '1.6deg';
       }
       setVars(jv);
       setVars(liveVars({
@@ -102,7 +102,7 @@
       clearTimeout(leaveTimer);
       leaveTimer = setTimeout(function () {
         btn.classList.remove('is-returning');
-      }, 950);
+      }, 1100);
     }
 
     btn.addEventListener('pointerenter', function (e) {
