@@ -27,8 +27,7 @@
       <button class="btn" data-nav="rules"><img class="pix-icon" data-icon="scroll" data-scale="1" alt=""> Regras</button>
       <button class="btn" data-nav="wardrobe"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> Vestiário</button>
       <button class="btn" data-nav="achievements"><img class="pix-icon" data-icon="trophy" data-scale="1" alt=""> Conquistas</button>
-      <button class="btn" data-nav="lewis"><img class="pix-icon" data-icon="flask" data-scale="1" alt=""> Praticar Lewis</button>
-      <button class="btn" data-nav="structural"><img class="pix-icon" data-icon="flask" data-scale="1" alt=""> Praticar Estrutural</button>
+      <button class="btn" data-nav="bonds"><img class="pix-icon" data-icon="board" data-scale="1" alt=""> Conteúdo de Ligações</button>
       <button class="btn" id="btn-sound"><img class="pix-icon" data-icon="soundOn" data-scale="1" alt=""> Som: Ligado</button>
       <button class="btn" id="btn-effects3d"><img class="pix-icon" data-icon="galaxy" data-scale="1" alt=""> Efeitos 3D: Ligado</button>
     </nav>
@@ -182,7 +181,7 @@
         </div>
       </div>
     </div>
-    <button class="btn btn-back" data-nav="menu">← Menu</button>
+    <button class="btn btn-back" id="btn-lewis-back" data-nav="menu"><span id="btn-lewis-back-label">← Menu</span></button>
   </div>
 </section>
 
@@ -213,13 +212,101 @@
         </div>
       </div>
     </div>
-    <button class="btn btn-back" data-nav="menu">← Menu</button>
+    <button class="btn btn-back" id="btn-structural-back" data-nav="menu"><span id="btn-structural-back-label">← Menu</span></button>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN: CONTEÚDO DE LIGAÇÕES (menu de aulas)
+============================================================ -->
+<section id="screen-bonds" class="screen" role="dialog" aria-label="Conteúdo de Ligações">
+  <div class="starfield" aria-hidden="true"></div>
+  <div id="fx3d-bonds" class="fx3d" aria-hidden="true"></div>
+  <div class="panel bonds-panel">
+    <h2 class="panel-title"><img class="pix-icon" data-icon="board" data-scale="2" alt=""> Conteúdo de Ligações</h2>
+    <p class="galaxy-sub">Estude com o Prof. Lewis antes ou depois das missões.</p>
+    <div class="bonds-grid">
+      <button class="btn bond-card bond-ionic" type="button" data-bond="ionica">
+        <img class="pix-icon" data-icon="flask" data-scale="2" alt="">
+        <span class="bond-card-text">
+          <strong>Ligações Iônicas</strong>
+          <small>Transferência de elétrons · cátions e ânions</small>
+        </span>
+      </button>
+      <button class="btn bond-card bond-covalent" type="button" data-bond="covalente">
+        <img class="pix-icon" data-icon="flask" data-scale="2" alt="">
+        <span class="bond-card-text">
+          <strong>Ligações Covalentes</strong>
+          <small>Compartilhamento de elétrons · moléculas</small>
+        </span>
+      </button>
+      <button class="btn bond-card bond-metallic" type="button" data-bond="metalica">
+        <img class="pix-icon" data-icon="flask" data-scale="2" alt="">
+        <span class="bond-card-text">
+          <strong>Ligações Metálicas</strong>
+          <small>Mar de elétrons · propriedades dos metais</small>
+        </span>
+      </button>
+    </div>
+    <button class="btn btn-back" data-nav="menu">← Voltar</button>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN: SALA DE AULA (Prof. Lewis + quadro negro)
+============================================================ -->
+<section id="screen-classroom" class="screen" role="application" aria-label="Sala de Aula do Prof. Lewis">
+  <div class="classroom-wrap">
+    <header class="classroom-topbar">
+      <span class="classroom-badge"><img class="pix-icon" data-icon="chalkW" data-scale="1" alt=""> <span id="cls-lesson-title">AULA</span></span>
+      <span class="classroom-progress" id="cls-progress">QUADRO 1/1</span>
+    </header>
+
+    <div class="classroom-scene">
+      <div class="classroom-board-frame">
+        <div class="blackboard" id="blackboard">
+          <h3 class="chalk-title" id="cls-board-title"></h3>
+          <ul class="chalk-lines" id="cls-board-lines"></ul>
+          <canvas id="cls-diagram" width="560" height="250" aria-hidden="true"></canvas>
+          <div class="chalk-hint" id="cls-hint">[ESPAÇO] continuar ▸</div>
+        </div>
+        <div class="chalk-tray" aria-hidden="true">
+          <i class="chalk-stick chalk-w"></i><i class="chalk-stick chalk-y"></i><i class="chalk-stick chalk-p"></i><i class="board-eraser"></i>
+        </div>
+      </div>
+
+      <aside class="prof-side">
+        <div class="prof-figure">
+          <img id="cls-prof-img" src="assets/images/prof_corpo_closed.png" alt="Prof. Lewis">
+          <span class="prof-caption">Prof. Lewis</span>
+        </div>
+        <div class="speech-bubble" id="cls-speech-wrap">
+          <p id="cls-speech"></p>
+          <i class="bubble-tail" aria-hidden="true"></i>
+        </div>
+      </aside>
+    </div>
+
+    <div class="training-box" id="cls-training" hidden>
+      <span class="training-label"><img class="pix-icon" data-icon="brain" data-scale="1" alt=""> TREINAMENTO</span>
+      <div class="training-buttons">
+        <button class="btn btn-primary" type="button" id="btn-open-lewis">Praticar Lewis</button>
+        <button class="btn btn-primary" type="button" id="btn-open-structural">Praticar Estrutural</button>
+      </div>
+    </div>
+
+    <footer class="classroom-controls">
+      <button class="btn btn-small" type="button" id="btn-cls-prev">◀ Anterior</button>
+      <button class="btn btn-small" type="button" id="btn-cls-skip">Pular aula ⏭</button>
+      <button class="btn btn-small" type="button" id="btn-cls-back" data-nav="bonds">Voltar para Conteúdo</button>
+      <button class="btn btn-primary btn-small" type="button" id="btn-cls-next">Próximo ▶</button>
+    </footer>
   </div>
 </section>
 
 <!-- ============================================================
      SCREEN: JOGO
-=========================================================== -->
+========================================================== -->
 <section id="screen-game" class="screen" role="application" aria-label="Jogo">
   <div class="game-wrapper">
     <div id="hud" class="hud" aria-hidden="true">
@@ -525,5 +612,6 @@
 <script src="exercises.js"></script>
 <script src="lewis_builder.js"></script>
 <script src="structural_builder.js"></script>
+<script src="classroom.js"></script>
 </body>
 </html>

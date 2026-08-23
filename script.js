@@ -7301,6 +7301,7 @@ const screens = {};
 document.querySelectorAll('.screen').forEach(s => { screens[s.id.replace('screen-', '')] = s; });
 
 function showScreen(name) {
+  const prevScreen = Game.screen;
   if (Game.screen === 'game' && name !== 'game') {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (typeof Effects3D !== 'undefined' && Effects3D.detach) Effects3D.detach();
@@ -7318,6 +7319,10 @@ function showScreen(name) {
   if (name !== 'lewis' && window.LewisBuilder && LewisBuilder.current) LewisBuilder.exit();
   if (name === 'structural' && window.StructuralBuilder) StructuralBuilder.enter();
   if (name !== 'structural' && window.StructuralBuilder && StructuralBuilder.current) StructuralBuilder.exit();
+
+  /* Sala de aula interativa (Conteúdo de Ligações) */
+  if (prevScreen === 'classroom' && name !== 'classroom' && window.Classroom && window.Classroom.active()) window.Classroom.exit();
+  if (name === 'classroom' && window.Classroom) window.Classroom.enter();
 
   updateTouchUI();
   updateRotateHint();
@@ -7353,6 +7358,20 @@ function navTo(nav) {
     return;
   }
   showScreen(nav);
+}
+
+/* Retorno das práticas Lewis/Estrutural: menu principal ou Conteúdo de Ligações.
+   Quando abertas a partir da aula de Ligações Covalentes, voltam para lá. */
+let practiceReturn = 'menu';
+function setPracticeReturn(target) {
+  practiceReturn = target === 'bonds' ? 'bonds' : 'menu';
+  ['lewis', 'structural'].forEach(k => {
+    const b = document.getElementById('btn-' + k + '-back');
+    if (!b) return;
+    b.dataset.nav = practiceReturn;
+    const lbl = document.getElementById('btn-' + k + '-back-label');
+    if (lbl) lbl.textContent = practiceReturn === 'bonds' ? '← Conteúdo de Ligações' : '← Menu';
+  });
 }
 
 function exitToMenu() {
@@ -7973,9 +7992,17 @@ window.addEventListener('keydown', e => {
   /* Bloqueio inicial do áudio (requisito do navegador) */
   AudioSys.unlock();
 
+  /* Sala de aula (Conteúdo de Ligações): navegação própria da apresentação */
+  if (Game.screen === 'classroom' && window.Classroom && window.Classroom.onKey(e)) return;
+
   /* Navegação de menus com teclado */
   if (Game.screen !== 'game') {
     if (e.code === 'Escape' && Game.screen !== 'menu') {
+      /* Práticas abertas a partir de Conteúdo de Ligações voltam para lá */
+      if ((Game.screen === 'lewis' || Game.screen === 'structural') && practiceReturn === 'bonds') {
+        showScreen('bonds');
+        return;
+      }
       showScreen('menu');
       return;
     }
