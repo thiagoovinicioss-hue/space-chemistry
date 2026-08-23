@@ -426,9 +426,12 @@ const LESSONS = {
 const DW = 560, DH = 250;
 
 /* --- helpers de desenho estilo giz --- */
+/* Fonte limpa e legível para os textos desenhados no quadro */
+const FONT_CLEAN = '"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif';
+
 function chalkText(ctx, txt, x, y, size, color, align, font) {
   ctx.save();
-  ctx.font = (size || 14) + 'px "' + (font || 'Pixelify Sans') + '", "Press Start 2P", monospace';
+  ctx.font = (size || 14) + 'px ' + (font || FONT_CLEAN);
   ctx.fillStyle = color || '#eef6ef';
   ctx.textAlign = align || 'center';
   ctx.textBaseline = 'middle';
@@ -623,7 +626,7 @@ const DIAGRAMS = {
     const lx = DW * 0.3, rx = DW * 0.7;
     const box = function (x, y, txt, color) {
       ctx.save();
-      ctx.font = '17px "Pixelify Sans", monospace';
+      ctx.font = '17px ' + FONT_CLEAN;
       const w = Math.max(64, ctx.measureText(txt).width + 22);
       ctx.fillStyle = 'rgba(0,0,0,0.25)';
       ctx.strokeStyle = color;
@@ -708,12 +711,12 @@ const DIAGRAMS = {
     const grow = Math.min(1, (t % 4) / 0.8);
     ctx.save();
     ctx.textAlign = 'center';
-    ctx.font = '58px "Pixelify Sans", monospace';
+    ctx.font = '58px ' + FONT_CLEAN;
     ctx.fillStyle = '#7ff5ff';
     ctx.shadowColor = '#7ff5ff'; ctx.shadowBlur = 10;
     ctx.fillText('H', DW / 2 - 52, DH / 2 - 4);
     ctx.fillText('O', DW / 2 + 40, DH / 2 - 4);
-    ctx.font = '34px "Pixelify Sans", monospace';
+    ctx.font = '34px ' + FONT_CLEAN;
     ctx.fillText('2', DW / 2 - 12, DH / 2 + 18);
     ctx.restore();
     if (grow >= 1) chalkText(ctx, '2 hidrogênios + 1 oxigênio', DW / 2, DH - 26, 14, '#eef6ef');
@@ -1048,7 +1051,7 @@ const DIAGRAMS = {
     items.forEach((txt, i) => {
       const y = gapY + i * (bh + gapY) + bh / 2;
       ctx.save();
-      ctx.font = '16px "Pixelify Sans", monospace';
+      ctx.font = '16px ' + FONT_CLEAN;
       const w = ctx.measureText(txt).width + 30;
       ctx.strokeStyle = colors[i];
       ctx.lineWidth = 2;

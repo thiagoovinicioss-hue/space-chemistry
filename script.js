@@ -8359,6 +8359,24 @@ document.getElementById('btn-effects3d').addEventListener('click', () => {
   AudioSys.sfx('click');
 });
 
+/* Tela cheia pelo menu principal (mesma função do HUD) */
+function updateFullscreenMenuButton() {
+  const b = document.getElementById('btn-fullscreen-menu');
+  if (!b) return;
+  const active = !!document.fullscreenElement;
+  b.innerHTML = '<span class="fs-glyph" aria-hidden="true">⛶</span> ' + (active ? 'Sair da Tela Cheia' : 'Tela Cheia');
+}
+document.getElementById('btn-fullscreen-menu').addEventListener('click', () => {
+  AudioSys.unlock();
+  toggleFullscreen();
+  AudioSys.sfx('click');
+  setTimeout(updateFullscreenMenuButton, 150);
+});
+document.addEventListener('fullscreenchange', () => {
+  AudioSys.sfx('click');
+  updateFullscreenMenuButton();
+});
+
 /* Vestiário: abas */
 document.querySelectorAll('#wardrobe-tabs .tab').forEach(tab => {
   tab.addEventListener('click', () => {

@@ -35,6 +35,26 @@ check('aula: botões Anterior/Pular/Próximo/Voltar para Conteúdo',
   ['btn-cls-prev', 'btn-cls-skip', 'btn-cls-next', 'btn-cls-back'].every(id => classScreen.includes(id)));
 check('index: classroom.js carregado', html.includes('<script src="classroom.js"></script>'));
 
+/* fala à esquerda do professor (bolha fora do bloco dele, antes dele) */
+const speechPos = classScreen.indexOf('id="cls-speech-wrap"');
+const profSideStart = classScreen.indexOf('<aside class="prof-side"');
+const speechCol = classScreen.slice(classScreen.indexOf('class="speech-col"'), classScreen.indexOf('</aside>'));
+check('fala: bolha em coluna própria ANTES do professor (lado esquerdo)',
+  speechCol.includes('cls-speech-wrap') && profSideStart > speechPos && !classScreen.slice(profSideStart).includes('cls-speech-wrap'));
+
+/* tela cheia no menu principal */
+check('menu: botão Tela Cheia presente', /id="btn-fullscreen-menu"/.test(menuBlock) && /Tela Cheia/.test(menuBlock));
+
+/* fonte limpa no quadro (não pixel-art) */
+const css = fs.readFileSync(__dirname + '/style.css', 'utf8');
+const chalkLinesCss = css.slice(css.indexOf('.chalk-lines {'), css.indexOf('.chalk-lines li'));
+check('quadro: fonte limpa (--font-clean) no conteúdo', chalkLinesCss.includes('var(--font-clean)') && !chalkLinesCss.includes('Pixelify'));
+check('quadro: espaçamento confortável definido', chalkLinesCss.includes('line-height: 1.65') && chalkLinesCss.includes('word-spacing'));
+const rootClean = css.match(/--font-clean:[^;]+;/);
+check('quadro: --font-clean usa fontes modernas de sistema',
+  !!rootClean && /Segoe UI|Inter|system-ui|Roboto/.test(rootClean[0]));
+check('diagramas: rótulos com a fonte limpa', fs.readFileSync(__dirname + '/classroom.js', 'utf8').includes('FONT_CLEAN'));
+
 /* ---------- 2. Sandbox DOM (estilo smoke_test_return) ---------- */
 function makeGradient() { return { addColorStop() {} }; }
 function makeCtx() {

@@ -30,6 +30,7 @@
       <button class="btn" data-nav="bonds"><img class="pix-icon" data-icon="board" data-scale="1" alt=""> Conteúdo de Ligações</button>
       <button class="btn" id="btn-sound"><img class="pix-icon" data-icon="soundOn" data-scale="1" alt=""> Som: Ligado</button>
       <button class="btn" id="btn-effects3d"><img class="pix-icon" data-icon="galaxy" data-scale="1" alt=""> Efeitos 3D: Ligado</button>
+      <button class="btn" id="btn-fullscreen-menu"><span class="fs-glyph" aria-hidden="true">⛶</span> Tela Cheia</button>
     </nav>
     <p class="menu-hint">Use as setas ou WASD e ENTER para navegar · ESC volta</p>
   </div>
@@ -275,14 +276,17 @@
         </div>
       </div>
 
+      <div class="speech-col">
+        <div class="speech-bubble" id="cls-speech-wrap">
+          <p id="cls-speech"></p>
+          <i class="bubble-tail" aria-hidden="true"></i>
+        </div>
+      </div>
+
       <aside class="prof-side">
         <div class="prof-figure">
           <img id="cls-prof-img" src="assets/images/prof_corpo_closed.png" alt="Prof. Lewis">
           <span class="prof-caption">Prof. Lewis</span>
-        </div>
-        <div class="speech-bubble" id="cls-speech-wrap">
-          <p id="cls-speech"></p>
-          <i class="bubble-tail" aria-hidden="true"></i>
         </div>
       </aside>
     </div>
