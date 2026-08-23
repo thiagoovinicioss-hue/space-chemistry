@@ -259,18 +259,16 @@ h3 .pix-icon { margin-right: 4px; }
 }
 .btn-back:hover { color: var(--text); }
 
-/* ------- Botões do MENU em Liquid Glass 3D fotorrealista -------
-   Cada botão é um bloco retangular de vidro fosco iluminado pela
-   direita: reflexo especular, faixa de refração interna, textura
-   microporosa do vidro, dispersão cromática sutil nas bordas,
-   sombra de contato + penumbra + oclusão ambiente.
-   No hover/toque o bloco dá um LEVE SALTO para frente (com mola),
-   avançando em direção à câmera e girando para a DIREITA, revelando
-   a parede lateral de vidro — projeção 3D estilo Apple Liquid Glass. */
+/* ------- Botões do MENU em Liquid Glass 3D — dirigido por ponteiro -------
+   A pose do bloco vem de variáveis atualizadas pelo menu_glass.js:
+   --mg-x/--mg-y/--mg-z (deslocamento), --mg-rx/--mg-ry (giro 3D),
+   --mg-wl/--mg-wr (paredes esquerda/direita reveladas).
+   O toque num lado faz o bloco girar mostrando a PAREDE OPSTA;
+   o meio dá apenas um leve salto para frente. Retorno com mola longa. */
 .menu-buttons {
   gap: 18px;
-  perspective: 1100px;
-  perspective-origin: 50% 38%;
+  perspective: 1200px;
+  perspective-origin: 50% 40%;
 }
 .menu-buttons .btn {
   position: relative;
@@ -286,29 +284,24 @@ h3 .pix-icon { margin-right: 4px; }
   text-shadow: 0 1px 2px rgba(8, 16, 44, 0.55);
   cursor: pointer;
 
-  /* FACE FRONTAL DO VIDRO (de cima para baixo):
-     1) faixa de refração interna que desliza no hover
-     2) reflexo interno invertido perto do rodapé (leis do vidro)
-     3) corpo do vidro com leve gradiente de espessura
-     4) hotspot especular no topo-direita (fonte de luz)
-     5) microporosidade do vidro fosco (ruído fractal embutido) */
+  /* face frontal: refração deslizante + corpo + hotspot + ruído fosco */
   background:
     linear-gradient(248deg,
       rgba(255,255,255,0)    24%,
-      rgba(255,255,255,0.13) 33%,
-      rgba(255,255,255,0.32) 41%,
-      rgba(255,255,255,0.09) 51%,
+      rgba(255,255,255,0.12) 33%,
+      rgba(255,255,255,0.30) 41%,
+      rgba(255,255,255,0.08) 51%,
       rgba(255,255,255,0)    62%),
     linear-gradient(15deg,
-      rgba(210,228,252,0.14) 0%,
+      rgba(210,228,252,0.13) 0%,
       rgba(255,255,255,0.05) 16%,
       rgba(255,255,255,0)    30%),
     linear-gradient(180deg,
-      rgba(255,255,255,0.20) 0%,
+      rgba(255,255,255,0.22) 0%,
       rgba(255,255,255,0.05) 28%,
       rgba(148,180,232,0.10) 72%,
-      rgba(198,220,252,0.17) 100%),
-    radial-gradient(60% 46% at 86% -4%, rgba(255,255,255,0.42), rgba(255,255,255,0) 62%),
+      rgba(198,220,252,0.16) 100%),
+    radial-gradient(60% 46% at 86% -4%, rgba(255,255,255,0.40), rgba(255,255,255,0) 62%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
   -webkit-backdrop-filter: blur(10px) saturate(150%) brightness(1.06);
   backdrop-filter: blur(10px) saturate(150%) brightness(1.06);
@@ -319,8 +312,6 @@ h3 .pix-icon { margin-right: 4px; }
   outline: 1px solid rgba(205, 228, 255, 0.14);
   outline-offset: -3px;
 
-  /* VOLUME: brilho de borda (Fresnel), núcleo mais denso embaixo,
-     sombra de contato + penumbra + oclusão ambiente projetadas à esquerda */
   box-shadow:
     inset 0 -10px 18px rgba(15, 30, 70, 0.17),
     inset 0 10px 14px rgba(255, 255, 255, 0.10),
@@ -328,19 +319,20 @@ h3 .pix-icon { margin-right: 4px; }
     inset -1px 0 0 rgba(255, 255, 255, 0.40),
     0 1px 2px rgba(3, 6, 20, 0.45),
     -4px 9px 18px rgba(3, 7, 24, 0.38),
-    -9px 20px 44px rgba(3, 7, 24, 0.36);
+    -9px 20px 44px rgba(3, 7, 24, 0.34);
 
-  transform: translateZ(0);
+  transform: translate3d(var(--mg-x, 0px), var(--mg-y, 0px), var(--mg-z, 0px))
+             rotateX(var(--mg-rx, 0deg)) rotateY(var(--mg-ry, 0deg));
   transform-style: preserve-3d;
   transition:
-    box-shadow 0.25s ease,
-    border-color 0.25s ease,
-    background-position 0.4s ease,
-    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s ease,
+    border-color 0.4s ease,
+    background-position 0.65s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
-/* PAREDE LATERAL ESQUERDA = espessura do bloco (revelada ao girar) */
+/* PAREDE ESQUERDA do bloco (revelada quando o giro vai para +ry) */
 .menu-buttons .btn::before {
   content: "";
   position: absolute;
@@ -350,90 +342,118 @@ h3 .pix-icon { margin-right: 4px; }
   width: 9px;
   border-radius: 8px 0 0 8px;
   background: linear-gradient(180deg,
-    rgba(222, 240, 255, 0.36) 0%,
-    rgba(168, 202, 250, 0.17) 45%,
-    rgba(66, 100, 165, 0.24) 100%);
+    rgba(222, 240, 255, 0.38) 0%,
+    rgba(168, 202, 250, 0.18) 45%,
+    rgba(64, 98, 163, 0.26) 100%);
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-right: none;
   transform-origin: right center;
-  transform: rotateY(-84deg);
-  opacity: 0.55;
-  transition: transform 0.28s ease, opacity 0.28s ease;
+  transform: rotateY(calc(-86deg + 30deg * var(--mg-wl, 0)));
+  opacity: var(--mg-wl, 0);
+  transition:
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s ease;
   pointer-events: none;
 }
-/* lâmina especular superior + ruído fino por cima de tudo */
+/* PAREDE DIREITA do bloco (revelada quando o giro vai para -ry) */
 .menu-buttons .btn::after {
   content: "";
   position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0) 32%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  top: 4%;
+  bottom: 4%;
+  right: -9px;
+  width: 9px;
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(180deg,
+    rgba(255, 246, 238, 0.36) 0%,
+    rgba(190, 214, 250, 0.17) 45%,
+    rgba(70, 96, 150, 0.25) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-left: none;
+  transform-origin: left center;
+  transform: rotateY(calc(86deg - 30deg * var(--mg-wr, 0)));
+  opacity: var(--mg-wr, 0);
+  transition:
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s ease;
   pointer-events: none;
 }
 .menu-buttons .btn > * { position: relative; z-index: 2; }
 
-/* SALTO PARA FRENTE com assentamento em mola:
-   sobe, avança em direção à câmera, gira para a DIREITA e acomoda */
-@keyframes menu-glass-jump {
-  0%   { transform: translateX(0)    translateY(0)    translateZ(0)     rotateY(0deg)    rotateX(0deg); }
-  36%  { transform: translateX(10px) translateY(-6px) translateZ(28px)  rotateY(12deg)   rotateX(2.5deg); }
-  66%  { transform: translateX(6px)  translateY(-1px) translateZ(18px)  rotateY(8deg)    rotateX(1deg); }
-  84%  { transform: translateX(8px)  translateY(0)    translateZ(24px)  rotateY(10deg)   rotateX(1.6deg); }
-  100% { transform: translateX(7px)  translateY(0)    translateZ(22px)  rotateY(9deg)    rotateX(1.5deg); }
-}
-
-.menu-buttons .btn:hover,
-.menu-buttons .btn:focus-visible {
-  animation: menu-glass-jump 0.52s cubic-bezier(0.25, 0.65, 0.35, 1) both;
+/* iluminação de "vidro sob o ponteiro" */
+.menu-buttons .btn.is-lit {
   border-top-color: rgba(255, 248, 242, 0.72);
   border-right-color: rgba(216, 240, 255, 0.75);
   background-position: -30px 0, 0 0, 0 0, 0 0, 0 0;
   box-shadow:
     inset 0 -12px 20px rgba(15, 30, 70, 0.19),
-    inset 0 10px 16px rgba(255, 255, 255, 0.15),
+    inset 0 10px 16px rgba(255, 255, 255, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.75),
     inset -1px 0 0 rgba(255, 255, 255, 0.55),
     0 2px 3px rgba(3, 6, 20, 0.4),
-    -7px 14px 26px rgba(3, 7, 24, 0.48),
-    -14px 30px 60px rgba(3, 7, 24, 0.42),
-    0 0 26px rgba(89, 211, 255, 0.15);
+    -7px 14px 26px rgba(3, 7, 24, 0.46),
+    -14px 30px 60px rgba(3, 7, 24, 0.40),
+    0 0 26px rgba(89, 211, 255, 0.14);
 }
-.menu-buttons .btn:hover::before,
-.menu-buttons .btn:focus-visible::before {
-  transform: rotateY(-58deg);
-  opacity: 1;
-}
-.menu-buttons .btn:active {
-  animation: none;
-  transform: translateX(3px) translateZ(6px) rotateY(4deg);
-  box-shadow:
-    inset 0 -8px 14px rgba(15, 30, 70, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 1px 2px rgba(3, 6, 20, 0.4),
-    -3px 6px 14px rgba(3, 7, 24, 0.45);
-}
-/* toque: o mesmo salto 3D ao pressionar */
-@media (hover: none) {
-  .menu-buttons .btn:active {
-    animation: menu-glass-jump 0.45s ease both;
+
+/* SALTO DE ENTRADA por zona — variáveis definidas no pointerdown/enter:
+   meio: pulo reto; lado: gira revelando a parede oposta */
+@keyframes menu-glass-jump {
+  0% {
+    transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg);
   }
-  .menu-buttons .btn:active::before {
-    transform: rotateY(-58deg);
-    opacity: 1;
+  34% {
+    transform: translate3d(calc(var(--jx, 0px) * 1.35), -7px, var(--jz, 32px))
+               rotateX(calc(var(--jrx, 1.4deg) * 1.5))
+               rotateY(calc(var(--jry, 0deg) * 1.3));
   }
+  62% {
+    transform: translate3d(calc(var(--jx, 0px) * 0.7), -1px, calc(var(--jz, 32px) * 0.72))
+               rotateX(calc(var(--jrx, 1.4deg) * 0.7))
+               rotateY(calc(var(--jry, 0deg) * 0.75));
+  }
+  82% {
+    transform: translate3d(var(--jx, 0px), 0px, calc(var(--jz, 32px) * 1.06))
+               rotateX(var(--jrx, 1.4deg))
+               rotateY(calc(var(--jry, 0deg) * 1.08));
+  }
+  100% {
+    transform: translate3d(var(--mg-x, 0px), var(--mg-y, 0px), var(--mg-z, 0px))
+               rotateX(var(--mg-rx, 0deg)) rotateY(var(--mg-ry, 0deg));
+  }
+}
+.menu-buttons .btn.is-jumping {
+  animation: menu-glass-jump 0.68s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+/* retorno ao repouso: mola longa e muito suave */
+.menu-buttons .btn.is-returning {
+  transition:
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.75s ease,
+    border-color 0.6s ease,
+    background-position 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.menu-buttons .btn.is-returning::before,
+.menu-buttons .btn.is-returning::after {
+  transition:
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.7s ease;
+}
+
+/* teclado: contorno visível sem depender do movimento */
+.menu-buttons .btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 3px;
 }
 /* acessibilidade: sem movimento para quem prefere */
 @media (prefers-reduced-motion: reduce) {
   .menu-buttons .btn,
-  .menu-buttons .btn::before {
+  .menu-buttons .btn::before,
+  .menu-buttons .btn::after {
     transition: none;
     animation: none !important;
   }
-  .menu-buttons .btn:hover,
-  .menu-buttons .btn:focus-visible {
+  .menu-buttons .btn {
     transform: none;
   }
 }
@@ -444,12 +464,12 @@ h3 .pix-icon { margin-right: 4px; }
   background:
     linear-gradient(248deg,
       rgba(255,255,255,0)    24%,
-      rgba(255,255,255,0.15) 33%,
-      rgba(255,255,255,0.34) 41%,
-      rgba(255,255,255,0.10) 51%,
+      rgba(255,255,255,0.14) 33%,
+      rgba(255,255,255,0.32) 41%,
+      rgba(255,255,255,0.09) 51%,
       rgba(255,255,255,0)    62%),
     linear-gradient(15deg,
-      rgba(170, 212, 255, 0.16) 0%,
+      rgba(170, 212, 255, 0.15) 0%,
       rgba(255,255,255,0.05) 16%,
       rgba(255,255,255,0)    30%),
     linear-gradient(180deg,
@@ -457,7 +477,7 @@ h3 .pix-icon { margin-right: 4px; }
       rgba(98, 154, 240, 0.20) 28%,
       rgba(58, 108, 205, 0.25) 72%,
       rgba(124, 178, 250, 0.27) 100%),
-    radial-gradient(60% 46% at 86% -4%, rgba(255,255,255,0.46), rgba(255,255,255,0) 62%),
+    radial-gradient(60% 46% at 86% -4%, rgba(255,255,255,0.44), rgba(255,255,255,0) 62%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
   border-top-color: rgba(214, 240, 255, 0.62);
   border-right-color: rgba(196, 232, 255, 0.62);
@@ -469,18 +489,17 @@ h3 .pix-icon { margin-right: 4px; }
     inset -1px 0 0 rgba(255, 255, 255, 0.45),
     0 1px 2px rgba(3, 6, 20, 0.45),
     -4px 9px 18px rgba(3, 7, 24, 0.42),
-    0 0 22px rgba(89, 211, 255, 0.24);
+    0 0 22px rgba(89, 211, 255, 0.22);
 }
-.menu-buttons .btn-primary:hover {
-  background-position: -30px 0, 0 0, 0 0, 0 0, 0 0;
+.menu-buttons .btn-primary.is-lit {
   box-shadow:
     inset 0 -12px 20px rgba(10, 28, 70, 0.25),
     inset 0 10px 16px rgba(255, 255, 255, 0.19),
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
     inset -1px 0 0 rgba(255, 255, 255, 0.58),
     0 2px 3px rgba(3, 6, 20, 0.4),
-    -7px 14px 26px rgba(3, 7, 24, 0.5),
-    0 0 30px rgba(89, 211, 255, 0.32);
+    -7px 14px 26px rgba(3, 7, 24, 0.48),
+    0 0 30px rgba(89, 211, 255, 0.3);
 }
 
 /* fallback: navegadores sem backdrop-filter ficam mais opacos (mesma 3D) */

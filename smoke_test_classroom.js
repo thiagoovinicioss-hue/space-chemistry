@@ -70,17 +70,27 @@ check('menu: botões em vidro líquido (blur + borda luminosa + brilho interno)'
   mBtnCss.includes('.menu-buttons .btn {') &&
   /backdrop-filter: blur\(\d+px\) saturate/.test(mBtnCss) &&
   /inset 0 1px 0 rgba\(255,\s*255,\s*255/.test(mBtnCss));
-check('menu: blocos com profundidade 3D (perspectiva + giro para a direita)',
-  /perspective:\s*\d+px/.test(mBtnCss) && /rotateY\(\d+deg\)/.test(mBtnCss) &&
-  mBtnCss.includes('.menu-buttons .btn::before') && /left:\s*-9px/.test(mBtnCss) && /rotateY\(-\d+deg\)/.test(mBtnCss));
-check('menu: salto para frente com mola no hover',
-  mBtnCss.includes('@keyframes menu-glass-jump') && /animation:\s*menu-glass-jump/.test(mBtnCss) && mBtnCss.includes('translateZ(28px)'));
-check('menu: realismo do vidro (ruído fosco, dispersão e reflexo interno)',
+check('menu: blocos com profundidade 3D (perspectiva + pose por variáveis)',
+  /perspective:\s*\d+px/.test(mBtnCss) &&
+  mBtnCss.includes('rotateY(var(--mg-ry, 0deg))') &&
+  mBtnCss.includes('transform-style: preserve-3d'));
+check('menu: DUAS paredes de vidro vivas (esquerda e direita por variável)',
+  /--mg-wl/.test(mBtnCss) && /--mg-wr/.test(mBtnCss) &&
+  mBtnCss.includes('.menu-buttons .btn::before') && mBtnCss.includes('.menu-buttons .btn::after'));
+check('menu: salto de entrada por zona com mola',
+  mBtnCss.includes('@keyframes menu-glass-jump') &&
+  /animation:\s*menu-glass-jump/.test(mBtnCss) &&
+  mBtnCss.includes('var(--jry, 0deg)') && mBtnCss.includes('.menu-buttons .btn.is-jumping'));
+check('menu: retorno suave após tirar o mouse',
+  mBtnCss.includes('.is-returning') && mBtnCss.includes('cubic-bezier(0.16, 1, 0.3, 1)'));
+check('menu: realismo do vidro (ruído fosco, dispersão e rim light)',
   /feTurbulence/.test(mBtnCss) && mBtnCss.includes('brightness(1.06)') && mBtnCss.includes('outline-offset: -3px'));
-check('menu: toque e acessibilidade (hover:none e reduced-motion)',
-  mBtnCss.includes('@media (hover: none)') && mBtnCss.includes('@media (prefers-reduced-motion: reduce)'));
-check('menu: reflexo de refração que desliza no hover',
-  mBtnCss.includes('.menu-buttons .btn::before') && mBtnCss.includes(':hover::before'));
+check('menu: acessibilidade (reduced-motion no CSS e no JS)',
+  mBtnCss.includes('@media (prefers-reduced-motion: reduce)') &&
+  fs.readFileSync(__dirname + '/menu_glass.js', 'utf8').includes('prefers-reduced-motion'));
+check('menu: módulo interativo MenuGlass carregado (toque + zonas)',
+  /<script src="menu_glass\.js\?v=/.test(html) &&
+  ['pointerenter', 'pointerdown', '--mg-wl', '--jry'].every(s => fs.readFileSync(__dirname + '/menu_glass.js', 'utf8').includes(s)));
 check('menu: variante azulada do botão principal', mBtnCss.includes('.menu-buttons .btn-primary'));
 check('menu: fonte limpa e espaçamento confortável no texto',
   mBtnCss.includes('var(--font-clean)') && /letter-spacing:\s*0?\.\d+px/.test(mBtnCss));
