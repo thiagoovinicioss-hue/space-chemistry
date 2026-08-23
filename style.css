@@ -259,6 +259,141 @@ h3 .pix-icon { margin-right: 4px; }
 }
 .btn-back:hover { color: var(--text); }
 
+/* ---------------- Botões do MENU em Liquid Glass (bloco de vidro real) ----------------
+   Vidro translúcido com desfoque do fundo, reflexo diagonal que desliza
+   no hover, brilho especular no topo e borda luminosa — como um bloco
+   de vidro fosco de verdade. Texto na fonte limpa, espaçado e legível. */
+.menu-buttons {
+  gap: 16px;
+}
+.menu-buttons .btn {
+  position: relative;
+  overflow: hidden;
+  padding: 16px 28px;
+  min-height: 54px;
+  font-family: var(--font-clean);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.4px;
+  color: #f5f9ff;
+  text-shadow: 0 1px 2px rgba(8, 16, 44, 0.6), 0 0 14px rgba(130, 185, 255, 0.28);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.10) 42%, rgba(150,185,255,0.15) 100%),
+    radial-gradient(140% 110% at 20% 0%, rgba(255,255,255,0.26), rgba(255,255,255,0) 55%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.42);
+  border-bottom-color: rgba(255,255,255,0.26);
+  border-radius: 16px;
+  box-shadow:
+    0 10px 26px rgba(4,8,30,0.45),
+    0 2px 6px rgba(4,8,30,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.62),
+    inset 0 -1px 1px rgba(255,255,255,0.20),
+    inset 0 0 24px rgba(160,200,255,0.10);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+/* faixa de refração interna do vidro (fica entre o fundo e o texto) */
+.menu-buttons .btn::before {
+  content: "";
+  position: absolute;
+  top: -60%;
+  bottom: -60%;
+  left: 10%;
+  width: 36%;
+  z-index: -1;
+  transform: rotate(16deg);
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.10) 38%,
+    rgba(255,255,255,0.26) 50%,
+    rgba(255,255,255,0.10) 62%,
+    rgba(255,255,255,0) 100%);
+  transition: left 0.35s ease;
+  pointer-events: none;
+}
+/* lâmina de luz superior do bloco */
+.menu-buttons .btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 34%);
+  pointer-events: none;
+}
+.menu-buttons .btn:hover {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.16) 42%, rgba(158,192,255,0.20) 100%),
+    radial-gradient(140% 110% at 20% 0%, rgba(255,255,255,0.32), rgba(255,255,255,0) 55%);
+  border-color: rgba(255,255,255,0.62);
+  transform: translateY(-2px);
+  box-shadow:
+    0 16px 34px rgba(4,8,30,0.5),
+    0 3px 8px rgba(4,8,30,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.78),
+    inset 0 -1px 1px rgba(255,255,255,0.26),
+    inset 0 0 26px rgba(170,210,255,0.16),
+    0 0 20px rgba(89,211,255,0.22);
+}
+.menu-buttons .btn:hover::before { left: 58%; }
+.menu-buttons .btn:active {
+  transform: translateY(1px) scale(0.995);
+  box-shadow:
+    0 5px 14px rgba(4,8,30,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    inset 0 0 18px rgba(150,195,255,0.12);
+}
+.menu-buttons .btn:focus-visible {
+  outline: 2px solid rgba(255,255,255,0.75);
+  outline-offset: 3px;
+}
+/* botão principal: vidro azulado com brilho próprio */
+.menu-buttons .btn-primary {
+  color: #ffffff;
+  background:
+    linear-gradient(135deg, rgba(126,193,255,0.46) 0%, rgba(84,142,240,0.30) 45%, rgba(46,98,205,0.36) 100%),
+    radial-gradient(140% 110% at 20% 0%, rgba(255,255,255,0.30), rgba(255,255,255,0) 55%);
+  border-color: rgba(170,218,255,0.58);
+  box-shadow:
+    0 10px 26px rgba(4,8,30,0.5),
+    0 2px 6px rgba(4,8,30,0.35),
+    0 0 22px rgba(89,211,255,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.7),
+    inset 0 -1px 1px rgba(255,255,255,0.24),
+    inset 0 0 26px rgba(140,200,255,0.18);
+  text-shadow: 0 1px 2px rgba(6, 20, 52, 0.65), 0 0 16px rgba(160,220,255,0.4);
+}
+.menu-buttons .btn-primary:hover {
+  background:
+    linear-gradient(135deg, rgba(146,206,255,0.56) 0%, rgba(102,156,250,0.38) 45%, rgba(58,112,222,0.42) 100%),
+    radial-gradient(140% 110% at 20% 0%, rgba(255,255,255,0.36), rgba(255,255,255,0) 55%);
+  border-color: rgba(190,228,255,0.75);
+  box-shadow:
+    0 16px 34px rgba(4,8,30,0.55),
+    0 0 30px rgba(89,211,255,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.85),
+    inset 0 0 30px rgba(150,208,255,0.24);
+}
+/* fallback: navegadores sem backdrop-filter ficam um pouco mais opacos */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .menu-buttons .btn {
+    background:
+      linear-gradient(135deg, rgba(64,86,150,0.92), rgba(38,56,110,0.9));
+  }
+  .menu-buttons .btn-primary {
+    background: linear-gradient(135deg, rgba(66,128,214,0.95), rgba(38,80,168,0.93));
+  }
+}
+@media (max-width: 640px) {
+  .menu-buttons .btn {
+    padding: 13px 18px;
+    font-size: 16px;
+    min-height: 48px;
+  }
+}
+
 /* ---------------- Painéis ---------------- */
 
 .panel {

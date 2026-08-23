@@ -63,6 +63,20 @@ check('balão: liquid glass (vidro com blur translúcido)',
 check('balão: translúcido de verdade (sem branco sólido)',
   !bubbleCss.match(/rgba\(2\d\d,\s*2\d\d,\s*2\d\d,\s*0\.9/) && /rgba\(255,255,255,0\.(1|2|3|4)/.test(bubbleCss));
 check('balão: fallback para navegadores sem backdrop-filter', css.includes('@supports not ((backdrop-filter'));
+
+/* botões do menu em liquid glass */
+const mBtnCss = css.slice(css.indexOf('.menu-buttons .btn {'), css.indexOf('/* ---------------- Painéis'));
+check('menu: botões em vidro líquido (blur + borda luminosa + brilho interno)',
+  mBtnCss.includes('.menu-buttons .btn {') &&
+  /backdrop-filter: blur\(\d+px\) saturate/.test(mBtnCss) &&
+  mBtnCss.includes('inset 0 1px 0 rgba(255,255,255'));
+check('menu: reflexo de refração que desliza no hover',
+  mBtnCss.includes('.menu-buttons .btn::before') && mBtnCss.includes(':hover::before'));
+check('menu: variante azulada do botão principal', mBtnCss.includes('.menu-buttons .btn-primary'));
+check('menu: fonte limpa e espaçamento confortável no texto',
+  mBtnCss.includes('var(--font-clean)') && /letter-spacing:\s*0?\.\d+px/.test(mBtnCss));
+check('menu: fallback sem backdrop-filter para os botões',
+  css.indexOf('@supports not ((backdrop-filter', css.indexOf('.menu-buttons .btn')) > 0);
 const speechColCss = css.slice(css.indexOf('.speech-col {'), css.indexOf('/* Balão estilo'));
 check('balão: posição mais acima que o centro', /top:\s*4[0-9]%|top:\s*[0-3]?[0-9]%/.test(speechColCss));
 
