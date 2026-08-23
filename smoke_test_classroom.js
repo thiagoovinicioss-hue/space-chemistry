@@ -70,9 +70,13 @@ check('menu: botões em vidro líquido (blur + borda luminosa + brilho interno)'
   mBtnCss.includes('.menu-buttons .btn {') &&
   /backdrop-filter: blur\(\d+px\) saturate/.test(mBtnCss) &&
   /inset 0 1px 0 rgba\(255,\s*255,\s*255/.test(mBtnCss));
-check('menu: blocos com profundidade 3D (perspectiva + giro para a esquerda)',
-  /perspective:\s*\d+px/.test(mBtnCss) && /rotateY\(-\d+deg\)/.test(mBtnCss) &&
-  mBtnCss.includes('.menu-buttons .btn::before') && /rotateY\(\d+deg\)/.test(mBtnCss));
+check('menu: blocos com profundidade 3D (perspectiva + giro para a direita)',
+  /perspective:\s*\d+px/.test(mBtnCss) && /rotateY\(\d+deg\)/.test(mBtnCss) &&
+  mBtnCss.includes('.menu-buttons .btn::before') && /left:\s*-9px/.test(mBtnCss) && /rotateY\(-\d+deg\)/.test(mBtnCss));
+check('menu: salto para frente com mola no hover',
+  mBtnCss.includes('@keyframes menu-glass-jump') && /animation:\s*menu-glass-jump/.test(mBtnCss) && mBtnCss.includes('translateZ(28px)'));
+check('menu: realismo do vidro (ruído fosco, dispersão e reflexo interno)',
+  /feTurbulence/.test(mBtnCss) && mBtnCss.includes('brightness(1.06)') && mBtnCss.includes('outline-offset: -3px'));
 check('menu: toque e acessibilidade (hover:none e reduced-motion)',
   mBtnCss.includes('@media (hover: none)') && mBtnCss.includes('@media (prefers-reduced-motion: reduce)'));
 check('menu: reflexo de refração que desliza no hover',
