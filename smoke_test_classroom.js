@@ -99,6 +99,22 @@ check('menu: fonte limpa e espaçamento confortável no texto',
   mBtnCss.includes('var(--font-clean)') && /letter-spacing:\s*0?\.\d+px/.test(mBtnCss));
 check('menu: fallback sem backdrop-filter para os botões',
   css.indexOf('@supports not ((backdrop-filter', css.indexOf('.menu-buttons .btn')) > 0);
+
+/* liquid glass global + transição branca */
+check('jogo: TODOS os .btn em vidro (blur global na base)',
+  (() => { const b = css.slice(css.indexOf('.btn {'), css.indexOf('/* ------- Botões do MENU')); return b.includes('backdrop-filter') && b.includes('is-pressed'); })());
+check('jogo: painéis e cartões em vidro escuro sofisticado',
+  (() => {
+    const gi = css.indexOf('LIQUID GLASS GLOBAL');
+    if (gi < 0) return false;
+    const g = css.slice(gi);
+    return g.includes('.panel {') && /backdrop-filter:\s*blur\(18px\)/.test(g) && g.includes('.bond-card,');
+  })());
+const mgjs = fs.readFileSync(__dirname + '/menu_glass.js', 'utf8');
+check('transição: pressionar -> recuar -> cortina branca -> trocar tela',
+  mgjs.includes("id = 'glass-fade'") && mgjs.includes('_glassReplay') && mgjs.includes("'is-pressed'") && mgjs.includes('replayClick'));
+check('transição: som, Tela Cheia e Efeitos 3D NÃO têm fade',
+  mgjs.includes("'btn-sound': 1") && mgjs.includes("'btn-fullscreen-menu': 1") && mgjs.includes("'btn-effects3d': 1"));
 const speechColCss = css.slice(css.indexOf('.speech-col {'), css.indexOf('/* Balão estilo'));
 check('balão: posição mais acima que o centro', /top:\s*4[0-9]%|top:\s*[0-3]?[0-9]%/.test(speechColCss));
 

@@ -137,11 +137,83 @@
   function init(root) {
     var buttons = (root || document).querySelectorAll('.menu-buttons .btn');
     Array.prototype.forEach.call(buttons, bind);
+    initGlassNav();
+  }
+
+  /* ============================================================
+     GLASS NAV — pressionar => recuar => cortina branca => trocar tela
+     Aplica-se a todos os botões que mudam de tela (data-nav, cartões
+     de conteúdo, práticas e voltar). Exceções: som, tela cheia e
+     efeitos 3D (toggles que não navegam).
+  ============================================================ */
+  var NAV_SEL = 'button[data-nav], .bond-card, #btn-open-lewis, #btn-open-structural,' +
+    ' #btn-cls-back, #btn-lewis-back, #btn-structural-back';
+  var NAV_EXCLUDE = { 'btn-sound': 1, 'btn-fullscreen-menu': 1, 'btn-effects3d': 1 };
+  var PRESS_MS = 210;
+  var FADE_IN_MS = 250;
+  var HOLD_MS = 90;
+  var fadeEl = null;
+
+  function ensureFadeEl() {
+    if (fadeEl) return fadeEl;
+    fadeEl = document.getElementById('glass-fade');
+    if (!fadeEl) {
+      fadeEl = document.createElement('div');
+      fadeEl.id = 'glass-fade';
+      document.body.appendChild(fadeEl);
+    }
+    return fadeEl;
+  }
+
+  function replayClick(el) {
+    var ev;
+    try {
+      ev = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+    } catch (err) {
+      ev = document.createEvent('MouseEvents');
+      ev.initMouseEvent('click', true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+    }
+    ev._glassReplay = true;
+    el.dispatchEvent(ev);
+  }
+
+  function initGlassNav() {
+    ensureFadeEl();
+    document.addEventListener('click', function (e) {
+      if (e._glassReplay) return;                 /* segundo passe: deixa passar */
+      var el = e.target && e.target.closest ? e.target.closest(NAV_SEL) : null;
+      if (!el || el.disabled) return;
+      var id = el.id || '';
+      if (NAV_EXCLUDE[id]) return;                /* som / tela cheia / efeitos 3D */
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      el.classList.remove('is-pressed');
+      void el.offsetWidth;                        /* reinicia a animação */
+      el.classList.add('is-pressed');
+      setTimeout(function () { el.classList.remove('is-pressed'); }, PRESS_MS + 320);
+
+      setTimeout(function () {
+        ensureFadeEl().classList.add('show');     /* cortina entra */
+        setTimeout(function () {
+          replayClick(el);                        /* troca de tela em branco */
+          setTimeout(function () {
+            ensureFadeEl().classList.remove('show'); /* cortina sai suave */
+          }, HOLD_MS);
+        }, FADE_IN_MS);
+      }, PRESS_MS);
+    }, true);
+
+    /* segurança: a cortina nunca fica presa na tela */
+    document.addEventListener('glassfade:release', function () {
+      if (fadeEl) fadeEl.classList.remove('show');
+    });
   }
 
   window.MenuGlass = {
     init: init,
-    version: '1.0.0'
+    version: '1.1.0'
   };
 
   if (document.readyState === 'loading') {
