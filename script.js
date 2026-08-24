@@ -237,6 +237,45 @@ const RETURN_RING_VR = 150;          /* velocidade de expansão dos anéis de ch
 const RETURN_RING_LIFE = 0.5;        /* vida dos anéis de choque */
 const RETURN_EARTH_ACCENT = '#59b4ff'; /* cor-guia do fundo da batalha (Terra) */
 
+/* --- Máquina Balística (ficção do universo: converte compostos químicos
+   armazenados em projéteis de energia puros para a batalha final) --- */
+/* O composto é química de verdade; a CONVERSÃO em projétil é tecnologia
+   fictícia da nave — os compostos reais não são munição. */
+const AMMO_TYPES = {
+  /* Munição básica alternativa: sempre disponível, mesmo sem side quests */
+  STD:  { formula: '⚡', name: 'Célula Padrão', kind: 'std', dmg: 1, cd: 0.24, spread: 1, pierce: false, size: 1,
+    color: '#7ff5ff', desc: 'Carga genérica da nave. Confiável, porém simples.' },
+
+  /* Compostos da campanha principal (armazenados ao serem montados) */
+  NaCl: { dmg: 1, cd: 0.20, spread: 1, pierce: false, size: 1, color: '#ffffff', desc: 'Rede iônica estável: disparos limpos e cadentes.' },
+  MgO:  { dmg: 2, cd: 0.36, spread: 1, pierce: false, size: 1.3, color: '#ff9df2', desc: 'Ligação forte: projétil pesado de alto impacto.' },
+  KBr:  { dmg: 1, cd: 0.16, spread: 1, pierce: false, size: 0.9, color: '#c7a2ff', desc: 'Halogeneto leve: rajadas rápidas contínuas.' },
+  H2O:  { dmg: 1, cd: 0.20, spread: 1, pierce: true,  size: 1,   color: '#59d3ff', desc: 'Jato pressurizado que atravessa alvos em linha.' },
+  CO2:  { dmg: 1, cd: 0.32, spread: 2, pierce: false, size: 0.9, color: '#b8e0c8', desc: 'Nuvem dupla de gás carbônico em leque.' },
+  NH3:  { dmg: 2, cd: 0.42, spread: 1, pierce: true,  size: 1.2, color: '#8dffea', desc: 'Amônia instável: perfura e causa bom dano.' },
+  CU:   { dmg: 2, cd: 0.28, spread: 1, pierce: false, size: 1.1, color: '#e8a26d', desc: 'Núcleo condutor: energia estável e direta.' },
+  FE:   { dmg: 3, cd: 0.48, spread: 1, pierce: false, size: 1.5, color: '#b0b6c4', desc: 'Massa ferroza: demolidor de blindagens.' },
+  AU:   { dmg: 4, cd: 0.62, spread: 1, pierce: false, size: 1.6, color: '#ffd166', desc: 'Carga nobre raríssima: um tiro, estrago grande.' },
+
+  /* SIDE QUEST Planeta Kinder (iônica avançada) — munições de elite */
+  NA2S: { dmg: 3, cd: 0.30, spread: 1, pierce: false, size: 1.4, color: '#ffd9f5', desc: 'Dois íons sódio: carga dobrada por disparo.' },
+  CAF2: { dmg: 1, cd: 0.38, spread: 3, pierce: false, size: 0.9, color: '#9fffe0', desc: 'Três fluoretos: leque triplo de projéteis.' },
+  ALCL3:{ dmg: 2, cd: 0.34, spread: 1, pierce: true,  size: 1.2, color: '#c8f0ff', desc: 'Tricloreto perfurante com carga +3.' },
+
+  /* SIDE QUEST Planeta Bueno (covalente avançada) — munições de elite */
+  CH4:  { dmg: 1, cd: 0.11, spread: 1, pierce: false, size: 0.8, color: '#7fffd4', desc: 'Metralhadora molecular: cadência altíssima.' },
+  N2:   { dmg: 5, cd: 0.64, spread: 1, pierce: true,  size: 1.8, color: '#a0b8ff', desc: 'Energia da ligação tripla N≡N: o mais poderoso.' },
+  HCL:  { dmg: 2, cd: 0.26, spread: 1, pierce: true,  size: 1.1, color: '#d8fff0', desc: 'Haleto corrosivo: atravessa e desgasta escudos.' }
+};
+
+/* --- Boss da batalha final: o Devorador Estelar --- */
+const BOSS_HP = 46;
+const BOSS_R = 56;
+const BOSS_X_TARGET_FRAC = 0.72;     /* posição horizontal de combate */
+const BOSS_FIRE_EVERY = 1.7;         /* segundos entre rajadas */
+const BOSS_FAN = 3;                  /* projéteis por rajada (leque) */
+const BOSS_FAN_SPREAD = 0.24;        /* abertura do leque (rad) */
+
 /* =====================================================================
    02. UTILITÁRIOS
 ===================================================================== */
@@ -376,6 +415,7 @@ const AudioSys = {
       case 'boom': this.noise({ dur: 0.35, vol: 0.3 }); this.tone({ freq: 200, slideTo: 40, type: 'square', dur: 0.3, vol: 0.16 }); break;
       case 'bigBoom': this.noise({ dur: 0.6, vol: 0.35 }); this.tone({ freq: 140, slideTo: 30, type: 'sawtooth', dur: 0.6, vol: 0.2 }); break;
       case 'return': [440, 554, 659].forEach((f, i) => this.tone({ freq: f, type: 'triangle', dur: 0.25, vol: 0.18, delay: i * 0.1 })); break;
+      case 'warning': this.tone({ freq: 320, slideTo: 170, type: 'square', dur: 0.35, vol: 0.16 }); this.tone({ freq: 320, slideTo: 170, type: 'square', dur: 0.35, vol: 0.16, delay: 0.45 }); break;
       case 'chalk': this.noise({ dur: 0.4, vol: 0.12 }); break;
       case 'cheer': [523, 659, 784, 1047, 1319].forEach((f, i) => this.tone({ freq: f, type: 'triangle', dur: 0.35, vol: 0.22, delay: i * 0.12 })); break;
     }
@@ -1881,6 +1921,13 @@ const RECIPES = {
   }
 };
 
+/* Completa nome/fórmula das munições a partir das receitas reais
+   (a química vem SEMPRE daqui — a conversão em projétil é ficção). */
+for (const id of Object.keys(AMMO_TYPES)) {
+  const rec = RECIPES[id];
+  if (rec) { AMMO_TYPES[id].formula = rec.formula; AMMO_TYPES[id].name = rec.name; }
+}
+
 /* --- Fases (planetas circulares) ---
    Cada planeta é uma superfície ESFÉRICA: a área jogável é um círculo de
    raio `radius` (em tiles) e tudo fora dele é espaço. As bordas exibem a
@@ -2312,6 +2359,8 @@ const Save = {
       unlocks: ['h_classic', 's_classic', 'ship_default', 't_none'],
       equipped: { helmet: 'h_classic', suit: 's_classic', ship: 'ship_default', trail: 't_none' },
       achievements: [],
+      /* Compostos já sintetizados (para a Máquina Balística da batalha final) */
+      compounds: {},
       musicOn: true,
       sfxOn: true
     };
@@ -2333,6 +2382,10 @@ const Save = {
         /* Migrate: saves antigos têm 5 planetas — completa as side quests */
         while (this.data.completed.length < LEVELS.length) this.data.completed.push(false);
         while (this.data.exerciseBest.length < LEVELS.length) this.data.exerciseBest.push(0);
+        /* Migrate: saves antigos não tinham registro de compostos */
+        if (!this.data.compounds || typeof this.data.compounds !== 'object') {
+          this.data.compounds = {};
+        }
         return;
       }
     } catch (e) { /* armazenamento indisponível */ }
@@ -2358,6 +2411,28 @@ const Save = {
     this.save();
   }
 };
+
+/* ---------------- Máquina Balística: registro de compostos ---------------- */
+/* A química dos compostos é real (RECIPES); a conversão em projéteis de
+   energia é tecnologia FICTÍCIA da nave do universo do jogo. */
+function storeCompound(recipeId) {
+  if (!recipeId || !RECIPES[recipeId]) return false;
+  const c = Save.data.compounds;
+  if (c[recipeId]) return false;   /* já armazenado antes */
+  c[recipeId] = true;
+  Save.save();
+  showToast('Composto armazenado!', RECIPES[recipeId].formula + ' foi guardado no tanque da Máquina Balística.');
+  return true;
+}
+
+/* Compostos disponíveis para a máquina (munição básica sempre incluída) */
+function getStoredCompounds() {
+  const c = Save.data.compounds || {};
+  return Object.keys(AMMO_TYPES).filter(id => id !== 'STD' && c[id]);
+}
+function getAmmoOptions() {
+  return ['STD'].concat(getStoredCompounds());
+}
 
 /* =====================================================================
    07. GERENCIADOR DE ESTADO E TELAS
@@ -4440,6 +4515,7 @@ const Fusion = {
     document.getElementById('fusion').hidden = true;
     AudioSys.sfx('build');
     consumeAtoms(recipe.atoms);
+    storeCompound(recipe.id);
     const kind = lv.idx === FINAL_INDEX ? 'reactor' : recipe.kind;
     Game.buildAnim = {
       kind, recipe, t: 0, dur: 2.6,
@@ -5587,6 +5663,150 @@ function chooseRoute(idx) {
   startDeparture();
 }
 
+/* ---------------- Máquina Balística (antes da batalha final) ---------------- */
+/* Interface onde o jogador escolhe qual composto armazenado será convertido
+   em projétil de energia para a batalha de volta para a Terra. */
+const BALLISTIC_PROC_DUR = 1.9;
+
+function ammoOrigin(id) {
+  if (id === 'STD') return 'ballistic.tag.std';
+  if (['NA2S', 'CAF2', 'ALCL3'].indexOf(id) >= 0) return 'ballistic.tag.kinder';
+  if (['CH4', 'N2', 'HCL'].indexOf(id) >= 0) return 'ballistic.tag.bueno';
+  return 'ballistic.tag.main';
+}
+
+function showBallistic() {
+  Game.phase = 'ballistic';
+  Game.locked = true;
+  Game.return = null;
+  Game.ballistic = { sel: null, token: 0 };
+  const ov = document.getElementById('ballistic');
+  if (!ov) { ballisticFire(); return; }   /* HTML ausente: segue direto */
+  const IH = window.I18N;
+  const tEl = document.getElementById('ballistic-title-text');
+  if (tEl && IH) tEl.textContent = IH.t('ballistic.title', 'Máquina Balística');
+  const sEl = document.getElementById('ballistic-sub');
+  if (sEl && IH) sEl.textContent = IH.t('ballistic.sub',
+    'A nave armazenou os compostos que você sintetizou. A Máquina Balística converte cada composto em um projétil de energia puro — tecnologia experimental a bordo!');
+  const st = document.getElementById('ballistic-status');
+  if (st && IH) st.textContent = IH.t('ballistic.pick', 'Selecione um composto armazenado.');
+  const fireBtn = document.getElementById('ballistic-fire');
+  if (fireBtn) {
+    fireBtn.hidden = true;
+    fireBtn.textContent = IH ? IH.t('ballistic.fire', 'Iniciar Batalha Final') : 'Iniciar Batalha Final';
+    fireBtn.onclick = ballisticFire;
+  }
+  buildBallisticSlots();
+  ov.hidden = false;
+  AudioSys.sfx('click');
+}
+
+function buildBallisticSlots() {
+  const box = document.getElementById('ballistic-slots');
+  if (!box) return;
+  const opts = getAmmoOptions();
+  /* Padrão: a melhor munição especial já armazenada (ou a básica) */
+  let best = 'STD';
+  for (const id of opts) if (id !== 'STD' && AMMO_TYPES[id].dmg > AMMO_TYPES[best].dmg) best = id;
+  box.innerHTML = '';
+  opts.forEach(id => {
+    const a = AMMO_TYPES[id];
+    const IH = window.I18N;
+    const b = document.createElement('button');
+    b.className = 'btn ballistic-slot';
+    b.dataset.id = id;
+    b.style.setProperty('--ammo-color', a.color);
+    b.innerHTML =
+      '<span class="slot-formula">' + a.formula + '</span>' +
+      '<span class="slot-text"><strong>' + a.name + '</strong>' +
+      '<small>' + (IH ? IH.t(ammoOrigin(id), ammoTagFallback(id)) : ammoTagFallback(id)) +
+      ' · Dano ' + a.dmg + '</small></span>';
+    b.addEventListener('click', () => ballisticSelect(id));
+    box.appendChild(b);
+  });
+  ballisticSelect(best);
+}
+
+function ammoTagFallback(id) {
+  if (id === 'STD') return 'Munição básica';
+  if (ammoOrigin(id) === 'ballistic.tag.kinder') return 'Planeta Kinder · iônica';
+  if (ammoOrigin(id) === 'ballistic.tag.bueno') return 'Planeta Bueno · covalente';
+  return 'Campanha principal';
+}
+
+function ballisticSelect(id) {
+  const B = Game.ballistic;
+  if (!B) return;
+  B.sel = id;
+  const token = ++B.token;   /* cancela processamento anterior */
+  const a = AMMO_TYPES[id];
+  document.querySelectorAll('#ballistic-slots .ballistic-slot').forEach(el => {
+    el.classList.toggle('selected', el.dataset.id === id);
+  });
+  const chip = document.getElementById('ballistic-chip');
+  const core = document.getElementById('ballistic-core');
+  const fill = document.getElementById('ballistic-fill');
+  const proj = document.getElementById('ballistic-proj');
+  const stats = document.getElementById('ballistic-stats');
+  const status = document.getElementById('ballistic-status');
+  const fireBtn = document.getElementById('ballistic-fire');
+  if (!chip || !core || !fill || !proj) return;
+  chip.textContent = a.formula;
+  proj.style.setProperty('--ammo-color', a.color);
+  proj.classList.remove('pop');
+  core.classList.remove('charging');
+  fill.style.width = '0%';
+  if (stats) stats.innerHTML = '';
+  if (fireBtn) fireBtn.hidden = true;
+  if (status) {
+    const IH = window.I18N;
+    status.textContent = (IH ? IH.t('ballistic.proc', 'Convertendo…') : 'Convertendo…')
+      .replace('{f}', a.formula);
+  }
+  AudioSys.sfx('click');
+  /* Reinicia a animação CSS do núcleo */
+  void core.offsetWidth;
+  core.classList.add('charging');
+  setTimeout(() => { if (Game.ballistic === B && B.token === token) ballisticProcessDone(); }, BALLISTIC_PROC_DUR * 1000);
+}
+
+function ballisticProcessDone() {
+  const B = Game.ballistic;
+  const a = AMMO_TYPES[B.sel];
+  const proj = document.getElementById('ballistic-proj');
+  if (proj) proj.classList.add('pop');
+  const stats = document.getElementById('ballistic-stats');
+  const IH = window.I18N;
+  if (stats) {
+    const pierceTxt = IH ? IH.t('ballistic.stat.pierce', 'Sim') : 'Sim';
+    const shotsTxt = a.spread > 1 ? ('×' + a.spread) : (IH ? IH.t('ballistic.stat.single', '1') : '1');
+    stats.innerHTML =
+      '<div class="stat"><small>' + (IH ? IH.t('ballistic.stat.dmg', 'Dano') : 'Dano') + '</small><b>' + a.dmg + '</b></div>' +
+      '<div class="stat"><small>' + (IH ? IH.t('ballistic.stat.cd', 'Cadência') : 'Cadência') + '</small><b>' + (0.24 / a.cd).toFixed(1) + '×</b></div>' +
+      '<div class="stat"><small>' + (IH ? IH.t('ballistic.stat.shots', 'Projéteis') : 'Projéteis') + '</small><b>' + shotsTxt + '</b></div>' +
+      '<div class="stat"><small>' + (IH ? IH.t('ballistic.stat.pierceLbl', 'Perfura') : 'Perfura') + '</small><b>' + (a.pierce ? pierceTxt : '—') + '</b></div>' +
+      '<p class="stat-desc">' + a.desc + '</p>';
+  }
+  const status = document.getElementById('ballistic-status');
+  if (status) {
+    status.textContent = (IH ? IH.t('ballistic.ready', '{name} pronto! Projétil de energia carregado.') : '{name} pronto!')
+      .replace('{name}', a.name);
+  }
+  const fireBtn = document.getElementById('ballistic-fire');
+  if (fireBtn) fireBtn.hidden = false;
+  AudioSys.sfx('correct');
+}
+
+function ballisticFire() {
+  const ov = document.getElementById('ballistic');
+  if (ov) ov.hidden = true;
+  const sel = (Game.ballistic && Game.ballistic.sel) || 'STD';
+  Game.ballistic = null;
+  Game.ammo = AMMO_TYPES[sel] || AMMO_TYPES.STD;
+  AudioSys.sfx('laser');
+  startReturn();
+}
+
 /* Transição de partida: preparação, decolagem e câmera afastando do planeta 3D
    antes de entrar na viagem espacial 2D (a mecânica da viagem é preservada). */
 function startDeparture() {
@@ -6417,7 +6637,10 @@ function startReturn() {
     spawnT: 0.9, shotCd: 0, armor: RETURN_ARMOR, earthReach: false,
     aim: { x: VIEW_W + 80, y: VIEW_H / 2 },
     spawned: 0, killed: 0, fleet: RETURN_FLEET,
-    cleared: false, warnT: 0
+    cleared: false, warnT: 0,
+    /* Munição carregada na Máquina Balística (padrão se não escolheu) */
+    ammo: (Game.ammo || AMMO_TYPES.STD),
+    boss: null
   };
   camX = 0; camY = 0;
   Game.fade = null;
@@ -6462,34 +6685,49 @@ function updateReturn(dt) {
     spawnReturnEnemy();
   }
 
-  /* Disparos do herói */
+  /* Disparos do herói (munição da Máquina Balística: dano, cor e perfuração) */
   for (let i = r.shots.length - 1; i >= 0; i--) {
     const b = r.shots[i];
     b.x += b.vx * dt;
     b.y += b.vy * dt;
     b.t += dt;
-    /* Rastro luminoso do laser */
-    if (chance(0.5)) emitParticle(b.x, b.y, -b.vx * 0.1 + rand(-6, 6), -b.vy * 0.1 + rand(-6, 6), '#7ff5ff', 0.18, 2);
+    /* Rastro luminoso na cor do projétil carregado */
+    if (chance(0.5)) emitParticle(b.x, b.y, -b.vx * 0.1 + rand(-6, 6), -b.vy * 0.1 + rand(-6, 6), b.color, 0.18, 2);
     if (b.x < -20 || b.x > VIEW_W + 20 || b.y < -20 || b.y > VIEW_H + 20) {
       r.shots.splice(i, 1);
       continue;
     }
     let hit = false;
+    /* Perfurante: cada inimigo é atingido uma só vez pelo mesmo tiro */
+    if (!b.hit) b.hit = [];
     for (const e of r.enemies) {
-      if (e.dead || e.hp <= 0) continue;
+      if (e.dead || e.hp <= 0 || b.hit.indexOf(e) >= 0) continue;
       if (dist(b.x, b.y, e.x, e.y) < e.r + 6) {
-        e.hp--;
+        e.hp -= (b.dmg || 1);
         e.hitT = RETURN_ENEMY_HIT_T;
         hit = true;
-        burst(b.x, b.y, '#7ff5ff', 8);
+        burst(b.x, b.y, b.color, 8);
         spawnSparks(e.x, e.y, e.color, 6);
         AudioSys.sfx('enemyHit');
         r.shake = Math.max(r.shake, 2.5);
         if (e.hp <= 0) killReturnEnemy(e);
-        break;
+        if (!b.pierce) break;
+        b.hit.push(e);
       }
     }
-    if (hit) r.shots.splice(i, 1);
+    /* Boss: o Devorador Estelar também sente a química do jogador */
+    const bo = r.boss;
+    if (!hit && bo && !bo.dead && b.hit.indexOf(bo) < 0 &&
+        dist(b.x, b.y, bo.x, bo.y) < bo.r + 6) {
+      hit = true;
+      damageBoss(b.dmg || 1);
+      burst(b.x, b.y, b.color, 10);
+      spawnSparks(bo.x + rand(-bo.r / 2, bo.r / 2), bo.y + rand(-bo.r / 2, bo.r / 2), b.color, 6);
+      AudioSys.sfx('enemyHit');
+      r.shake = Math.max(r.shake, 2.5);
+      if (b.pierce) b.hit.push(bo);
+    }
+    if (hit && !b.pierce) r.shots.splice(i, 1);
   }
 
   /* Naves inimigas: patrulham → perseguem, desviam de tiros e atiram */
@@ -6591,28 +6829,34 @@ function updateReturn(dt) {
   /* Limpa naves destruídas depois da animação de explosão */
   r.enemies = r.enemies.filter(e => !e.dead || e.deadT < RETURN_DEATH_DUR);
 
-  /* Frota aniquilada: libera o caminho até a Terra */
+  /* Frota aniquilada: o Devorador Estelar surge para o confronto final */
   if (!r.cleared && r.spawned >= r.fleet && r.enemies.length === 0) {
     r.cleared = true;
     r.clearedT = 0;
-    AudioSys.sfx('unlock');
+    AudioSys.sfx('warning');
     burst(70, VIEW_H / 2, '#59d3ff', 30);
-    spawnFloater(VIEW_W / 2, VIEW_H / 2 - 40, 'Caminho para a Terra liberado!');
+    spawnFloater(VIEW_W / 2, VIEW_H / 2 - 40, 'ALVO PRIORITÁRIO DETECTADO!');
+    spawnReturnBoss();
   }
 
-  /* Barreira alienígena: bloqueia a Terra até a frota ser destruída */
-  if (!r.cleared && p.x < RETURN_BARRIER_X) {
+  /* Boss: movimento senoidal, rajadas miradas e colisão de contato */
+  const bo = r.boss;
+  if (bo) updateReturnBoss(dt);
+
+  /* Barreira alienígena: bloqueia a Terra até derrotar frota e boss */
+  const blocked = !r.cleared || (bo && !bo.dead);
+  if (blocked && p.x < RETURN_BARRIER_X) {
     p.x = RETURN_BARRIER_X;
     r.warnT += dt;
     if (r.warnT > 1.0) {
       r.warnT = 0;
-      spawnFloater(p.x + 40, p.y - 26, 'Frota bloqueando a Terra!');
+      spawnFloater(p.x + 40, p.y - 26, bo ? 'O Devorador bloqueia o caminho!' : 'Frota bloqueando a Terra!');
       AudioSys.sfx('error');
     }
   }
 
-  /* Chegou à Terra: aterrissagem com fade */
-  if (r.cleared && !r.earthReach && p.x < 120) {
+  /* Chegou à Terra (boss derrotado): aterrissagem com fade */
+  if (r.cleared && (!bo || bo.dead) && !r.earthReach && p.x < 120) {
     r.earthReach = true;
     startFadeOut(1.0, () => startClassroom());
   }
@@ -6691,17 +6935,258 @@ function returnShoot() {
   const r = Game.return;
   if (!r || r.earthReach) return;
   if (r.shotCd > 0) return;
-  r.shotCd = 0.24;
+  /* Cadência e formato vêm da munição escolhida na Máquina Balística */
+  const a = r.ammo || AMMO_TYPES.STD;
+  r.shotCd = a.cd;
   /* Mira: aponta para o mouse (computador) ou o último toque (celular) */
   const ang = Math.atan2(r.aim.y - r.ship.y, r.aim.x - r.ship.x);
   const mx = Math.cos(ang), my = Math.sin(ang);
   const ox = r.ship.x + 24 * mx, oy = r.ship.y + 24 * my;
-  r.shots.push({ x: ox, y: oy, vx: mx * RETURN_BOLT_SPEED, vy: my * RETURN_BOLT_SPEED, t: 0 });
+  const spread = a.spread || 1;
+  for (let s = 0; s < spread; s++) {
+    /* Leque: projéteis extras abrem ângulo simétrico em torno da mira */
+    const off = spread > 1 ? (s - (spread - 1) / 2) * 0.16 : 0;
+    const sa = ang + off;
+    r.shots.push({
+      x: ox, y: oy,
+      vx: Math.cos(sa) * RETURN_BOLT_SPEED, vy: Math.sin(sa) * RETURN_BOLT_SPEED,
+      t: 0, dmg: a.dmg, pierce: !!a.pierce, color: a.color, size: a.size || 1
+    });
+  }
   /* Flash do cano + recuo visual da nave (pequenos efeitos de câmera) */
   spawnMuzzleFlash(ox, oy, ang);
   r.ship.recoil = 4;
-  burst(ox, oy, '#7ff5ff', 4);
+  burst(ox, oy, a.color, 4);
   AudioSys.sfx('laser');
+}
+
+/* ---------------- Boss final: o Devorador Estelar ---------------- */
+/* Nave-mãe que drenou a energia química da galáxia. Aparece quando a frota
+   é destruída e bloqueia o caminho de volta para a Terra até cair. */
+function spawnReturnBoss() {
+  const r = Game.return;
+  if (!r || r.boss) return;
+  r.boss = {
+    x: VIEW_W + BOSS_R + 60, y: VIEW_H / 2,
+    r: BOSS_R,
+    hp: BOSS_HP, maxHp: BOSS_HP,
+    t: rand(0, 6), fireT: 2.4, entering: true,
+    hitT: 0, dead: false, deadT: 0
+  };
+}
+
+function damageBoss(dmg) {
+  const bo = Game.return && Game.return.boss;
+  if (!bo || bo.dead) return;
+  bo.hp -= dmg;
+  bo.hitT = RETURN_ENEMY_HIT_T;
+  if (bo.hp <= 0) killReturnBoss();
+}
+
+/* Corpo do Devorador Estelar: casco escuro anguloso, núcleo que esquenta
+   conforme perde vida, espinhos, motores e barra de vida central. */
+function drawReturnBoss(bo) {
+  const r = Game.return;
+  const hpFrac = clamp(bo.hp / bo.maxHp, 0, 1);
+
+  /* Colapso: afunda, gira e apaga */
+  ctx.save();
+  ctx.translate(bo.x, bo.y);
+  if (bo.dead) {
+    const k = clamp(bo.deadT / 2.0, 0, 1);
+    ctx.globalAlpha = 1 - k;
+    ctx.rotate(k * 1.2);
+    ctx.scale(1 + k * 0.35, 1 + k * 0.2);
+    if (chance(0.5)) burst(bo.x + rand(-30, 30), bo.y + rand(-24, 24), chance(0.5) ? '#ffd166' : '#ff8a5d', 4);
+  }
+
+  /* Halo de ameaça */
+  const coreColor = hpFrac > 0.55 ? '#ff9d5d' : (hpFrac > 0.25 ? '#ff5d6c' : '#ff2e44');
+  const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, bo.r * 2.6);
+  glow.addColorStop(0, hexToRgba(coreColor, 0.3));
+  glow.addColorStop(1, hexToRgba(coreColor, 0));
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, bo.r * 2.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* Motores (atrás, à direita): chamas duplas */
+  for (const ey of [-18, 18]) {
+    const fl = rand(10, 20);
+    const fg = ctx.createLinearGradient(bo.r - 6, 0, bo.r - 6 + fl, 0);
+    fg.addColorStop(0, 'rgba(255,122,61,0.95)');
+    fg.addColorStop(1, 'rgba(255,225,77,0)');
+    ctx.fillStyle = fg;
+    ctx.beginPath();
+    ctx.moveTo(bo.r - 8, ey - 5);
+    ctx.lineTo(bo.r - 8 + fl, ey);
+    ctx.lineTo(bo.r - 8, ey + 5);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  /* Casco angular (apontando para a esquerda/herói) */
+  const hull = ctx.createLinearGradient(0, -bo.r, 0, bo.r);
+  hull.addColorStop(0, '#3a2140');
+  hull.addColorStop(0.5, '#1c1230');
+  hull.addColorStop(1, '#120a22');
+  ctx.fillStyle = hull;
+  ctx.strokeStyle = coreColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-bo.r * 1.15, 0);                       /* proa */
+  ctx.lineTo(-bo.r * 0.35, -bo.r * 0.62);
+  ctx.lineTo(bo.r * 0.75, -bo.r * 0.78);
+  ctx.lineTo(bo.r, -bo.r * 0.25);
+  ctx.lineTo(bo.r, bo.r * 0.25);
+  ctx.lineTo(bo.r * 0.75, bo.r * 0.78);
+  ctx.lineTo(-bo.r * 0.35, bo.r * 0.62);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  /* Espinhos dorsais/ventrais */
+  ctx.fillStyle = '#241536';
+  ctx.strokeStyle = 'rgba(255,93,108,0.55)';
+  for (const sgn of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(-bo.r * 0.15, sgn * bo.r * 0.52);
+    ctx.lineTo(sgn * bo.r * 0.28, sgn * bo.r * 1.12);
+    ctx.lineTo(bo.r * 0.42, sgn * bo.r * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  /* Núcleo pulsante (reator drenado da galáxia) */
+  const pulse = 0.75 + Math.sin(bo.t * (hpFrac < 0.35 ? 11 : 6)) * 0.25;
+  ctx.save();
+  ctx.shadowColor = coreColor;
+  ctx.shadowBlur = 16;
+  ctx.fillStyle = coreColor;
+  ctx.beginPath();
+  ctx.arc(-bo.r * 0.18, 0, bo.r * 0.26 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.beginPath();
+  ctx.arc(-bo.r * 0.18, 0, bo.r * 0.1 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  /* Piscada branca ao tomar dano */
+  if (bo.hitT > 0) {
+    ctx.fillStyle = 'rgba(255,255,255,' + clamp(bo.hitT / RETURN_ENEMY_HIT_T, 0, 1).toFixed(2) * 0.65 + ')';
+    ctx.beginPath();
+    ctx.arc(0, 0, bo.r * 1.25, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  /* Barra de vida central sob o banner */
+  if (!bo.dead) {
+    const bw = Math.min(VIEW_W * 0.5, 340);
+    const bx = VIEW_W / 2 - bw / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(bx - 2, 34, bw + 4, 12);
+    ctx.fillStyle = 'rgba(255,93,108,0.25)';
+    ctx.fillRect(bx, 36, bw, 8);
+    ctx.fillStyle = hpFrac > 0.35 ? '#ff5d6c' : '#ff2e44';
+    ctx.fillRect(bx, 36, bw * hpFrac, 8);
+    ctx.fillStyle = '#ffd7dc';
+    ctx.font = 'bold 8px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('DEVORADOR ESTELAR', VIEW_W / 2, 58);
+    ctx.textAlign = 'left';
+  }
+}
+
+function killReturnBoss() {
+  const r = Game.return;
+  const bo = r && r.boss;
+  if (!bo || bo.dead) return;
+  bo.dead = true;
+  bo.deadT = 0;
+  AudioSys.sfx('bigBoom');
+  /* Explosão em camadas ao longo do casco */
+  for (let k = 0; k < 5; k++) {
+    const px = bo.x + rand(-bo.r, bo.r) * 0.7;
+    const py = bo.y + rand(-bo.r, bo.r) * 0.7;
+    burst(px, py, k % 2 ? '#ffd166' : '#ff5d6c', 18);
+    spawnRing(px, py, '#ffffff', 0.8 + k * 0.2);
+  }
+  spawnShipDebris(bo.x, bo.y, '#ff5d6c', 30);
+  spawnShipDebris(bo.x, bo.y, '#ffd166', 16);
+  r.shake = 16;
+  r.flash = 0.8;
+  r.flashColor = '#ffd166';
+  if (!Game.replay) Game.run.score += 500;
+  updateHudScore();
+  spawnFloater(bo.x, bo.y - bo.r - 20, 'DEVORADOR ESTELAR DERROTADO! (+500)');
+}
+
+function updateReturnBoss(dt) {
+  const r = Game.return;
+  const bo = r.boss;
+  const p = r.ship;
+  bo.t += dt;
+
+  /* Morte: animação de colapso e liberação do caminho */
+  if (bo.dead) {
+    bo.deadT += dt;
+    if (bo.deadT < 2.0 && chance(0.35)) {
+      emitParticle(bo.x + rand(-bo.r, bo.r) * 0.8, bo.y + rand(-bo.r, bo.r) * 0.6,
+        rand(-30, 30), rand(-40, 10), chance(0.5) ? '#ff9d8a' : '#ffd166', rand(0.4, 0.9), rand(2, 5));
+    }
+    if (bo.deadT >= 2.0 && !bo.gone) {
+      bo.gone = true;
+      r.boss = null;
+      AudioSys.sfx('unlock');
+      burst(VIEW_W / 2, VIEW_H / 2, '#59d3ff', 24);
+      spawnFloater(VIEW_W / 2, VIEW_H / 2 - 40, 'Caminho para a Terra liberado!');
+    }
+    return;
+  }
+
+  bo.hitT = Math.max(0, bo.hitT - dt);
+
+  /* Entrada pela direita até a posição de combate */
+  const targetX = VIEW_W * BOSS_X_TARGET_FRAC;
+  if (bo.entering) {
+    bo.x += (targetX - bo.x) * Math.min(1, dt * 1.2);
+    if (Math.abs(bo.x - targetX) < 6) bo.entering = false;
+  } else {
+    /* Flutuação senoidal vertical + leve avanço/recuo */
+    bo.y = VIEW_H / 2 + Math.sin(bo.t * 0.9) * (VIEW_H * 0.3);
+    bo.x = targetX + Math.sin(bo.t * 0.55) * 26;
+  }
+
+  /* Fumaça quando com pouca vida */
+  if (bo.hp < bo.maxHp * 0.35 && chance(0.3)) {
+    emitParticle(bo.x + rand(-14, 14), bo.y - 10, rand(-12, 12), -rand(18, 40), '#5b6478', rand(0.5, 1.1), rand(3, 6));
+  }
+
+  /* Rajadas miradas em leque */
+  bo.fireT -= dt;
+  if (!bo.entering && bo.fireT <= 0) {
+    bo.fireT = BOSS_FIRE_EVERY;
+    const base = Math.atan2(p.y - bo.y, p.x - bo.x);
+    for (let s = 0; s < BOSS_FAN; s++) {
+      const a = base + (s - (BOSS_FAN - 1) / 2) * BOSS_FAN_SPREAD;
+      r.enemyShots.push({
+        x: bo.x, y: bo.y,
+        vx: Math.cos(a) * RETURN_ENEMY_BOLT_SPEED * 1.15,
+        vy: Math.sin(a) * RETURN_ENEMY_BOLT_SPEED * 1.15,
+        t: 0, homing: RETURN_HOMING_T
+      });
+    }
+    AudioSys.sfx('enemyShot');
+  }
+
+  /* Contato com a nave do herói */
+  if (p.invuln <= 0 && dist(p.x, p.y, bo.x, bo.y) < bo.r + 13) {
+    hitReturnShip();
+    p.x += 34;   /* empurrão para fora do casco */
+  }
 }
 
 /* Anel de choque expansivo (onda de explosão / impacto) */
@@ -6907,8 +7392,14 @@ function drawReturnScene() {
   ctx.font = 'bold 11px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   if (r.cleared) {
-    ctx.fillStyle = '#5dffa6';
-    drawIconLabel(ctx, 'check', 'CAMINHO LIBERADO — VÁ PARA A TERRA!', VIEW_W / 2, 17, 1);
+    const bo = r.boss;
+    if (bo && !bo.dead) {
+      ctx.fillStyle = '#ff5d6c';
+      drawIconLabel(ctx, 'target', 'DEVORADOR ESTELAR — DESTRUA O CHEFE!', VIEW_W / 2, 17, 1);
+    } else {
+      ctx.fillStyle = '#5dffa6';
+      drawIconLabel(ctx, 'check', 'CAMINHO LIBERADO — VÁ PARA A TERRA!', VIEW_W / 2, 17, 1);
+    }
   } else {
     ctx.fillStyle = '#ffd166';
     drawIconLabel(ctx, 'rocket', 'MISSÃO FINAL — DESTRUA ' + r.killed + '/' + r.fleet + ' NAVES (ESPAÇO/J)', VIEW_W / 2, 17, 1);
@@ -6946,23 +7437,29 @@ function drawReturnScene() {
     ctx.fill();
   }
 
-  /* Disparos do herói: feixe com núcleo brilhante e cauda gradiente */
+  /* Munição carregada na Máquina Balística */
+  const ammo = r.ammo || AMMO_TYPES.STD;
+  ctx.fillStyle = ammo.color;
+  ctx.fillText('MUNIÇÃO: ' + (ammo.formula || '⚡') + ' ' + (ammo.name || ''), 8, 62);
+
+  /* Disparos do herói: feixe na cor da munição carregada (Máquina Balística) */
   for (const b of r.shots) {
     const ang = Math.atan2(b.vy, b.vx);
     const pulse = 0.8 + Math.sin(b.t * 45) * 0.2;
+    const sz = (b.size || 1);
     ctx.save();
     ctx.translate(b.x, b.y);
     ctx.rotate(ang);
-    ctx.shadowColor = '#7ff5ff';
-    ctx.shadowBlur = 14;
-    const lg = ctx.createLinearGradient(-16, 0, 10, 0);
-    lg.addColorStop(0, 'rgba(127,245,255,0.15)');
-    lg.addColorStop(0.55, 'rgba(191,250,255,0.9)');
+    ctx.shadowColor = b.color;
+    ctx.shadowBlur = 14 * sz;
+    const lg = ctx.createLinearGradient(-16 * sz, 0, 10 * sz, 0);
+    lg.addColorStop(0, hexToRgba(b.color, 0.15));
+    lg.addColorStop(0.55, hexToRgba(b.color, 0.9));
     lg.addColorStop(1, 'rgba(255,255,255,1)');
     ctx.fillStyle = lg;
-    ctx.fillRect(-16, -2.2 * pulse, 30 * pulse, 4.4 * pulse);
+    ctx.fillRect(-16 * sz, -2.2 * pulse * sz, 30 * sz * pulse, 4.4 * pulse * sz);
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(-10, -1 * pulse, 22 * pulse, 2 * pulse);
+    ctx.fillRect(-10 * sz, -1 * pulse * sz, 22 * sz * pulse, 2 * pulse * sz);
     ctx.restore();
   }
 
@@ -7060,6 +7557,9 @@ function drawReturnScene() {
       ctx.fillRect(e.x - hbW / 2, e.y - e.r - 12, hbW * clamp(e.hp / e.maxHp, 0, 1), 5);
     }
   }
+
+  /* Boss: corpo desenhado por cima da frota (é o foco da cena) */
+  if (r.boss) drawReturnBoss(r.boss);
 
   /* Mira do jogador: mouse no computador, último toque no celular */
   const aim = r.aim;
@@ -7615,7 +8115,7 @@ function showScreen(name) {
 
 /* Esconde os overlays do ciclo novo (diálogo/fusão/quiz/missão/viagem) */
 function hideOverhaulOverlays() {
-  ['dialog', 'fusion', 'quiz', 'mission', 'results', 'credits', 'periodic-table', 'route'].forEach(id => {
+  ['dialog', 'fusion', 'quiz', 'mission', 'results', 'credits', 'periodic-table', 'route', 'ballistic'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.hidden = true;
@@ -8119,9 +8619,10 @@ function completeLevel() {
   updateHudProgress();
 
   if (idx === FINAL_INDEX) {
-    /* Fim do jogo: recompensas + volta para a Terra (batalha, sala, resultados, créditos) */
+    /* Fim do jogo: recompensas + Máquina Balística (carregar projétil) +
+       volta para a Terra (batalha, sala, resultados, créditos) */
     applyFinalRewards();
-    startReturn();
+    showBallistic();
     return;
   }
 
@@ -8234,7 +8735,7 @@ function togglePause() {
   if (document.getElementById('victory').hidden === false) return;
   if (document.getElementById('defeat').hidden === false) return;
   if (document.getElementById('reward').hidden === false) return;
-  if (Game.phase === 'departure' || Game.phase === 'travel' || Game.phase === 'arrival' || Game.phase === 'return') return;
+  if (Game.phase === 'departure' || Game.phase === 'travel' || Game.phase === 'arrival' || Game.phase === 'return' || Game.phase === 'ballistic') return;
 
   pauseShown = !pauseShown;
   if (window.Effects3D && Effects3D.setPaused) Effects3D.setPaused(pauseShown);

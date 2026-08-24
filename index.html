@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#070b1d">
 <title>Space Chemistry: Mission Bonds</title>
 <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
-<link rel="stylesheet" href="style.css?v=20260824a">
+<link rel="stylesheet" href="style.css?v=20260824b">
 </head>
 <body>
 
@@ -590,6 +590,23 @@
     </div>
   </div>
 
+  <!-- OVERLAY: Máquina Balística (converte compostos armazenados em projéteis de energia — tecnologia experimental da nave) -->
+  <div id="ballistic" class="overlay" hidden>
+    <div class="panel ballistic-panel">
+      <h2 class="panel-title ballistic-title"><img class="pix-icon" data-icon="flask" data-scale="2" alt=""> <span id="ballistic-title-text">Máquina Balística</span></h2>
+      <p class="ballistic-sub" id="ballistic-sub">A nave armazenou os compostos que você sintetizou. A Máquina Balística converte cada composto em um projétil de energia puro — tecnologia experimental a bordo!</p>
+      <div class="ballistic-slots" id="ballistic-slots"></div>
+      <div class="ballistic-stage">
+        <div class="ballistic-chip" id="ballistic-chip">⚡</div>
+        <div class="ballistic-core" id="ballistic-core"><div class="ballistic-fill" id="ballistic-fill"></div></div>
+        <div class="ballistic-proj" id="ballistic-proj">➤</div>
+      </div>
+      <p class="ballistic-status" id="ballistic-status"></p>
+      <div class="ballistic-stats" id="ballistic-stats"></div>
+      <button class="btn btn-primary ballistic-fire" id="ballistic-fire" hidden>Iniciar Batalha Final ➤</button>
+    </div>
+  </div>
+
   <!-- OVERLAY: resultados finais (pós-sala de aula) -->
   <div id="results" class="overlay results-overlay" hidden>
     <div class="panel results-panel">
@@ -646,18 +663,18 @@
 </div>
 
 <script src="assets/vendor/three.min.js"></script>
-<script src="loading_scene.js?v=20260824a"></script>
-<script src="effects3d.js?v=20260824a"></script>
-<script src="atom3d.js?v=20260824a"></script>
-<script src="questions.js?v=20260824a"></script>
-<script src="periodic_table.js?v=20260824a"></script>
-<script src="i18n.js?v=20260824a"></script>
-<script src="i18n_content.js?v=20260824a"></script>
-<script src="script.js?v=20260824a"></script>
-<script src="exercises.js?v=20260824a"></script>
-<script src="lewis_builder.js?v=20260824a"></script>
-<script src="structural_builder.js?v=20260824a"></script>
-<script src="classroom.js?v=20260824a"></script>
-<script src="menu_glass.js?v=20260824a"></script>
+<script src="loading_scene.js?v=20260824b"></script>
+<script src="effects3d.js?v=20260824b"></script>
+<script src="atom3d.js?v=20260824b"></script>
+<script src="questions.js?v=20260824b"></script>
+<script src="periodic_table.js?v=20260824b"></script>
+<script src="i18n.js?v=20260824b"></script>
+<script src="i18n_content.js?v=20260824b"></script>
+<script src="script.js?v=20260824b"></script>
+<script src="exercises.js?v=20260824b"></script>
+<script src="lewis_builder.js?v=20260824b"></script>
+<script src="structural_builder.js?v=20260824b"></script>
+<script src="classroom.js?v=20260824b"></script>
+<script src="menu_glass.js?v=20260824b"></script>
 </body>
 </html>

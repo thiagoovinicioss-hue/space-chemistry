@@ -41,7 +41,11 @@ function makeEl(id) {
     id,
     hidden: false,
     style: new Proxy({}, {
-      get: (t, k) => (k in t ? t[k] : ''),
+      get: (t, k) => {
+        if (k === 'setProperty') return (n, v) => { t[n] = v; };
+        if (k === 'getPropertyValue') return (n) => (t[n] != null ? t[n] : '');
+        return k in t ? t[k] : '';
+      },
       set: (t, k, v) => { t[k] = v; return true; }
     }),
     classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
@@ -340,12 +344,89 @@ const css = fs.readFileSync(__dirname + '/style.css', 'utf8');
 const src = fs.readFileSync(__dirname + '/script.js', 'utf8');
 check('#route presente no HTML com opções e título',
   html.includes('id="route"') && html.includes('id="route-options"') && html.includes('id="route-title-text"'));
-check('cache bumpado para 20260824a em todos os assets',
-  html.includes('?v=20260824a') && !html.includes('?v=20260823'));
+check('cache bumpado para 20260824b em todos os assets',
+  html.includes('?v=20260824b') && !html.includes('?v=20260824a') && !html.includes('?v=20260823'));
 check('CSS estiliza painel de rota e cartões de planeta opcional',
   css.includes('.route-panel') && css.includes('.route-btn.route-side') && css.includes('.planet-btn.side'));
 check('overlay route é escondido nas trocas de tela (hideOverhaulOverlays)',
-  src.includes("'periodic-table', 'route']"));
+  src.includes("'route', 'ballistic']"));
+
+/* ---------- Máquina Balística (compostos → projéteis + boss) ---------- */
+const i18nSrc = fs.readFileSync(__dirname + '/i18n.js', 'utf8');
+check('save tem registro de compostos e migra saves antigos (compounds = {})',
+  run('JSON.stringify(Save.data.compounds)') === '{}');
+check('storeCompound grava composto sintetizado e persiste no save',
+  run(`
+    storeCompound('NA2S');
+    Save.data.compounds.NA2S === true &&
+    JSON.parse(localStorage.getItem(SAVE_KEY)).compounds.NA2S === true
+  `));
+check('getAmmoOptions: STD sempre primeiro + só o que foi formado',
+  run('JSON.stringify(getAmmoOptions())') === '["STD","NA2S"]');
+check('munição desconhecida é rejeitada (química só de receitas reais)',
+  run("!storeCompound('XX') && !storeCompound()"));
+check('AMMO_TYPES cobre TODAS as receitas + STD, com stats completos',
+  run(`
+    Object.keys(RECIPES).every(id => AMMO_TYPES[id] &&
+      AMMO_TYPES[id].dmg > 0 && AMMO_TYPES[id].cd > 0 &&
+      AMMO_TYPES[id].color && AMMO_TYPES[id].formula === RECIPES[id].formula) &&
+    AMMO_TYPES.STD.dmg === 1 && AMMO_TYPES.STD.cd > 0
+  `));
+check('munições dos desvios têm personalidades distintas (leque/perfurante/rajada)',
+  run(`
+    AMMO_TYPES.CAF2.spread > 1 && AMMO_TYPES.H2O.pierce === true &&
+    AMMO_TYPES.N2.pierce === true && AMMO_TYPES.N2.dmg > AMMO_TYPES.STD.dmg &&
+    AMMO_TYPES.CH4.cd < AMMO_TYPES.STD.cd
+  `));
+check('síntese registra o composto na nave (hook na Fusion.complete)',
+  src.includes('consumeAtoms(recipe.atoms);') &&
+  src.includes('storeCompound(recipe.id);'));
+check('completeLevel final abre a Máquina Balística antes da batalha',
+  /applyFinalRewards\(\);[\s\S]{0,60}showBallistic\(\);/.test(src));
+check('showBallistic prepara overlay e pré-seleciona a melhor munição',
+  run(`
+    showBallistic();
+    Game.phase === 'ballistic' && Game.locked === true &&
+    Game.ballistic.sel === 'NA2S'
+  `));
+check('ballisticFire carrega a munição escolhida e chama a batalha final',
+  run("Game.ballistic = { sel: 'N2', token: 1 }; ballisticFire(); Game.ammo.id !== undefined || true") &&
+  run('Game.ammo === AMMO_TYPES.N2 && Game.return.ammo === AMMO_TYPES.N2'));
+check('boss entra após a frota cair e bloqueia a Terra até ser destruído',
+  src.includes('spawnReturnBoss();') &&
+  src.includes('function updateReturnBoss') &&
+  src.includes('(bo && !bo.dead)') &&
+  /bo\.dead\) && !r\.earthReach/.test(src));
+check('tiros do herói usam dano/cor/piercing da munição escolhida',
+  src.includes('e.hp -= (b.dmg || 1);') &&
+  src.includes("b.vx: Math.cos(sa)") === false &&
+  /dmg: a\.dmg, pierce: !!a\.pierce, color: a\.color, size: a\.size \|\| 1/.test(src));
+check('overlay #ballistic no HTML com slots, estágio e botão',
+  html.includes('id="ballistic"') && html.includes('id="ballistic-slots"') &&
+  html.includes('id="ballistic-core"') && html.includes('id="ballistic-fire"'));
+check('CSS estiliza painel balístico e animação de conversão',
+  css.includes('.ballistic-panel') &&
+  css.includes('.ballistic-core.charging .ballistic-fill') &&
+  css.includes('@keyframes ball-proj-pop'));
+check('i18n traduz a Máquina Balística em PT/EN/ES',
+  (i18nSrc.match(/'ballistic\.title'/g) || []).length >= 3 &&
+  i18nSrc.includes("'Ballistic Machine'") && i18nSrc.includes("'Máquina Balística'"));
+check('simulação: frota limpa → boss surge → cai → Terra liberada',
+  run(`
+    (function () {
+      Game.replay = true;                 /* não suja score dos outros checks */
+      startReturn();
+      var r = Game.return;
+      r.spawned = r.fleet; r.enemies = [];   /* frota destruída */
+      updateReturn(0.016);
+      if (!r.boss || r.boss.dead) return false;
+      var guard = 300;
+      while (r.boss && !r.boss.dead && guard-- > 0) damageBoss(1);
+      if (!r.boss || !r.boss.dead) return false;
+      for (var i = 0; i < 160; i++) updateReturn(0.05);   /* colapso ~8s */
+      return r.boss === null;
+    })()
+  `));
 
 /* ---------- resultado ---------- */
 if (failures) {
