@@ -122,12 +122,19 @@ check('idiomas: dock liquid glass no menu E na pausa',
   html.includes('lang-dock lang-dock--row') &&
   (html.match(/data-lang="en"/g) || []).length === 2 &&
   (html.match(/data-lang="pt"/g) || []).length === 2);
-check('idiomas: tela de loading com nave orbitando planeta (3D + fallback 2D)',
-  html.includes('id="screen-loading"') && html.includes('id="loading-scene"') &&
-  html.includes('loading_scene.js?v=20260823j') &&
+check('idiomas: loading é OVERLAY independente (regressão tela azul/espremida)',
+  html.includes('id="lang-loading"') && html.includes('overlay lang-overlay" hidden') &&
+  !i18nSrc.includes('showScreen(') && !i18nSrc.includes('Effects3D.setPaused') &&
+  i18nSrc.includes("addEventListener('keydown', guard, true)") &&
+  css.includes('.lang-overlay[hidden] { display: none !important; }'));
+check('idiomas: cena da nave orbitando planeta (3D three.js + fallback 2D)',
+  html.includes('loading_scene.js?v=20260823k') &&
   lscene.includes('THREE.WebGLRenderer') && lscene.includes('start2D'));
+check('idiomas: refresh de labels dinâmicos pós-troca (script+classroom)',
+  src.includes('__scLangRefresh') && src.includes(".t('menu.sound.on'") &&
+  classroomSrc.includes("addEventListener('sc:language'"));
 check('idiomas: i18n.js antes do script.js, persistência e evento sc:language',
-  html.indexOf('i18n.js?v=20260823j') < html.indexOf('script.js?v=20260823j') &&
+  html.indexOf('i18n.js?v=20260823k') < html.indexOf('script.js?v=20260823k') &&
   i18nSrc.includes("localStorage.setItem(LS_KEY") && i18nSrc.includes("sc_lang") &&
   i18nSrc.includes("'sc:language'"));
 check('idiomas: dicionário cobre pt/en/es e labels dinâmicos com fallback',

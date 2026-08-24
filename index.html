@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#070b1d">
 <title>Space Chemistry: Mission Bonds</title>
 <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
-<link rel="stylesheet" href="style.css?v=20260823j">
+<link rel="stylesheet" href="style.css?v=20260823k">
 </head>
 <body>
 
@@ -317,17 +317,18 @@
 </section>
 
 <!-- ============================================================
-     SCREEN: LOADING DE IDIOMA (nave orbitando um planeta em 3D)
+   OVERLAY: LOADING DE IDIOMA (nave orbitando um planeta em 3D).
+   Overlay INDEPENDENTE do sistema de telas: cobre o que estiver
+   na tela e, ao sair, o jogador continua exatamente onde estava.
 ============================================================ -->
-<section id="screen-loading" class="screen" role="status" aria-label="Carregando idioma">
-  <div class="starfield" aria-hidden="true"></div>
+<div id="lang-loading" class="overlay lang-overlay" hidden role="status" aria-label="Aplicando idioma">
   <div id="loading-scene" aria-hidden="true"></div>
   <div class="loading-copy">
     <p class="loading-caption" id="loading-caption">Aplicando novo idioma…</p>
     <p class="loading-sub" id="loading-sub">Preparando a galáxia no seu idioma</p>
   </div>
   <div id="loading-fade" aria-hidden="true"></div>
-</section>
+</div>
 
 <!-- ============================================================
      SCREEN: JOGO
@@ -336,7 +337,7 @@
   <div class="game-wrapper">
     <div id="hud" class="hud" aria-hidden="true">
       <div class="hud-left">
-        <div class="hud-score"><span class="hud-label">PONTOS</span><span id="hud-score">0</span></div>
+        <div class="hud-score"><span class="hud-label" data-i18n="hud.score">PONTOS</span><span id="hud-score">0</span></div>
         <div class="hud-lives" id="hud-lives" title="Vidas"></div>
       </div>
       <div class="hud-center">
@@ -350,7 +351,7 @@
         <button class="btn btn-small" id="btn-pause" title="Pausar (ESC)">⏸</button>
       </div>
       <div id="travel-wrap" class="travel-wrap" hidden>
-        <div class="travel-label"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> VIAGEM ESPACIAL</div>
+        <div class="travel-label"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> <span data-i18n="travel.label">VIAGEM ESPACIAL</span></div>
         <div class="travel-track"><div class="travel-fill" id="travel-fill"></div></div>
       </div>
     </div>
@@ -358,7 +359,7 @@
     <div class="canvas-wrap">
       <canvas id="game-canvas" width="640" height="360"></canvas>
       <div id="fx3d-game" class="fx3d" aria-hidden="true"></div>
-      <div id="interact-hint" class="interact-hint" hidden>[ESPAÇO] Interagir</div>
+      <div id="interact-hint" class="interact-hint" hidden data-i18n="interact.hint">[ESPAÇO] Interagir</div>
       <div id="gate-panel" class="gate-panel" hidden></div>
       <div id="mobile-ui" class="mobile-ui" aria-hidden="true">
         <div id="joy-base" class="joy-base" hidden><div id="joy-knob" class="joy-knob"></div></div>
@@ -416,7 +417,7 @@
   <div id="periodic-table" class="overlay ptable-overlay" hidden>
     <div class="ptable-container">
       <div class="ptable-header">
-        <h2 class="panel-title">🔬 Tabela Periódica</h2>
+        <h2 class="panel-title" data-i18n="ptable.title">🔬 Tabela Periódica</h2>
         <button class="btn" id="btn-pt-close" data-i18n="ptable.close">Fechar</button>
       </div>
       <div class="ptable-body">
@@ -636,17 +637,17 @@
 </div>
 
 <script src="assets/vendor/three.min.js"></script>
-<script src="loading_scene.js?v=20260823j"></script>
-<script src="effects3d.js?v=20260823j"></script>
-<script src="atom3d.js?v=20260823j"></script>
-<script src="questions.js?v=20260823j"></script>
-<script src="periodic_table.js?v=20260823j"></script>
-<script src="i18n.js?v=20260823j"></script>
-<script src="script.js?v=20260823j"></script>
-<script src="exercises.js?v=20260823j"></script>
-<script src="lewis_builder.js?v=20260823j"></script>
-<script src="structural_builder.js?v=20260823j"></script>
-<script src="classroom.js?v=20260823j"></script>
-<script src="menu_glass.js?v=20260823j"></script>
+<script src="loading_scene.js?v=20260823k"></script>
+<script src="effects3d.js?v=20260823k"></script>
+<script src="atom3d.js?v=20260823k"></script>
+<script src="questions.js?v=20260823k"></script>
+<script src="periodic_table.js?v=20260823k"></script>
+<script src="i18n.js?v=20260823k"></script>
+<script src="script.js?v=20260823k"></script>
+<script src="exercises.js?v=20260823k"></script>
+<script src="lewis_builder.js?v=20260823k"></script>
+<script src="structural_builder.js?v=20260823k"></script>
+<script src="classroom.js?v=20260823k"></script>
+<script src="menu_glass.js?v=20260823k"></script>
 </body>
 </html>

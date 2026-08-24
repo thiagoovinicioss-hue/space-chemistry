@@ -1462,4 +1462,14 @@ document.querySelectorAll('.bond-card').forEach(card => {
 window.Classroom = Classroom;
 /* acesso de depuração/testes (smoke_test_classroom.js) */
 Classroom._dbg = { S, LESSONS, DIAGRAMS, advance, goSlide, prev, skipLesson, finishTyping };
+
+/* Troca de idioma com a sala aberta: refresca textos de estado */
+document.addEventListener('sc:language', function () {
+  if (!Classroom.active || !Classroom.active()) return;
+  try {
+    els.progress.textContent =
+      (window.I18N ? I18N.t('cls.progress.board', 'QUADRO') : 'QUADRO') +
+      ' ' + (S.idx + 1) + '/' + slideCount();
+  } catch (e) {}
+});
 })();

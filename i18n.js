@@ -100,6 +100,10 @@
       'pause.restart': '↻ Recomeçar Fase',
       'pause.exit': 'Sair',
       'ptable.close': 'Fechar',
+      'ptable.title': '🔬 Tabela Periódica',
+      'hud.score': 'PONTOS',
+      'travel.label': 'VIAGEM ESPACIAL',
+      'interact.hint': '[ESPAÇO] Interagir',
 
       'back.menu': '← Menu',
       'back.voltar': '← Voltar',
@@ -202,6 +206,10 @@
       'pause.restart': '↻ Restart Level',
       'pause.exit': 'Exit',
       'ptable.close': 'Close',
+      'ptable.title': '🔬 Periodic Table',
+      'hud.score': 'SCORE',
+      'travel.label': 'SPACE TRAVEL',
+      'interact.hint': '[SPACE] Interact',
 
       'back.menu': '← Menu',
       'back.voltar': '← Back',
@@ -304,6 +312,10 @@
       'pause.restart': '↻ Reiniciar Nivel',
       'pause.exit': 'Salir',
       'ptable.close': 'Cerrar',
+      'ptable.title': '🔬 Tabla Periódica',
+      'hud.score': 'PUNTOS',
+      'travel.label': 'VIAJE ESPACIAL',
+      'interact.hint': '[ESPACIO] Interactuar',
 
       'back.menu': '← Menú',
       'back.voltar': '← Volver',
@@ -324,7 +336,7 @@
 
   var I18N = {
     lang: 'pt',
-    version: '1.0.0',
+    version: '1.1.0',
 
     t: function (key, fallback) {
       var d = DICT[this.lang];
@@ -344,15 +356,6 @@
       }
       this.syncDock();
       document.documentElement.lang = this.lang === 'pt' ? 'pt-BR' : this.lang;
-    },
-
-    setLanguage: function (lang) {
-      if (LANGS.indexOf(lang) < 0) return false;
-      this.lang = lang;
-      try { localStorage.setItem(LS_KEY, lang); } catch (e) {}
-      this.apply(document);
-      document.dispatchEvent(new CustomEvent('sc:language', { detail: { lang: lang } }));
-      return true;
     },
 
     getLanguage: function () { return this.lang; },
@@ -389,37 +392,43 @@
       });
     },
 
-    /* ---------- Tela de loading + troca de idioma ---------- */
+    /* ---------- Overlay de loading + troca de idioma ----------
+       NÃO passa pelo sistema de navegação de telas: é um overlay
+       independente (como a pausa). O jogo por baixo nunca é
+       alterado, portanto é impossível "perder" a tela atual. */
     openLoading: function (targetLang) {
+      var self = this;
       if (this._switching) return;
       this._switching = true;
 
-      var Game = window.Game || {};
-      var prevScreen = Game.screen || null;
-      var wasPaused = false;
-      var pauseEl = document.getElementById('pause');
-      if (prevScreen === 'game' && pauseEl && !pauseEl.hidden) wasPaused = true;
-
-      /* Congela o estado atual e mostra a tela de loading */
-      if (window.Effects3D && Effects3D.setPaused) Effects3D.setPaused(true);
-      if (pauseEl) pauseEl.hidden = true;
-      if (window.showScreen) showScreen('loading');
-      else {
-        var secs = document.querySelectorAll('.screen');
-        for (var i = 0; i < secs.length; i++) secs[i].classList.toggle('active', secs[i].id === 'screen-loading');
-        Game.screen = 'loading';
-      }
+      var ov = document.getElementById('lang-loading');
+      var fade = document.getElementById('loading-fade');
+      if (!ov) { this._switching = false; return; }
 
       var caption = document.getElementById('loading-caption');
       if (caption) caption.textContent = this.t('loading.caption');
       var sub = document.getElementById('loading-sub');
       if (sub) sub.textContent = this.t('loading.sub');
 
-      var scene = window.LoadingScene && LoadingScene.start ? LoadingScene.start() : null;
-      var self = this;
+      /* Trava teclado durante o voo para nada por baixo reagir */
+      var guard = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      };
+      document.addEventListener('keydown', guard, true);
+      document.addEventListener('keyup', guard, true);
 
-      /* Otimização: aplica o idioma uma única vez durante o voo,
-         garante tempo mínimo de exibição e sai com fade suave */
+      ov.hidden = false;
+      if (fade) fade.classList.remove('show');
+
+      /* Cena 3D com fallback; falha da cena NUNCA quebra a troca */
+      var sceneOk = true;
+      try {
+        if (window.LoadingScene && LoadingScene.start) LoadingScene.start();
+      } catch (err) { sceneOk = false; }
+
+      /* Aplica o idioma uma vez, cedo o bastante para terminar
+         antes do fim do voo (otimização: 1 única passada) */
       var applied = false;
       var applyNow = function () {
         if (applied) return;
@@ -431,28 +440,35 @@
       setTimeout(function () {
         applyNow();
         requestAnimationFrame(function () {
-          var fade = document.getElementById('loading-fade');
-          var done = function () {
-            if (scene && LoadingScene.stop) LoadingScene.stop();
+          var finish = function () {
+            try {
+              if (window.LoadingScene && LoadingScene.stop) LoadingScene.stop();
+            } catch (err2) {}
+            ov.hidden = true;
             if (fade) fade.classList.remove('show');
+            document.removeEventListener('keydown', guard, true);
+            document.removeEventListener('keyup', guard, true);
             self._switching = false;
-            /* Devolve o jogador exatamente onde estava */
-            if (prevScreen && window.showScreen) {
-              showScreen(prevScreen);
-              if (wasPaused && pauseEl) {
-                pauseEl.hidden = false;
-                if (window.Effects3D && Effects3D.setPaused) Effects3D.setPaused(true);
-              }
-            } else {
-              if (window.Effects3D && Effects3D.setPaused) Effects3D.setPaused(false);
-            }
           };
           if (fade) {
             fade.classList.add('show');
-            setTimeout(done, 520);
-          } else done();
+            setTimeout(finish, 520);
+          } else finish();
         });
       }, MIN_LOADING_MS);
+
+      void sceneOk;
+    },
+
+    setLanguage: function (lang) {
+      if (LANGS.indexOf(lang) < 0) return false;
+      this.lang = lang;
+      try { localStorage.setItem(LS_KEY, lang); } catch (e) {}
+      this.apply(document);
+      /* Refresca labels dinâmicos do jogo imediatamente */
+      if (window.__scLangRefresh) { try { window.__scLangRefresh(); } catch (e) {} }
+      document.dispatchEvent(new CustomEvent('sc:language', { detail: { lang: lang } }));
+      return true;
     },
 
     boot: function () {

@@ -8382,6 +8382,13 @@ function updateFullscreenMenuButton() {
     (IF ? IF.t(active ? 'menu.fs.exit' : 'menu.fs.enter', active ? 'Sair da Tela Cheia' : 'Tela Cheia')
         : (active ? 'Sair da Tela Cheia' : 'Tela Cheia'));
 }
+
+/* Hook do sistema de idiomas (i18n.js): refresca labels dinâmicos */
+window.__scLangRefresh = function () {
+  try { updateSoundButton(); } catch (e) {}
+  try { updateEffects3DButton(); } catch (e) {}
+  try { updateFullscreenMenuButton(); } catch (e) {}
+};
 document.getElementById('btn-fullscreen-menu').addEventListener('click', () => {
   AudioSys.unlock();
   toggleFullscreen();
