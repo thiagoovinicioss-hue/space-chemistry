@@ -275,6 +275,8 @@ const AMMO_TYPES = {
   N2:   { dmg: 5, cd: 0.64, spread: 1, pierce: true,  size: 1.8, color: '#a0b8ff', desc: 'Energia da ligação tripla N≡N: o mais poderoso.' },
   HCL:  { dmg: 2, cd: 0.26, spread: 1, pierce: true,  size: 1.1, color: '#d8fff0', desc: 'Haleto corrosivo: atravessa e desgasta escudos.' }
 };
+/* Módulos irmãos (boss3d.js) consultam a tabela por window.AMMO_TYPES */
+window.AMMO_TYPES = AMMO_TYPES;
 
 /* --- Boss da batalha final: o Devorador Estelar --- */
 const BOSS_HP = 46;
@@ -2501,6 +2503,8 @@ const Input = {
   touched: {},
   isDown(code) { return !!this.keys[code] || !!this.touched[code]; }
 };
+/* Módulos irmãos (boss3d.js) leem o teclado por window.Input */
+window.Input = Input;
 
 /* --- Acesso rápido ao canvas --- */
 const canvas = document.getElementById('game-canvas');
@@ -3117,6 +3121,13 @@ function update(dt) {
 
   /* Batalha espacial de volta para a Terra */
   if (Game.phase === 'return') { updateReturn(dt); updateParticles(dt); return; }
+  /* Batalha 3D contra o boss: o módulo BossBattle assume o loop */
+  if (Game.phase === 'boss') {
+    if (window.BossBattle && BossBattle.isActive()) BossBattle.tick(dt);
+    else finishBossEncounter(); /* autorecuperação se a batalha sumir */
+    updateParticles(dt);
+    return;
+  }
   /* Sala de aula (diálogo do professor + fim do jogo) */
   if (Game.phase === 'classroom') { updateClassroom(dt); updateParticles(dt); return; }
   /* Resultados finais (tela estática aguardando avanço para os créditos) */
@@ -4004,6 +4015,8 @@ function render() {
   if (!lv) return;
   if (Game.phase === 'travel') { drawTravelScene(); return; }
   if (Game.phase === 'return') { drawReturnScene(); return; }
+  /* Batalha 3D: o canvas WebGL cobre a tela; aqui só um fundo de reserva */
+  if (Game.phase === 'boss') { ctx.fillStyle = '#04060f'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); return; }
   if (Game.phase === 'classroom') { drawClassroom(); return; }
   if (Game.phase === 'results') {
     /* Mantém a sala de aula visível atrás do overlay de resultados */
@@ -6947,14 +6960,16 @@ function updateReturn(dt) {
   /* Limpa naves destruídas depois da animação de explosão */
   r.enemies = r.enemies.filter(e => !e.dead || e.deadT < RETURN_DEATH_DUR);
 
-  /* Frota aniquilada: o Devorador Estelar surge para o confronto final */
+  /* Frota aniquilada: o Devorador Estelar surge para o confronto final.
+     Com WebGL é uma batalha 3D em terceira pessoa; sem WebGL,
+     mantém o confronto 2D clássico como reserva. */
   if (!r.cleared && r.spawned >= r.fleet && r.enemies.length === 0) {
     r.cleared = true;
     r.clearedT = 0;
     AudioSys.sfx('warning');
     burst(70, VIEW_H / 2, '#59d3ff', 30);
     spawnFloater(VIEW_W / 2, VIEW_H / 2 - 40, 'ALVO PRIORITÁRIO DETECTADO!');
-    spawnReturnBoss();
+    startBossEncounter();
   }
 
   /* Boss: movimento senoidal, rajadas miradas e colisão de contato */
@@ -7080,7 +7095,8 @@ function returnShoot() {
 
 /* ---------------- Boss final: o Devorador Estelar ---------------- */
 /* Nave-mãe que drenou a energia química da galáxia. Aparece quando a frota
-   é destruída e bloqueia o caminho de volta para a Terra até cair. */
+   é destruída e bloqueia o caminho de volta para a Terra até cair.
+   Reserva 2D usada quando não há WebGL (a batalha principal é a 3D). */
 function spawnReturnBoss() {
   const r = Game.return;
   if (!r || r.boss) return;
@@ -7099,6 +7115,50 @@ function damageBoss(dmg) {
   bo.hp -= dmg;
   bo.hitT = RETURN_ENEMY_HIT_T;
   if (bo.hp <= 0) killReturnBoss();
+}
+
+/* ---------- Batalha final em 3D (terceira pessoa) ----------
+   A frota limpa entrega o controle para o módulo BossBattle (boss3d.js),
+   que roda a fase 'boss' com câmera atrás da nave. Na vitória, o fluxo
+   volta para a fase 2D 'return' e a nave segue até a Terra. */
+function startBossEncounter() {
+  const r = Game.return;
+  if (window.BossBattle && BossBattle.supported()) {
+    const ok = BossBattle.start({
+      ammo: (r && r.ammo) || AMMO_TYPES.STD,
+      addScore(n) {
+        if (!Game.replay) {
+          Game.run.score = Math.max(0, Game.run.score + n);
+          updateHudScore();
+        }
+      },
+      onVictory() { finishBossEncounter(); }
+    });
+    if (ok) {
+      Game.phase = 'boss';
+      const mu = document.getElementById('mobile-ui');
+      if (mu) mu.classList.add('boss3d-off');
+      return;
+    }
+  }
+  /* Sem WebGL: confronto 2D clássico dentro da fase 'return' */
+  spawnReturnBoss();
+}
+
+function finishBossEncounter() {
+  const r = Game.return;
+  const mu = document.getElementById('mobile-ui');
+  if (mu) mu.classList.remove('boss3d-off');
+  if (!r) { Game.phase = 'return'; return; }
+  r.boss = null;
+  Game.phase = 'return';
+  /* Reposiciona a nave saindo da nuvem de detritos rumo à Terra */
+  const p = r.ship;
+  p.x = Math.max(p.x, RETURN_BARRIER_X + 40);
+  p.y = VIEW_H / 2;
+  p.invuln = 2;
+  spawnFloater(VIEW_W / 2, VIEW_H / 2 - 40, 'Caminho para a Terra liberado!');
+  AudioSys.sfx('gate');
 }
 
 /* Corpo do Devorador Estelar: casco escuro anguloso, núcleo que esquenta
@@ -8272,6 +8332,10 @@ function setPracticeReturn(target) {
 
 function exitToMenu() {
   if (resultsTimer) { clearTimeout(resultsTimer); resultsTimer = null; }
+  /* Encerra a batalha 3D se estiver em andamento */
+  if (window.BossBattle && BossBattle.isActive()) BossBattle.stop();
+  const muBoss = document.getElementById('mobile-ui');
+  if (muBoss) muBoss.classList.remove('boss3d-off');
   Game.level = null;
   Game.buildAnim = null;
   Game.feedback = null;
@@ -8859,7 +8923,7 @@ function togglePause() {
   if (document.getElementById('victory').hidden === false) return;
   if (document.getElementById('defeat').hidden === false) return;
   if (document.getElementById('reward').hidden === false) return;
-  if (Game.phase === 'departure' || Game.phase === 'travel' || Game.phase === 'arrival' || Game.phase === 'return' || Game.phase === 'ballistic') return;
+  if (Game.phase === 'departure' || Game.phase === 'travel' || Game.phase === 'arrival' || Game.phase === 'return' || Game.phase === 'ballistic' || Game.phase === 'boss') return;
 
   pauseShown = !pauseShown;
   if (window.Effects3D && Effects3D.setPaused) Effects3D.setPaused(pauseShown);
@@ -8982,6 +9046,8 @@ window.addEventListener('keydown', e => {
       if (e.code === 'Space' || e.code === 'KeyJ') returnShoot();
       return;
     }
+    /* Batalha 3D: movimento e disparo são lidos direto do Input pelo módulo */
+    if (Game.phase === 'boss') return;
     /* Sala de aula: avança o diálogo do professor */
     if (Game.phase === 'classroom') {
       if ((e.code === 'Space' || e.code === 'Enter') && Game.dialog) advanceDialog();
@@ -9053,6 +9119,12 @@ canvas.addEventListener('pointerdown', e => {
   if (!lv || Game.screen !== 'game') return;
   /* Créditos: toque/clique pula direto para o menu */
   if (Game.phase === 'credits') { skipCredits(); return; }
+  if (Game.phase === 'boss' && window.BossBattle && BossBattle.isActive()) {
+    /* Batalha 3D: o módulo trata mouse (PC) e toques (joystick/botões/mira).
+       Fica antes dos travamentos porque a fase roda com Game.locked = true. */
+    BossBattle.pointerDown(e, canvas.getBoundingClientRect());
+    return;
+  }
   if (Game.locked || Game.buildAnim || Game.feedback || Game.screen !== 'game') return;
   /* Celular: toque na metade esquerda controla o joystick, não ataca/interage */
   if (e.pointerType === 'touch') {
@@ -9084,6 +9156,10 @@ canvas.addEventListener('pointerdown', e => {
 /* Mira da batalha final: acompanha o mouse (computador). No celular a mira
    segue o último toque fora do joystick (o dedo esquerdo não mirado). */
 canvas.addEventListener('pointermove', e => {
+  if (Game.phase === 'boss' && window.BossBattle && BossBattle.isActive()) {
+    BossBattle.pointerMove(e, canvas.getBoundingClientRect());
+    return;
+  }
   if (Game.phase !== 'return' || !Game.return) return;
   const rect = canvas.getBoundingClientRect();
   if (e.pointerType === 'touch' && (e.clientX - rect.left) < rect.width * JOY_ZONE) return;
@@ -9105,6 +9181,8 @@ const Joy = { id: null, active: false, baseX: 0, baseY: 0 };
 
 function joyStart(e, clientX, clientY) {
   if (!IS_TOUCH) return;
+  /* Na batalha 3D o BossBattle tem joystick próprio */
+  if (Game.phase === 'boss') return;
   /* Só cria o joystick quando o toque cai na metade esquerda da tela de jogo */
   const rect = canvas.getBoundingClientRect();
   if ((clientX - rect.left) < rect.width * JOY_ZONE) {
@@ -9123,7 +9201,7 @@ function joyStart(e, clientX, clientY) {
 }
 
 function joyMove(clientX, clientY) {
-  if (!Joy.active) return;
+  if (!Joy.active || Game.phase === 'boss') return;
   let dx = clientX - Joy.baseX;
   let dy = clientY - Joy.baseY;
   const len = Math.hypot(dx, dy);
@@ -9163,8 +9241,14 @@ if (canvasWrapEl) {
   window.addEventListener('pointermove', e => {
     if (e.pointerId === Joy.id) joyMove(e.clientX, e.clientY);
   });
-  window.addEventListener('pointerup', e => { if (e.pointerId === Joy.id) joyEnd(); });
-  window.addEventListener('pointercancel', e => { if (e.pointerId === Joy.id) joyEnd(); });
+  window.addEventListener('pointerup', e => {
+    if (window.BossBattle && BossBattle.isActive()) BossBattle.pointerUp(e.pointerId);
+    if (e.pointerId === Joy.id) joyEnd();
+  });
+  window.addEventListener('pointercancel', e => {
+    if (window.BossBattle && BossBattle.isActive()) BossBattle.pointerUp(e.pointerId);
+    if (e.pointerId === Joy.id) joyEnd();
+  });
   /* Fallback para navegadores antigos sem Pointer Events */
   canvasWrapEl.addEventListener('touchstart', e => {
     if (Joy.active) return;

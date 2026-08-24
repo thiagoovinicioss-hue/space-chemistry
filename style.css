@@ -937,7 +937,11 @@ h3 .pix-icon { margin-right: 4px; }
 /* Só aparece quando o toque é o controle principal (celular/tablet).
    Em desktop (mouse) fica sempre escondido, mesmo com tela de toque. */
 @media (hover: none) and (pointer: coarse) {
-  .mobile-ui.show { display: block; }
+.mobile-ui.show { display: block; }
+
+/* Batalha 3D do boss: os botões antigos saem de cena — a batalha usa
+   joystick/botões próprios desenhados no canvas (boss3d.js). */
+.mobile-ui.boss3d-off { display: none !important; }
 }
 
 /* Base do joystick: aparece no ponto em que o dedo toca a metade esquerda.
