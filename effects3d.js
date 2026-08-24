@@ -90,6 +90,11 @@
   var activePhase = '';
   var phaseAge = 0;
 
+  /* Planeta opcional FÍSICO no caminho da viagem (desvio/side quest):
+     segundo corpo 3D, projetado no mesmo ponto lógico do mapa 2D. */
+  var detourPlanet = null;
+  var detourTheme = '';
+
   /* Frota inimiga 3D da batalha final (pool estático, sincronizado com a
      posição lógica 2D de Game.return.enemies — a colisão é sempre 2D). */
   var returnFleet = null;
@@ -1093,6 +1098,39 @@
     try { idx = (Game.levelIndex || 0) + 1; } catch (e) { idx = 1; }
     return Math.min(idx, LEVELS.length - 1);
   }
+  function readTravelDetour() {
+    /* Corpo físico do desvio no caminho ({idx,x,y,r}) ou null.
+       Esconde durante chegadas/cinemáticas (a nave já escolheu o rumo). */
+    try {
+      var tr = Game && Game.travel;
+      if (!tr || tr.cinematic || tr.arriving || !tr.detour) return null;
+      return tr.detour;
+    } catch (e) { return null; }
+  }
+  function updateDetourPlanet(dt) {
+    var det = null;
+    try { det = readTravelDetour(); } catch (e) {}
+    if (!det) {
+      if (detourPlanet) detourPlanet.visible = false;
+      return;
+    }
+    var theme = '';
+    try {
+      var lv = LEVELS[det.idx];
+      theme = lv && lv.theme ? lv.theme : '';
+    } catch (e) {}
+    if (!theme) { if (detourPlanet) detourPlanet.visible = false; return; }
+    if (detourTheme !== theme || !detourPlanet) {
+      if (detourPlanet) detourPlanet.visible = false;
+      detourTheme = theme;
+      detourPlanet = ensurePlanet(theme);
+    }
+    detourPlanet.visible = true;
+    var scale = worldRadiusForPx(det.px || 30);
+    detourPlanet.position.set(logicalToWorldX(det.x), logicalToWorldY(det.y), 0);
+    detourPlanet.scale.setScalar(scale * 0.999);  /* evita z-fight com o destino */
+    if (detourPlanet.userData.update) detourPlanet.userData.update(dt, sceneTime);
+  }
   function readLevelTheme() {
     try {
       if (!Game) return '';
@@ -1585,8 +1623,12 @@
       /* Frota inimiga 3D: só na batalha final (posições 2D projetadas) */
       if (phase === 'return') updateReturnFleet(dt);
       else hideReturnFleet();
+      /* Desvio opcional no caminho da viagem (planeta físico 3D) */
+      if (phase === 'travel') updateDetourPlanet(dt);
+      else if (detourPlanet) detourPlanet.visible = false;
     } else {
       hideReturnFleet();
+      if (detourPlanet) detourPlanet.visible = false;
     }
     updateScene(dt, content);
     renderer.render(scene, camera);
@@ -1732,6 +1774,9 @@
       activeTheme = '';
       activePhase = '';
       phaseAge = 0;
+      if (detourPlanet) detourPlanet.visible = false;
+      detourPlanet = null;
+      detourTheme = '';
       black.a = 0; black.target = 0; black.speed = 1000;
       if (blackScreen) blackScreen.material.opacity = 0;
       renderer.setClearColor(0x000000, 0);

@@ -645,6 +645,57 @@ h3 .pix-icon { margin-right: 4px; }
 .planet-btn.side:hover:not(:disabled) { border-color: #b388ff; box-shadow: 0 8px 0 rgba(0,0,0,0.3), 0 0 14px rgba(179,136,255,0.45); }
 .planet-btn.side .planet-status { color: #c9a8ff; }
 
+/* Side quests JÁ ZERADAS: cartão secreto luxuoso (ouro sobre preto) */
+.planet-btn.secret {
+  border-color: transparent;
+  background:
+    linear-gradient(165deg, #191307 0%, #07060d 42%, #100c04 74%, #1a1408 100%);
+  box-shadow:
+    inset 0 0 22px rgba(255,209,102,0.10),
+    inset 0 1px 0 rgba(255,233,168,0.18),
+    0 0 18px -6px rgba(255,209,102,0.55);
+}
+.planet-btn.secret::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, #ffe9a8 0%, #8a6a20 28%, #ffd166 52%, #6e520e 78%, #ffd166 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask-composite: exclude;
+  pointer-events: none;
+}
+.planet-btn.secret .planet-name {
+  color: #ffe9a8;
+  text-shadow: 0 0 10px rgba(255,209,102,0.35);
+}
+.planet-btn.secret .planet-status { color: rgba(255,233,168,0.75); }
+.planet-btn.secret.selected {
+  box-shadow:
+    inset 0 0 26px rgba(255,209,102,0.2),
+    0 0 22px -4px rgba(255,209,102,0.75);
+}
+.planet-btn.secret:hover:not(:disabled) {
+  border-color: transparent;
+  box-shadow:
+    inset 0 0 26px rgba(255,209,102,0.2),
+    0 8px 0 rgba(0,0,0,0.3),
+    0 0 20px -4px rgba(255,209,102,0.7);
+}
+.planet-secret-badge {
+  margin-top: 5px;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-indent: 3px;
+  color: #ffd166;
+  text-shadow: 0 0 8px rgba(255,209,102,0.65), 0 1px 0 #000;
+  border-top: 1px solid rgba(255,209,102,0.35);
+  padding-top: 4px;
+}
+
 .galaxy-footer {
   display: flex;
   align-items: center;

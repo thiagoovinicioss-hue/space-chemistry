@@ -59,6 +59,9 @@
       'route.tag.main': 'Campanha principal · próximo planeta',
       'route.tag.side': '★ DESVIO OPCIONAL · recompensa exclusiva',
 
+      'travel.detour': '★ DESVIO OPCIONAL',
+      'galaxy.secret': 'SECRETO',
+
       'ballistic.title': 'Máquina Balística',
       'ballistic.sub': 'A nave armazenou os compostos que você sintetizou. A Máquina Balística converte cada composto em um projétil de energia puro — tecnologia experimental a bordo!',
       'ballistic.pick': 'Selecione um composto armazenado.',
@@ -187,6 +190,9 @@
       'route.tag.main': 'Main campaign · next planet',
       'route.tag.side': '★ OPTIONAL DETOUR · exclusive reward',
 
+      'travel.detour': '★ OPTIONAL DETOUR',
+      'galaxy.secret': 'SECRET',
+
       'ballistic.title': 'Ballistic Machine',
       'ballistic.sub': "Your ship stored the compounds you synthesized. The Ballistic Machine converts each compound into a pure energy projectile — experimental technology on board!",
       'ballistic.pick': 'Select a stored compound.',
@@ -314,6 +320,9 @@
       'route.sub': '¡Un desvío opcional apareció en tu camino! ¿A dónde vamos?',
       'route.tag.main': 'Campaña principal · próximo planeta',
       'route.tag.side': '★ DESVÍO OPCIONAL · recompensa exclusiva',
+
+      'travel.detour': '★ DESVÍO OPCIONAL',
+      'galaxy.secret': 'SECRETO',
 
       'ballistic.title': 'Máquina Balística',
       'ballistic.sub': '¡Tu nave almacenó los compuestos que sintetizaste! La Máquina Balística convierte cada compuesto en un proyectil de energía pura — tecnología experimental a bordo.',

@@ -61,9 +61,15 @@ function makeEl(id) {
     getContext() { return makeCtx(); },
     get clientWidth() { return 0; },
     get clientHeight() { return 0; },
-    textContent: '', innerHTML: '', value: '', checked: false, dataset: {},
+    textContent: '', value: '', checked: false, dataset: {},
     children, firstChild: null
   };
+  /* innerHTML='' em um elemento real limpa os filhos (renderGalaxy depende disso) */
+  let _innerHTML = '';
+  Object.defineProperty(el, 'innerHTML', {
+    get() { return _innerHTML; },
+    set(v) { _innerHTML = v; children.length = 0; }
+  });
   return el;
 }
 /* getElementById estável por id (para testar #route) */
@@ -173,21 +179,25 @@ check('side quest desbloqueia após o planeta âncora (e só depois)',
     run('Save.data.completed[2] = true;');           /* covalente feito */
     return run('sideQuestUnlocked(BUENO_INDEX)');
   })());
-check('rota pós-tutorial oferece principal + desvio (quando liberado)',
-  run('JSON.stringify(travelOptionsFor(0))') === '[1,5]');
-check('rota pós-covalente oferece principal + desvio Bueno',
-  run('JSON.stringify(travelOptionsFor(2))') === '[3,6]');
+check('menu de rota NUNCA oferece desvio (só campanha principal)',
+  run('JSON.stringify(travelOptionsFor(0))') === '[1]' &&
+  run('JSON.stringify(travelOptionsFor(2))') === '[3]');
 check('saindo do desvio volta ao fluxo principal (nunca trava)',
   run('JSON.stringify(travelOptionsFor(5))') === '[1]' &&
   run('JSON.stringify(travelOptionsFor(6))') === '[3]');
 check('planetas sem desvio seguem direto ao próximo',
   run('JSON.stringify(travelOptionsFor(1))') === '[2]' &&
   run('JSON.stringify(travelOptionsFor(3))') === '[4]');
-check('desvio bloqueado não aparece na rota',
+check('desvio físico só existe na transição âncora→próximo (e se não zerado)',
   (() => {
     run('Save.data = Save.defaults();');             /* nada completado */
-    const opts = JSON.parse(run('JSON.stringify(travelOptionsFor(0))'));
-    return opts.length === 1 && opts[0] === 1;
+    if (run('travelDetourFor(0)') !== null) return false;   /* âncora não feita */
+    run('Save.data.completed[0] = true;');
+    if (run('travelDetourFor(0)') !== run('KINDER_INDEX')) return false;
+    if (run('travelDetourFor(1)') !== null) return false;   /* janela passou */
+    if (run('travelDetourFor(5)') !== null) return false;   /* saindo do desvio */
+    run('Save.data.completed[5] = true;');
+    return run('travelDetourFor(0)') === null;       /* já zerado: some */
   })());
 
 /* ---------- 4. Viagem respeita a rota escolhida ---------- */
@@ -201,6 +211,69 @@ check('startTravel usa o destino da rota e limpa a escolha',
       startTravel();
     `);
     const ok = run('Game.travel && Game.travel.nextIdx === KINDER_INDEX && Game.routeDest === null');
+    run('Game.travel = null;');
+    return !!ok;
+  })());
+
+/* ---------- 4b. Desvio FÍSICO no espaço durante a viagem ---------- */
+check('startTravel cria o planeta desvio no canto inferior direito (sem menu)',
+  (() => {
+    run(`
+      Save.data = Save.defaults();
+      Save.data.completed[0] = true;      /* tutorial feito, Kinder não */
+      Game.levelIndex = 0;
+      Game.level = buildLevel(0);
+      startTravel();
+    `);
+    const ok = run(`
+      !!Game.travel.detour &&
+      Game.travel.detour.idx === KINDER_INDEX &&
+      Game.travel.detour.x > VIEW_W * 0.6 &&
+      Game.travel.detour.y > VIEW_H * 0.55
+    `);
+    run('Game.travel = null;');
+    return !!ok;
+  })());
+check('Bueno aparece como desvio na viagem covalente → metálica',
+  (() => {
+    run(`
+      Save.data.completed[2] = true;      /* covalente feita, Bueno não */
+      Game.levelIndex = 2;
+      Game.level = buildLevel(2);
+      startTravel();
+    `);
+    const ok = run('!!Game.travel.detour && Game.travel.detour.idx === BUENO_INDEX');
+    run('Game.travel = null;');
+    return !!ok;
+  })());
+check('encostar no planeta físico DESVIA a viagem para a side quest',
+  (() => {
+    run(`
+      Save.data.completed[0] = true; Save.data.completed[5] = false;
+      Game.levelIndex = 0;
+      Game.level = buildLevel(0);
+      startTravel();
+      var d = Game.travel.detour;
+      Game.travel.ship.x = d.x; Game.travel.ship.y = d.y;  /* toca no planeta */
+      updateTravel(0.016);
+    `);
+    const ok = run(`
+      !Game.travel.detour &&
+      Game.travel.nextIdx === KINDER_INDEX &&
+      (!!Game.travel.arriving || !!Game.travel.cinematic)
+    `);
+    run('Game.travel = null;');
+    return !!ok;
+  })());
+check('desvio já zerado NÃO aparece mais no caminho',
+  (() => {
+    run(`
+      Save.data.completed[0] = true; Save.data.completed[5] = true;
+      Game.levelIndex = 0;
+      Game.level = buildLevel(0);
+      startTravel();
+    `);
+    const ok = run('Game.travel.detour === null');
     run('Game.travel = null;');
     return !!ok;
   })());
@@ -344,12 +417,46 @@ const css = fs.readFileSync(__dirname + '/style.css', 'utf8');
 const src = fs.readFileSync(__dirname + '/script.js', 'utf8');
 check('#route presente no HTML com opções e título',
   html.includes('id="route"') && html.includes('id="route-options"') && html.includes('id="route-title-text"'));
-check('cache bumpado para 20260824b em todos os assets',
-  html.includes('?v=20260824b') && !html.includes('?v=20260824a') && !html.includes('?v=20260823'));
+check('cache bumpado para 20260824c em todos os assets',
+  html.includes('?v=20260824c') && !html.includes('?v=20260824b') && !html.includes('?v=20260823'));
 check('CSS estiliza painel de rota e cartões de planeta opcional',
   css.includes('.route-panel') && css.includes('.route-btn.route-side') && css.includes('.planet-btn.side'));
 check('overlay route é escondido nas trocas de tela (hideOverhaulOverlays)',
   src.includes("'route', 'ballistic']"));
+
+/* ---------- Galáxia: side quests SECRETAS (só aparecem zeradas) ---------- */
+check('planeta desvio só aparece na galáxia DEPOIS de zerado (card secreto)',
+  (() => {
+    const N = run('LEVELS.length');
+    run('Save.data = Save.defaults(); Save.data.completed[0] = true;');
+    run('renderGalaxy();');
+    /* sem os 2 secretos: apenas os 5 planetas principais no mapa */
+    const countBefore = run("document.getElementById('galaxy-track').children.length");
+    if (countBefore !== N - 2) return false;
+    run('Save.data.completed[5] = true; renderGalaxy();');
+    const countAfter = run("document.getElementById('galaxy-track').children.length");
+    const hasSecretClass = run(`
+      Array.from(document.getElementById('galaxy-track').children)
+        .some(b => /\\bsecret\\b/.test(b.className))
+    `);
+    return countAfter === N - 1 && hasSecretClass;
+  })());
+check('CSS do cartão secreto: borda dourada sobre preto luxuoso',
+  css.includes('.planet-btn.secret') &&
+  css.includes('.planet-btn.secret::before') &&
+  css.includes('.planet-secret-badge') &&
+  css.includes('#ffd166'));
+check('camada 3D projeta o planeta desvio no mesmo ponto lógico',
+  (() => {
+    const fx = fs.readFileSync(__dirname + '/effects3d.js', 'utf8');
+    return fx.includes('readTravelDetour') && fx.includes('updateDetourPlanet') &&
+      fx.includes('detourPlanet.position.set(logicalToWorldX(det.x)') &&
+      fx.includes('worldRadiusForPx(det.px');
+  })());
+check('desenho 2D do desvio tem etiqueta DESVIO OPCIONAL e posição própria',
+  src.includes('function drawTravelDetour') &&
+  src.includes('TR_DETOUR = { x: VIEW_W * 0.78') &&
+  src.includes("'travel.detour'"));
 
 /* ---------- Máquina Balística (compostos → projéteis + boss) ---------- */
 const i18nSrc = fs.readFileSync(__dirname + '/i18n.js', 'utf8');

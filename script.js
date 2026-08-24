@@ -58,16 +58,24 @@ function sideQuestUnlocked(idx) {
 }
 
 /* Destinos possíveis ao partir do planeta `idx`:
-   - vindo de um desvio → sempre volta ao fluxo principal;
-   - vindo do fluxo principal com desvio disponível → [principal, opcional]. */
+   SEMPRE apenas o fluxo principal. Os desvios opcionais NÃO aparecem em
+   nenhum menu de rota — eles ficam visíveis fisicamente no espaço durante
+   a viagem, e caberá ao piloto desviar da rota para visitá-los. */
 function travelOptionsFor(idx) {
   if (SIDE_QUESTS[idx]) return [SIDE_QUESTS[idx].next];
-  const opts = [Math.min(idx + 1, FINAL_INDEX)];
+  return [Math.min(idx + 1, FINAL_INDEX)];
+}
+
+/* Desvio opcional físico disponível ao partir do planeta `idx` (ou null):
+   existe só na transição âncora→próximo e enquanto o desvio não foi zerado. */
+function travelDetourFor(idx) {
   for (const k in SIDE_QUESTS) {
     const sq = SIDE_QUESTS[k];
-    if (sq.from === idx && sideQuestUnlocked(Number(k))) opts.push(Number(k));
+    if (sq.from === idx && sideQuestUnlocked(Number(k)) && !Save.data.completed[k]) {
+      return Number(k);
+    }
   }
-  return opts;
+  return null;
 }
 
 const COL_BOND = {
@@ -5606,9 +5614,9 @@ function missionDone(equip) {
   Save.save();
   updateHudProgress();
 
-  /* Escolha de rota: se existir desvio opcional disponível, o jogador decide
-     entre seguir direto para o próximo planeta principal OU visitá-lo.
-     A campanha principal NUNCA depende das side quests. */
+  /* Partida: destino é sempre o próximo planeta principal. Se existir desvio
+     opcional disponível, ele aparece FISICAMENTE no espaço durante a viagem —
+     nunca como menu (o piloto decide desviar ou seguir reto). */
   const dests = travelOptionsFor(Game.levelIndex);
   if (dests.length > 1) {
     showRouteChoice(dests);
@@ -5829,6 +5837,10 @@ function startDeparture() {
 /* ---------------- Viagem espacial ---------------- */
 /* Planeta de destino da viagem (colisão dispara a aterrissagem) */
 const TR_DEST = { x: VIEW_W - 120, y: 64, r: 46 };
+/* Desvio opcional: planeta visível FISICAMENTE no caminho (canto inferior
+   direito, puxado um pouco para o meio). Ir reto = destino principal;
+   desviar até ele = side quest. Nunca aparece em menu algum. */
+const TR_DETOUR = { x: VIEW_W * 0.78, y: VIEW_H * 0.70, r: 30 };
 
 function startTravel() {
   if (!Game.level) return;
@@ -5839,13 +5851,25 @@ function startTravel() {
   if (tw) tw.hidden = true;
   const dest = Game.routeDest != null ? Game.routeDest : Math.min(Game.levelIndex + 1, FINAL_INDEX);
   Game.routeDest = null;
+  /* Planeta opcional no caminho? (só na transição âncora→próximo) */
+  const detourIdx = travelDetourFor(Game.levelIndex);
+  const detLv = detourIdx != null ? LEVELS[detourIdx] : null;
   Game.travel = {
     t: 0, dur: TRAVEL_DUR,
     ship: { x: VIEW_W * 0.18, y: VIEW_H / 2, invuln: 0.5, tilt: 0, flame: 0, trailT: 0 },
     hazards: [], spawnT: 0.7,
     arriving: null, faded: false,
     tipIdx: randInt(0, TRAVEL_TIPS.length - 1), tipT: 0,
-    nextIdx: dest
+    nextIdx: dest,
+    /* Corpo físico do desvio (projetado também na camada 3D) */
+    detour: detLv ? {
+      idx: detourIdx,
+      x: TR_DETOUR.x, y: TR_DETOUR.y, r: TR_DETOUR.r,
+      px: TR_DETOUR.r,
+      color: detLv.planetColor,
+      name: detLv.name
+    } : null,
+    detourHintT: 0
   };
   camX = 0; camY = 0;
   updateTravelFill();
@@ -5975,6 +5999,32 @@ function updateTravel(dt) {
     return;
   }
 
+  /* Desvio opcional: encostar no planeta físico redireciona a viagem.
+     Ir reto e pousar no destino principal continua funcionando igual. */
+  if (tr.detour && dist(p.x, p.y, tr.detour.x, tr.detour.y) < tr.detour.r + 16) {
+    const detIdx = tr.detour.idx;
+    const detName = tr.detour.name;
+    const detColor = LEVELS[detIdx].planetColor;
+    const detX = p.x, detY = p.y;
+    tr.detour = null;          /* some do caminho (e da camada 3D) */
+    tr.nextIdx = detIdx;       /* a viagem agora termina nele */
+    AudioSys.sfx('gate');
+    burst(detX, detY, detColor, 22);
+    burst(detX, detY, '#ffffff', 8);
+    spawnFloater(detX, detY - 26, 'Desvio: ' + detName + '!');
+    startTravelArrive();
+    return;
+  }
+
+  /* Aproximação do desvio: dica piscando uma vez por viagem */
+  if (tr.detour) {
+    tr.detourHintT += dt;
+    if (!tr.detourHinted && tr.t > 1.2) {
+      tr.detourHinted = true;
+      spawnFloater(tr.detour.x, tr.detour.y - tr.detour.r - 18, '★ Desvio opcional à vista');
+    }
+  }
+
   /* Tempo esgotado = fallback: conclui a viagem */
   if (tr.t >= tr.dur) {
     finishTravel();
@@ -6067,6 +6117,7 @@ function drawTravelScene() {
      escondidos atrás da cena (só as estrelas continuam). */
   if (!tr.cinematic) {
     drawTravelPlanet(tr);
+    drawTravelDetour(tr);
     drawTravelHazards(tr);
     drawTravelShip(tr);
     drawTravelHud(tr);
@@ -6288,9 +6339,76 @@ function drawTravelPlanet(tr) {
   ctx.fill();
 }
 
+/* Planeta opcional FÍSICO no caminho (side quest): esfera sombreada no canto
+   inferior direito com anel pulsante e etiqueta "★ DESVIO OPCIONAL". Com o
+   3D ligado, o corpo é desenhado pela camada 3D no mesmo ponto da tela. */
+function drawTravelDetour(tr) {
+  const det = tr.detour;
+  if (!det) return;
+  const pulse = 1 + Math.sin(tr.t * 2.4) * 0.06;
+
+  /* Corpo (sombra, esfera, relevo) — só quando a camada 3D não desenha */
+  if (!(window.Effects3D && Effects3D.isEnabled())) {
+    ctx.save();
+    ctx.shadowColor = det.color;
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = det.color;
+    ctx.beginPath();
+    ctx.arc(det.x, det.y, det.r * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    /* Sombreamento esférico (terminador escuro no lado oposto ao sol) */
+    const shg = ctx.createRadialGradient(det.x - det.r * 0.4, det.y - det.r * 0.45, det.r * 0.1,
+      det.x, det.y, det.r * 1.15);
+    shg.addColorStop(0, 'rgba(255,255,255,0.22)');
+    shg.addColorStop(0.55, 'rgba(0,0,0,0)');
+    shg.addColorStop(1, 'rgba(0,0,0,0.55)');
+    ctx.fillStyle = shg;
+    ctx.beginPath();
+    ctx.arc(det.x, det.y, det.r * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    /* Relevo */
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(det.x + (i - 1) * 9, det.y + 3 + i * 4, 3.6 - i * 0.9, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  /* Anel de atração pulsante */
+  ctx.strokeStyle = hexToRgba(det.color, 0.55);
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 7]);
+  ctx.beginPath();
+  ctx.arc(det.x, det.y, det.r + 11 + Math.sin(tr.t * 3) * 3, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* Etiqueta: nome + aviso de desvio opcional */
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 10px "Press Start 2P", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.fillText(det.name.toUpperCase(), det.x, det.y + det.r + 24);
+  const IH = window.I18N;
+  const tag = IH ? IH.t('travel.detour', '★ DESVIO OPCIONAL') : '★ DESVIO OPCIONAL';
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillStyle = hexToRgba(det.color, 0.85 + Math.sin(tr.t * 5) * 0.15);
+  ctx.fillText(tag, det.x, det.y + det.r + 38);
+
+  /* Seta guia curva apontando para o planeta opcional */
+  const sa = Math.sin(tr.t * 3) * 3;
+  ctx.fillStyle = hexToRgba(det.color, 0.75);
+  ctx.beginPath();
+  ctx.moveTo(det.x - 7, det.y - det.r - 26 - sa);
+  ctx.lineTo(det.x, det.y - det.r - 18 - sa);
+  ctx.lineTo(det.x + 7, det.y - det.r - 26 - sa);
+  ctx.closePath();
+  ctx.fill();
+}
+
 /* Obstáculos espaciais detalhados (todos giram, sem ser um sprite só) */
-function drawTravelHazards(tr) {
-  for (const h of tr.hazards) {
+function drawTravelHazards(tr) {  for (const h of tr.hazards) {
     if (h.type === 'blackhole') {
       ctx.save();
       ctx.fillStyle = 'rgba(26,16,48,0.95)';
@@ -8309,20 +8427,26 @@ function renderGalaxy() {
   track.innerHTML = '';
   LEVELS.forEach((lv, i) => {
     const done = Save.data.completed[i];
+    /* Side quests são SECRETAS: só aparecem no mapa DEPOIS de zeradas.
+       Enquanto não concluídas, existem apenas como desvio físico no espaço. */
+    if (isSideQuest(i) && !done) return;
     /* Side quests têm desbloqueio próprio e NUNCA travam o fluxo principal */
     const unlocked = isSideQuest(i)
-      ? sideQuestUnlocked(i)
+      ? true
       : (i === 0 || Save.data.completed[i - 1]);
     const status = done ? (pixIcon('star', 1) + ' Restaurado')
-      : (unlocked ? (isSideQuest(i) ? '★ Opcional' : 'Disponível') : 'Bloqueado');
+      : (unlocked ? 'Disponível' : 'Bloqueado');
     const btn = document.createElement('button');
-    btn.className = 'planet-btn' + (isSideQuest(i) ? ' side' : '') + (i === selectedPlanet ? ' selected' : '');
+    btn.className = 'planet-btn' + (isSideQuest(i) ? ' side secret' : '') + (i === selectedPlanet ? ' selected' : '');
     btn.disabled = !unlocked;
     btn.setAttribute('role', 'option');
+    const IH = window.I18N;
+    const secretTag = IH ? IH.t('galaxy.secret', 'SECRETO') : 'SECRETO';
     btn.innerHTML =
       '<div class="planet-dot" style="background:radial-gradient(circle at 35% 35%, ' + lv.planetColor + ', #1a1030);"></div>' +
       '<div class="planet-name">' + lv.name + '</div>' +
       '<div class="planet-status' + (done ? ' done' : '') + '">' + status + '</div>' +
+      (isSideQuest(i) ? '<div class="planet-secret-badge">★ ' + secretTag + '</div>' : '') +
       (unlocked ? '' : '<div class="lock">' + pixIcon('lock', 2) + '</div>');
     btn.addEventListener('click', () => {
       selectedPlanet = i;
