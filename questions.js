@@ -236,6 +236,163 @@ const QUESTIONS = [
     ],
     wrongOpts: [6, 8, 10],
     whyExtra: 'A afirmativa 3 é falsa: na ligação covalente os elétrons são compartilhados, não transferidos definitivamente.'
+  },
+
+  /* ================= SIDE QUEST · PLANETA KINDER (iônica avançada) ================= */
+  {
+    id: 'kin1',
+    cat: 'kinder',
+    q: 'O alumínio (Al) forma o íon Al³⁺ e o oxigênio (O) forma o íon O²⁻. Ao cruzar as cargas para formar o óxido de alumínio, a fórmula correta é:',
+    opts: [
+      'AlO₂, porque as cargas se somam.',
+      'Al₂O₃, porque 2×(+3) + 3×(−2) = 0.',
+      'Al₃O₂, porque o cátion sempre vem depois.',
+      'Al₂O₂, porque o octeto exige pares iguais.'
+    ],
+    ans: 1,
+    why: 'No cruzamento de cargas, o número de carga de um vira o índice do outro (e simplifica): Al³⁺ → índice 3 no O; O²⁻ → índice 2 no Al. Resultado: Al₂O₃, com carga total zero.'
+  },
+  {
+    id: 'kin2',
+    cat: 'kinder',
+    q: 'Um astronauta precisa identificar íons em uma amostra marciana. Analise:\n1 - O magnésio (Z = 12) perde 2 elétrons da camada de valência e vira Mg²⁺.\n2 - O enxofre (Z = 16) recebe 2 elétrons e vira S²⁻.\n4 - Cátion é o íon POSITIVO, formado quando um átomo PERDE elétrons.\nA soma das afirmativas corretas é:',
+    statements: [
+      { number: 1, text: 'O magnésio (Z = 12) perde 2 elétrons da camada de valência e vira Mg²⁺.', correct: true },
+      { number: 2, text: 'O enxofre (Z = 16) recebe 2 elétrons e vira S²⁻.', correct: true },
+      { number: 4, text: 'Cátion é o íon POSITIVO, formado quando um átomo PERDE elétrons.', correct: true }
+    ],
+    wrongOpts: [3, 5, 6],
+    whyExtra: 'Mg (2-8-2) doa os 2 elétrons da valência; S (2-8-6) recebe 2 para fechar o octeto. Metal perde elétron → cátion; ametal ganha → ânion.'
+  },
+  {
+    id: 'kin3',
+    cat: 'kinder',
+    q: 'O flúor (F) tem 7 elétrons de valência e o cálcio (Ca) tem 2. Quando eles se combinam, o composto formado e o motivo corretos são:',
+    opts: [
+      'CaF, porque cada átomo doa 1 elétron.',
+      'Ca₂F, porque o cálcio precisa de dois fluoretos.',
+      'CaF₂, porque cada F⁻ recebe 1 dos 2 elétrons que o Ca²⁺ doa.',
+      'CaF₃, porque o flúor fica com carga −3.'
+    ],
+    ans: 2,
+    why: 'Ca (metal) doa seus 2 elétrons de valência virando Ca²⁺; como cada F só recebe 1 elétron (fica F⁻), são necessários DOIS fluoretos. Carga total: +2 + 2×(−1) = 0.'
+  },
+  {
+    id: 'kin4',
+    cat: 'kinder',
+    q: 'Analise as afirmativas sobre propriedades dos compostos iônicos:\n1 - No estado sólido, NÃO conduzem eletricidade porque os íons estão fixos na rede cristalina.\n2 - Fundidos ou dissolvidos em água, conduzem eletricidade porque os íons ficam livres.\n4 - Em geral apresentam alto ponto de fusão e são duros, porém quebradiços.\nA soma das afirmativas corretas é:',
+    statements: [
+      { number: 1, text: 'No estado sólido, NÃO conduzem eletricidade porque os íons estão fixos na rede cristalina.', correct: true },
+      { number: 2, text: 'Fundidos ou dissolvidos em água, conduzem eletricidade porque os íons ficam livres.', correct: true },
+      { number: 4, text: 'Em geral apresentam alto ponto de fusão e são duros, porém quebradiços.', correct: true }
+    ],
+    wrongOpts: [5, 6, 2],
+    whyExtra: 'Condução exige cargas livres: no sólido a rede prende os íons; ao fundir ou dissolver, eles se movem e conduzem.'
+  },
+  {
+    id: 'kin5',
+    cat: 'kinder',
+    q: 'Na Forja de Íons de Kinder, sobrou uma dúvida: qual composto iônico está FORMADO CORRETAMENTE?',
+    opts: [
+      'NaS, com 1 sódio para 1 enxofre.',
+      'Na₂S, com 2 Na⁺ para 1 S²⁻ — soma das cargas igual a zero.',
+      'NaS₂, com 1 Na⁺ para 2 S²⁻.',
+      'Na₃S₂, porque o enxofre doa 3 elétrons.'
+    ],
+    ans: 1,
+    why: 'Cada Na doa 1 elétron (vira Na⁺); o S recebe 2 (vira S²⁻). Para zerar: 2×(+1) + 1×(−2) = 0 → Na₂S.'
+  },
+  {
+    id: 'kin6',
+    cat: 'kinder',
+    q: 'Uma lâmpada ligada a um circuito com NaCl SÓLIDO não acende; ao dissolver o sal na água, ela acende. A explicação correta é:',
+    opts: [
+      'A água cria elétrons novos no sal.',
+      'No sólido os íons estão presos na rede; na solução, os íons Na⁺ e Cl⁻ ficam livres e conduzem a corrente.',
+      'O NaCl reage com a água e vira metal condutor.',
+      'A lâmpada acende porque a água sozinha é ótima condutora.'
+    ],
+    ans: 1,
+    why: 'Compostos iônicos só conduzem quando fundidos ou dissolvidos: é preciso que os íons (não elétrons!) estejam livres para migrar.'
+  },
+
+  /* ================= SIDE QUEST · PLANETA BUENO (covalente avançada) ================= */
+  {
+    id: 'bun1',
+    cat: 'bueno',
+    q: 'Cada nitrogênio tem 5 elétrons de valência. Na molécula de N₂, para ambos atingirem o octeto, os átomos compartilham:',
+    opts: [
+      '1 par de elétrons — ligação simples.',
+      '2 pares de elétrons — ligação dupla.',
+      '3 pares de elétrons — ligação tripla.',
+      'Nenhum par: o N₂ é iônico.'
+    ],
+    ans: 2,
+    why: '5 + 5 = 10 elétrons de valência; cada N precisa de 3 elétrons extras. Compartilhando 3 pares (6 elétrons), ambos completam o octeto → N≡N, ligação TRIPLA.'
+  },
+  {
+    id: 'bun2',
+    cat: 'bueno',
+    q: 'Sobre as representações de uma molécula, analise:\n1 - A Fórmula de Lewis mostra os elétrons como PONTOS ao redor dos átomos.\n2 - A Fórmula Estrutural representa cada par compartilhado por um TRAÇO.\n4 - A Fórmula Molecular indica apenas a quantidade de átomos de cada elemento.\nA soma das afirmativas corretas é:',
+    statements: [
+      { number: 1, text: 'A Fórmula de Lewis mostra os elétrons como PONTOS ao redor dos átomos.', correct: true },
+      { number: 2, text: 'A Fórmula Estrutural representa cada par compartilhado por um TRAÇO.', correct: true },
+      { number: 4, text: 'A Fórmula Molecular indica apenas a quantidade de átomos de cada elemento.', correct: true }
+    ],
+    wrongOpts: [3, 5, 6],
+    whyExtra: 'As três representam a MESMA molécula em níveis diferentes de detalhe: pontos (Lewis), traços (estrutural) e contagem (molecular).'
+  },
+  {
+    id: 'bun3',
+    cat: 'bueno',
+    q: 'No CO₂, o carbono (4 elétrons de valência) liga-se a dois oxigênios (6 elétrons de valência cada). A estrutura correta é:',
+    opts: [
+      'O−C−O, com duas ligações simples e o carbono instável.',
+      'O=C=O, com duas ligações duplas e todos os átomos com octeto completo.',
+      'O≡C≡O, com duas ligações triplas.',
+      'C₂O, com o oxigênio no centro.'
+    ],
+    ans: 1,
+    why: 'C compartilha 2 pares com cada O (4 pares no total): duas ligações DUPLAS. Assim C fica com 8 elétrons e cada O também completa o octeto.'
+  },
+  {
+    id: 'bun4',
+    cat: 'bueno',
+    q: 'Comparando CH₄, H₂O e HCl, todas essas moléculas têm em comum o fato de:',
+    opts: [
+      'serem formadas por transferência definitiva de elétrons.',
+      'conterem pelo menos um metal ligado a um ametal.',
+      'terem apenas ligações triplas entre os átomos.',
+      'formarem-se por COMPARTILHAMENTO de pares de elétrons entre ametais (ligações covalentes).'
+    ],
+    ans: 3,
+    why: 'C, H, O, N e Cl são ametais: todas as ligações dessas moléculas são covalentes — pares de elétrons compartilhados (simples, no caso).'
+  },
+  {
+    id: 'bun5',
+    cat: 'bueno',
+    q: 'O carbono tem 4 elétrons de valência. Por isso, na molécula de metano (CH₄), cada átomo de carbono:',
+    opts: [
+      'doa 4 elétrons aos hidrogênios e vira C⁴⁺.',
+      'recebe 4 elétrons dos hidrogênios e vira C⁴⁻.',
+      'compartilha 4 pares de elétrons, formando 4 ligações simples.',
+      'faz apenas 1 ligação, pois hidrogênio é gás nobre.'
+    ],
+    ans: 2,
+    why: 'Covalente é COMPARTILHAR: cada H aporta 1 elétron para o par; com 4 hidrogênios, o carbono divide 4 pares — 4 ligações simples e octeto completo.'
+  },
+  {
+    id: 'bun6',
+    cat: 'bueno',
+    q: 'Uma mesma molécula foi desenhada três vezes: “H·O·H” com pontos, “H−O−H” com traços e “H₂O”. As três representações:',
+    opts: [
+      'são moléculas diferentes, pois usam símbolos diferentes.',
+      'representam a MESMA molécula (água), mudando apenas o nível de detalhe da representação.',
+      'estão erradas, pois água não pode ser representada por traços.',
+      'provam que a água tem ligação iônica.'
+    ],
+    ans: 1,
+    why: 'Lewis (pontos), estrutural (traços) e molecular (contagem) são representações equivalentes da mesma substância: a água, com 2 ligações covalentes simples.'
   }
 ];
 
@@ -283,5 +440,7 @@ const LEVEL_QUIZ = {
   1: 'ionic',     /* Planeta Iônico */
   2: 'covalent',  /* Planeta Covalente */
   3: 'metallic',  /* Planeta Metálico */
-  4: 'general'    /* Planeta Final (revisão de tudo) */
+  4: 'general',   /* Planeta Final (revisão de tudo) */
+  [KINDER_INDEX]: 'kinder', /* SIDE QUEST · Planeta Kinder (iônica avançada) */
+  [BUENO_INDEX]: 'bueno'    /* SIDE QUEST · Planeta Bueno (covalente avançada) */
 };

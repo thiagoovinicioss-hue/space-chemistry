@@ -28,7 +28,7 @@
 
       'rules.title': 'Como Jogar',
       'rules.goal.title': 'Objetivo',
-      'rules.goal.body': 'Explore a galáxia e restaure os 5 planetas aprendendo os <strong>3 tipos de ligações químicas</strong>: iônica, covalente e metálica.',
+      'rules.goal.body': 'Explore a galáxia e restaure os 5 planetas aprendendo os <strong>3 tipos de ligações químicas</strong>: iônica, covalente e metálica. No caminho, desvios <strong>opcionais</strong> (Planetas Kinder e Bueno) guardam desafios avançados e recompensas exclusivas!',
       'rules.controls.title': 'Controles',
       'rules.controls.m1': '— mover',
       'rules.controls.m2': '— atacar com o sabre de luz',
@@ -53,6 +53,11 @@
       'galaxy.sub': 'Complete os planetas para restaurar a galáxia.',
       'galaxy.myship': 'Minha nave',
       'galaxy.launch': 'Lançar Missão',
+
+      'route.title': 'Escolha o Destino',
+      'route.sub': 'Um desvio opcional apareceu no seu caminho. Para onde vamos?',
+      'route.tag.main': 'Campanha principal · próximo planeta',
+      'route.tag.side': '★ DESVIO OPCIONAL · recompensa exclusiva',
 
       'wardrobe.title': 'Vestiário',
       'wardrobe.tab.helmets': 'Capacetes',
@@ -135,7 +140,7 @@
 
       'rules.title': 'How to Play',
       'rules.goal.title': 'Goal',
-      'rules.goal.body': 'Explore the galaxy and restore the 5 planets while learning the <strong>3 types of chemical bonds</strong>: ionic, covalent and metallic.',
+      'rules.goal.body': 'Explore the galaxy and restore the 5 planets while learning the <strong>3 types of chemical bonds</strong>: ionic, covalent and metallic. Along the way, <strong>optional</strong> detours (Kinder and Bueno Planets) hide advanced challenges and exclusive rewards!',
       'rules.controls.title': 'Controls',
       'rules.controls.m1': '— move',
       'rules.controls.m2': '— attack with the lightsaber',
@@ -160,6 +165,11 @@
       'galaxy.sub': 'Complete the planets to restore the galaxy.',
       'galaxy.myship': 'My ship',
       'galaxy.launch': 'Launch Mission',
+
+      'route.title': 'Choose Your Destination',
+      'route.sub': 'An optional detour appeared on your path. Where to next?',
+      'route.tag.main': 'Main campaign · next planet',
+      'route.tag.side': '★ OPTIONAL DETOUR · exclusive reward',
 
       'wardrobe.title': 'Wardrobe',
       'wardrobe.tab.helmets': 'Helmets',
@@ -242,7 +252,7 @@
 
       'rules.title': 'Cómo Jugar',
       'rules.goal.title': 'Objetivo',
-      'rules.goal.body': 'Explora la galaxia y restaura los 5 planetas aprendiendo los <strong>3 tipos de enlaces químicos</strong>: iónico, covalente y metálico.',
+      'rules.goal.body': 'Explora la galaxia y restaura los 5 planetas aprendiendo los <strong>3 tipos de enlaces químicos</strong>: iónico, covalente y metálico. En el camino, los desvíos <strong>opcionales</strong> (Planetas Kinder y Bueno) esconden desafíos avanzados y recompensas exclusivas.',
       'rules.controls.title': 'Controles',
       'rules.controls.m1': '— moverse',
       'rules.controls.m2': '— atacar con el sable de luz',
@@ -267,6 +277,11 @@
       'galaxy.sub': 'Completa los planetas para restaurar la galaxia.',
       'galaxy.myship': 'Mi nave',
       'galaxy.launch': 'Lanzar Misión',
+
+      'route.title': 'Elige el Destino',
+      'route.sub': '¡Un desvío opcional apareció en tu camino! ¿A dónde vamos?',
+      'route.tag.main': 'Campaña principal · próximo planeta',
+      'route.tag.side': '★ DESVÍO OPCIONAL · recompensa exclusiva',
 
       'wardrobe.title': 'Vestuario',
       'wardrobe.tab.helmets': 'Cascos',

@@ -38,6 +38,38 @@ const COVALENT_INDEX = 2;
 const METALLIC_INDEX = 3;
 const FINAL_INDEX = 4;
 
+/* --- Side quests opcionais (NUNCA bloqueiam a campanha principal) ---
+   KINDER (índice 5): desvio iônico avançado, acessível após o Planeta Inicial.
+   BUENO  (índice 6): desvio covalente avançado, acessível após o Planeta Covalente.
+   Cada desvio devolve o jogador ao próximo planeta PRINCIPAL do fluxo. */
+const KINDER_INDEX = 5;
+const BUENO_INDEX = 6;
+const SIDE_QUESTS = {
+  [KINDER_INDEX]: { from: 0, next: IONIC_INDEX },
+  [BUENO_INDEX]: { from: COVALENT_INDEX, next: METALLIC_INDEX }
+};
+
+function isSideQuest(idx) { return idx === KINDER_INDEX || idx === BUENO_INDEX; }
+
+/* Um desvio fica disponível quando o planeta principal de origem foi concluído */
+function sideQuestUnlocked(idx) {
+  const sq = SIDE_QUESTS[idx];
+  return !!sq && !!(Save.data && Save.data.completed[sq.from]);
+}
+
+/* Destinos possíveis ao partir do planeta `idx`:
+   - vindo de um desvio → sempre volta ao fluxo principal;
+   - vindo do fluxo principal com desvio disponível → [principal, opcional]. */
+function travelOptionsFor(idx) {
+  if (SIDE_QUESTS[idx]) return [SIDE_QUESTS[idx].next];
+  const opts = [Math.min(idx + 1, FINAL_INDEX)];
+  for (const k in SIDE_QUESTS) {
+    const sq = SIDE_QUESTS[k];
+    if (sq.from === idx && sideQuestUnlocked(Number(k))) opts.push(Number(k));
+  }
+  return opts;
+}
+
 const COL_BOND = {
   ionic: '#ff9df2',
   covalent: '#7ff5ff',
@@ -98,6 +130,22 @@ const DIALOGUES = {
     'METÁLICA = metais com "mar de elétrons" livres.',
     'Classifique as ligações nos portais, monte o NaCl no reator...',
     '...e responda ao questionário final para restaurar a galáxia!'
+  ],
+  5: [
+    'Bem-vindo ao Planeta Kinder, recruta!',
+    'Este mundo é um DESVIO OPCIONAL — aqui o desafio iônico é de elite.',
+    'Lembre: o metal vira CATIÓN (+) e o ametal vira ÂNION (−).',
+    'No cruzamento de cargas, a soma total do composto precisa dar ZERO.',
+    'Monte Na₂S, CaF₂ e AlCl₃ na Forja de Íons — cargas cruzadas com cuidado!',
+    'Se preferir pular, a rota para Krystália continua aberta. Boa sorte!'
+  ],
+  6: [
+    'Este é o Planeta Bueno, recruta!',
+    'Um desvio opcional para mestres da ligação COVALENTE.',
+    'Aqui você monta moléculas com ligações simples, duplas e triplas.',
+    'Compare as representações: Lewis usa PONTOS; a estrutural usa TRAÇOS.',
+    'Monte CH₄, N₂ e HCl no Sintetizador Molecular.',
+    'Complete e leve a recompensa exclusiva — ou siga direto para Ferravil!'
   ]
 };
 
@@ -1428,7 +1476,10 @@ const ELEMENTS = {
   Fe: { symbol: 'Fe', name: 'Ferro', color: '#b0b6c4', type: 'metal', valence: 2, ion: 'Fe²⁺' },
   Au: { symbol: 'Au', name: 'Ouro', color: '#ffd166', type: 'metal', valence: 1, ion: 'Au⁺' },
   Al: { symbol: 'Al', name: 'Alumínio', color: '#c8f0ff', type: 'metal', valence: 3, ion: 'Al³⁺' },
-  Cr: { symbol: 'Cr', name: 'Cromo', color: '#b0b6c4', type: 'metal', valence: 4, ion: 'Cr⁴⁺' }
+  Cr: { symbol: 'Cr', name: 'Cromo', color: '#b0b6c4', type: 'metal', valence: 4, ion: 'Cr⁴⁺' },
+  S:  { symbol: 'S',  name: 'Enxofre', color: '#e3d639', type: 'ametal', valence: 2, ion: 'S²⁻' },
+  F:  { symbol: 'F',  name: 'Flúor', color: '#9fffe0', type: 'ametal', valence: 1, ion: 'F⁻' },
+  Ca: { symbol: 'Ca', name: 'Cálcio', color: '#ff9db5', type: 'metal', valence: 2, ion: 'Ca²⁺' }
 };
 
 /* --- Temas visuais por planeta (superfícies circulares) ---
@@ -1454,7 +1505,15 @@ const THEMES = {
   final:    { sky1: '#0a061e', sky2: '#1d1040', floor: '#241a44', floorAlt: '#2a204e',
     wall: '#3a2a6b', wallTop: '#5440a0', edge: '#1c1433',
     water: '#4a3a8a', waterHi: '#c8a2ff', bridge: '#6b5ac0',
-    accent: '#c8a2ff', planet: '#7a4ad0', rim: '#c8a2ff' }
+    accent: '#c8a2ff', planet: '#7a4ad0', rim: '#c8a2ff' },
+  kinder:   { sky1: '#04102a', sky2: '#101f4a', floor: '#1a2f66', floorAlt: '#20397a',
+    wall: '#3a2f7a', wallTop: '#6553b8', edge: '#141048',
+    water: '#3aa0ff', waterHi: '#b8e0ff', bridge: '#5a6ad0',
+    accent: '#ff9df2', planet: '#b388ff', rim: '#ffd9f5' },
+  bueno:    { sky1: '#031a12', sky2: '#0a3324', floor: '#14503a', floorAlt: '#1a5f45',
+    wall: '#1d6a4e', wallTop: '#35b57a', edge: '#0d3020',
+    water: '#1d9e7a', waterHi: '#7fffd4', bridge: '#6b8a3a',
+    accent: '#7fffd4', planet: '#2ee89a', rim: '#a0ffd8' }
 };
 
 /* --- Cosmeticos (alguns trajes concedem corações extras) --- */
@@ -1464,14 +1523,16 @@ const COSMETICS = {
     { id: 'h_blue', name: 'Capacete Azul', unlock: 'level:0', main: '#3aa0ff', visor: '#cff3ff', cat: 'Capacete' },
     { id: 'h_red', name: 'Capacete Vermelho', unlock: 'ach:flawless', main: '#ff5252', visor: '#ffd9d9', cat: 'Capacete' },
     { id: 'h_gold', name: 'Capacete Dourado', unlock: 'level:4', main: '#ffd166', visor: '#fff3c4', cat: 'Capacete' },
-    { id: 'h_neon', name: 'Capacete Neon', unlock: 'ach:perfect', main: '#39ff8b', visor: '#d6ffec', cat: 'Capacete' }
+    { id: 'h_neon', name: 'Capacete Neon', unlock: 'ach:perfect', main: '#39ff8b', visor: '#d6ffec', cat: 'Capacete' },
+    { id: 'h_esmeralda', name: 'Capacete Esmeralda', unlock: 'level:' + BUENO_INDEX, main: '#2ee89a', visor: '#d8fff0', cat: 'Capacete' }
   ],
   suits: [
     { id: 's_classic', name: 'Traje Clássico', unlock: 'start', main: '#9bd0ff', cat: 'Traje', maxHearts: 3 },
     { id: 's_ionic', name: 'Traje Iônico', unlock: 'level:1', main: '#ff9df2', cat: 'Traje', maxHearts: 4 },
     { id: 's_covalent', name: 'Traje Covalente', unlock: 'ach:covalent_expert', main: '#7ff5ff', cat: 'Traje', maxHearts: 4 },
     { id: 's_metallic', name: 'Traje Metálico', unlock: 'ach:metallic_expert', main: '#ffb547', cat: 'Traje', maxHearts: 5 },
-    { id: 's_galaxy', name: 'Traje Galáctico', unlock: 'level:4', main: '#c8a2ff', cat: 'Traje', maxHearts: 5 }
+    { id: 's_galaxy', name: 'Traje Galáctico', unlock: 'level:4', main: '#c8a2ff', cat: 'Traje', maxHearts: 5 },
+    { id: 's_prisma', name: 'Traje Prisma', unlock: 'level:' + KINDER_INDEX, main: '#b388ff', cat: 'Traje', maxHearts: 5 }
   ],
   ships: [
     { id: 'ship_default', name: 'Nave Padrão', unlock: 'start', main: '#2b6f9e', cat: 'Nave' },
@@ -1793,6 +1854,30 @@ const RECIPES = {
   AU: {
     formula: 'Au', name: 'Ouro', kind: 'metallic', atoms: { Au: 1 },
     learn: 'Correto! O ouro, metal nobre, conduz eletricidade pelos elétrons livres do seu "mar de elétrons". Por isso é usado em eletrônicos.'
+  },
+  NA2S: {
+    formula: 'Na₂S', name: 'Sulfeto de Sódio', kind: 'ionic', atoms: { Na: 2, S: 1 },
+    learn: 'Correto! São necessários DOIS sódios: cada Na doa 1 elétron ao enxofre. Formam-se 2 Na⁺ e 1 S²⁻ — a soma das cargas zera!'
+  },
+  CAF2: {
+    formula: 'CaF₂', name: 'Fluoreto de Cálcio', kind: 'ionic', atoms: { Ca: 1, F: 2 },
+    learn: 'Correto! O cálcio doa 2 elétrons (Ca²⁺) e cada flúor recebe 1 (F⁻). Ca²⁺ atrai dois F⁻: cargas cruzadas e equilíbrio perfeito.'
+  },
+  ALCL3: {
+    formula: 'AlCl₃', name: 'Cloreto de Alumínio', kind: 'ionic', atoms: { Al: 1, Cl: 3 },
+    learn: 'Correto! O alumínio perde 3 elétrons (Al³⁺) e três cloros recebem um cada (3 Cl⁻). Carga total: +3 − 3 = 0!'
+  },
+  CH4: {
+    formula: 'CH₄', name: 'Metano', kind: 'covalent', atoms: { C: 1, H: 4 },
+    learn: 'Correto! O carbono tem 4 elétrons de valência e COMPARTILHA um par com cada hidrogênio: 4 ligações simples.'
+  },
+  N2: {
+    formula: 'N₂', name: 'Gás Nitrogênio', kind: 'covalent', atoms: { N: 2 },
+    learn: 'Correto! Cada nitrogênio tem 5 elétrons de valência; para ficarem estáveis, compartilham 3 pares — a famosa LIGAÇÃO TRIPLA N≡N.'
+  },
+  HCL: {
+    formula: 'HCl', name: 'Cloreto de Hidrogênio', kind: 'covalent', atoms: { H: 1, Cl: 1 },
+    learn: 'Correto! H e Cl são ametais que COMPARTILHAM um par de elétrons — ligação covalente SIMPLES.'
   }
 };
 
@@ -2071,6 +2156,111 @@ const LEVELS = [
       { t: 'switch', x: 23, y: 20, opens: [6, 21] },
       { t: 'switch', x: 6, y: 18, opens: [24, 21] }
     ]
+  },
+
+  /* ---------- 5 · SIDE QUEST: PLANETA KINDER (iônica avançada, opcional) ---------- */
+  {
+    id: 'kinder', name: 'Planeta Kinder', theme: 'kinder',
+    intro: 'Kinder é um DESVIO OPCIONAL entre a Estação Orbital e o Planeta Iônico. Aqui os desafios iônicos são de elite: cruze as cargas e zere a soma para montar Na₂S, CaF₂ e AlCl₃.',
+    radius: 13,
+    spawn: { x: 14, y: 23 }, machine: { x: 14, y: 13, label: 'Forja de Íons', type: 'furnace' },
+    standby: { x: 3, y: 11 },
+    walls: [
+      [3, 8, 4, 9], [24, 8, 25, 9],
+      [3, 19, 4, 20], [24, 19, 25, 20],
+      [10, 5, 18, 5], [7, 22, 12, 22],
+      [9, 10, 9, 13], [19, 10, 19, 13]
+    ],
+    breakables: [[6, 14], [22, 14], [14, 8]],
+    lakes: [[5, 11, 6, 12], [22, 11, 23, 12], [11, 17, 17, 18]],
+    bridges: [[6, 11], [22, 12], [14, 17]],
+    pipes: [[14, 13, 14, 9], [14, 13, 14, 18], [14, 13, 7, 12], [14, 13, 21, 12]],
+    crystals: {
+      Na: [[14, 23], [5, 21], [10, 8]],
+      S: [[6, 15], [24, 16]],
+      Ca: [[4, 12], [21, 5]],
+      F: [[9, 6], [19, 6], [26, 12]],
+      Al: [[6, 22], [22, 22]],
+      Cl: [[4, 7], [12, 22], [24, 7], [18, 15]]
+    },
+    hazards: [[11, 9], [17, 9], [7, 15], [21, 15], [12, 20], [16, 20], [9, 18], [19, 18]],
+    traps: [{ x: 12, y: 14, w: 4, h: 1 }, { x: 6, y: 20, w: 3, h: 1 }],
+    charges: [[5, 9], [10, 11], [18, 11], [23, 9], [7, 12], [21, 12], [12, 15], [16, 15], [6, 18], [22, 18], [9, 21], [20, 21], [14, 20], [11, 6]],
+    recipes: ['NA2S', 'CAF2', 'ALCL3'],
+    objective: 'Desvio iônico: monte os compostos avançados',
+    planetColor: '#b388ff',
+    enemies: [
+      { type: 'crystal', x: 9, y: 11, opens: [9, 12] },
+      { type: 'crystal', x: 19, y: 11, opens: [19, 12] },
+      { type: 'crystal', x: 14, y: 16 }
+    ],
+    npcs: [
+      { type: 'keeper', name: 'Guardiã Kinder', x: 12, y: 16,
+        lines: [
+          'Poucos astronautas chegam ao Planeta Kinder, viajante.',
+          'Aqui a regra é uma só: a soma das cargas do composto deve dar ZERO.',
+          'O cálcio doa 2 elétrons; o alumínio doa 3. Quantos ametais cada um precisa?',
+          'Cruze as cargas sem pressa — a Forja de Íons cobra precisão!'
+        ],
+        reward: { type: 'score', v: 100 } }
+    ],
+    critters: [],
+    hearts: [[6, 9], [22, 9], [14, 20]],
+    decor: [
+      { t: 'chest', x: 24, y: 21, el: 'S' },
+      { t: 'switch', x: 4, y: 16, opens: [12, 22] }
+    ]
+  },
+
+  /* ---------- 6 · SIDE QUEST: PLANETA BUENO (covalente avançada, opcional) ---------- */
+  {
+    id: 'bueno', name: 'Planeta Bueno', theme: 'bueno',
+    intro: 'Bueno é um DESVIO OPCIONAL entre o Planeta Covalente e o Planeta Metálico. Domine valência, ligações simples, duplas e triplas para montar CH₄, N₂ e HCl.',
+    radius: 13,
+    spawn: { x: 14, y: 23 }, machine: { x: 14, y: 13, label: 'Sintetizador Molecular', type: 'assembler' },
+    standby: { x: 3, y: 11 },
+    walls: [
+      [3, 8, 4, 9], [24, 8, 25, 9],
+      [3, 19, 4, 20], [24, 19, 25, 20],
+      [10, 4, 18, 4], [10, 21, 18, 21],
+      [6, 15, 6, 17], [22, 15, 22, 17]
+    ],
+    breakables: [[14, 20], [8, 12], [20, 12]],
+    lakes: [[9, 8, 12, 9], [16, 8, 19, 9], [12, 17, 16, 17]],
+    bridges: [[10, 8], [18, 9], [14, 17]],
+    pipes: [[14, 13, 14, 9], [14, 13, 14, 18], [14, 13, 8, 13], [14, 13, 20, 13]],
+    crystals: {
+      C: [[19, 4], [6, 22]],
+      H: [[14, 23], [7, 5], [9, 6], [21, 6], [10, 14], [20, 13], [12, 20]],
+      N: [[5, 12], [23, 12], [14, 6]],
+      Cl: [[4, 16], [24, 16]]
+    },
+    hazards: [[11, 11], [17, 11], [8, 15], [20, 15], [12, 19], [16, 19]],
+    charges: [[5, 9], [10, 11], [18, 11], [23, 9], [7, 12], [21, 12], [12, 15], [16, 15], [6, 18], [22, 18], [9, 22], [19, 22], [14, 19]],
+    critters: [[9, 13], [16, 8], [21, 11], [8, 18], [19, 16], [12, 16]],
+    hearts: [[6, 10], [22, 10], [14, 20]],
+    recipes: ['CH4', 'N2', 'HCL'],
+    objective: 'Desvio covalente: monte CH₄, N₂ e HCl',
+    planetColor: '#2ee89a',
+    enemies: [
+      { type: 'purple', x: 6, y: 16, opens: [6, 16] },
+      { type: 'purple', x: 22, y: 16, opens: [22, 16] },
+      { type: 'purple', x: 14, y: 10 }
+    ],
+    npcs: [
+      { type: 'alchemist', name: 'Alquimista Bueno', x: 16, y: 19,
+        lines: [
+          'Bem-vindo ao laboratório flutuante de Bueno, cientista.',
+          'Aqui moléculas ganham vida: CH₄ tem 4 ligações simples; N₂, uma tripla.',
+          'Lewis desenha PONTOS; a fórmula estrutural desenha TRAÇOS; a molecular resume.',
+          'Sintetize as três moléculas e leve a recompensa secreta da ilha!'
+        ],
+        reward: { type: 'score', v: 100 } }
+    ],
+    decor: [
+      { t: 'chest', x: 24, y: 21, el: 'C' },
+      { t: 'switch', x: 5, y: 21, opens: [18, 21] }
+    ]
   }
 ];
 
@@ -2080,7 +2270,9 @@ const LEVEL_REWARDS = {
   1: 's_ionic',
   2: 't_star',
   3: 'ship_meteor',
-  4: 'h_gold'
+  4: 'h_gold',
+  [KINDER_INDEX]: 's_prisma',
+  [BUENO_INDEX]: 'h_esmeralda'
 };
 
 const ACHIEVEMENT_PER_LEVEL = {
@@ -2099,7 +2291,9 @@ const INTRO_CHEM = {
   ionic: 'Química: ligação IÔNICA — o metal DOA elétrons para o ametal.',
   covalent: 'Química: ligação COVALENTE — os ametais COMPARTILHAM elétrons.',
   metallic: 'Química: ligação METÁLICA — os metais têm um "mar de elétrons".',
-  final: 'Química: revisão das ligações iônica, covalente e metálica.'
+  final: 'Química: revisão das ligações iônica, covalente e metálica.',
+  kinder: 'Química: ligação IÔNICA avançada — íons, cargas e o cruzamento que zera a carga total.',
+  bueno: 'Química: ligação COVALENTE avançada — valência, ligações simples/duplas/triplas e as fórmulas da molécula.'
 };
 
 /* =====================================================================
@@ -2112,8 +2306,8 @@ const Save = {
   defaults() {
     return {
       version: 1,
-      completed: [false, false, false, false, false],
-      exerciseBest: [0, 0, 0, 0, 0],
+      completed: [false, false, false, false, false, false, false],
+      exerciseBest: [0, 0, 0, 0, 0, 0, 0],
       bestScore: 0,
       unlocks: ['h_classic', 's_classic', 'ship_default', 't_none'],
       equipped: { helmet: 'h_classic', suit: 's_classic', ship: 'ship_default', trail: 't_none' },
@@ -2136,6 +2330,9 @@ const Save = {
             delete eq[plural];
           }
         }
+        /* Migrate: saves antigos têm 5 planetas — completa as side quests */
+        while (this.data.completed.length < LEVELS.length) this.data.completed.push(false);
+        while (this.data.exerciseBest.length < LEVELS.length) this.data.exerciseBest.push(0);
         return;
       }
     } catch (e) { /* armazenamento indisponível */ }
@@ -2189,6 +2386,7 @@ const Game = {
   quiz: null,            /* questionário */
   mission: null,         /* tela de missão concluída */
   travel: null,          /* viagem espacial entre planetas */
+  routeDest: null,       /* destino escolhido na rota (índice em LEVELS) */
   saber: null,           /* sabre de luz (combate) */
   fade: null,            /* transição de fade {a, target, speed, onDone} */
   classroom: null,       /* cena da sala de aula (volta à Terra) */
@@ -2204,13 +2402,13 @@ const Game = {
     deaths: 0,
     time: 0,
     atoms: 0,
-    completed: [false, false, false, false, false]
+    completed: [false, false, false, false, false, false, false]
   },
 
   resetRun() {
     this.run = {
       active: false, score: 0, lives: getMaxLives(), wrong: 0, deaths: 0, time: 0,
-      atoms: 0, completed: [false, false, false, false, false]
+      atoms: 0, completed: [false, false, false, false, false, false, false]
     };
   }
 };
@@ -3902,6 +4100,28 @@ const DIALOG_CONFIG = {
     palette: { S: '#c8a2ff', W: '#ffffff', D: '#0c1226', s: '#5a3a8a', V: '#8dffea', w: '#0c1226' },
     eyes: [{ row: 5, col: 3, w: 6, h: 2 }],
     mouth: { row: 7, col: 4, w: 4 }
+  },
+
+  /* SIDE QUEST Planeta Kinder: Guardiã Kinder (robô, viseira rosa-prisma) */
+  keeper: {
+    sprite: SPRITES.robot,
+    scale: 6,
+    name: 'Guardiã Kinder',
+    caption: 'Guardiã da Forja de Íons',
+    palette: { H: '#4a3a6e', G: '#b388ff', h: '#2b2054', V: '#ff9df2', w: '#14082e' },
+    eyes: [{ row: 4, col: 3, w: 6, h: 2 }],
+    mouth: { row: 8, col: 3, w: 6 }
+  },
+
+  /* SIDE QUEST Planeta Bueno: Alquimista Bueno (sábio, verde-esmeralda) */
+  alchemist: {
+    sprite: SPRITES.alienSage,
+    scale: 6,
+    name: 'Alquimista Bueno',
+    caption: 'Alquimista de Bueno',
+    palette: { S: '#2ee89a', W: '#ffffff', D: '#0c1226', s: '#14603e', V: '#d8fff0', w: '#0c1226' },
+    eyes: [{ row: 5, col: 3, w: 6, h: 2 }],
+    mouth: { row: 7, col: 4, w: 4 }
   }
 };
 
@@ -5310,6 +5530,60 @@ function missionDone(equip) {
   Save.save();
   updateHudProgress();
 
+  /* Escolha de rota: se existir desvio opcional disponível, o jogador decide
+     entre seguir direto para o próximo planeta principal OU visitá-lo.
+     A campanha principal NUNCA depende das side quests. */
+  const dests = travelOptionsFor(Game.levelIndex);
+  if (dests.length > 1) {
+    showRouteChoice(dests);
+  } else {
+    Game.routeDest = dests[0];
+    startDeparture();
+  }
+}
+
+/* ---------------- Escolha de rota (desvios opcionais) ---------------- */
+function showRouteChoice(dests) {
+  Game.phase = 'departure';
+  Game.locked = true;
+  const ov = document.getElementById('route');
+  const box = document.getElementById('route-options');
+  if (!ov || !box) { Game.routeDest = dests[0]; startDeparture(); return; }
+  box.innerHTML = '';
+  dests.forEach(di => {
+    const lv = LEVELS[di];
+    const side = isSideQuest(di);
+    const IH = window.I18N;
+    const tag = side
+      ? (IH ? IH.t('route.tag.side', '★ DESVIO OPCIONAL · recompensa exclusiva') : '★ DESVIO OPCIONAL · recompensa exclusiva')
+      : (IH ? IH.t('route.tag.main', 'Campanha principal · próximo planeta') : 'Campanha principal · próximo planeta');
+    const b = document.createElement('button');
+    b.className = 'btn route-btn' + (side ? ' route-side' : ' route-main btn-primary');
+    b.innerHTML =
+      '<span class="route-dot" style="background:radial-gradient(circle at 35% 35%, ' + lv.planetColor + ', #1a1030);"></span>' +
+      '<span class="route-text"><strong>' + lv.name + '</strong><small>' + tag + '</small></span>';
+    b.addEventListener('click', () => chooseRoute(di));
+    box.appendChild(b);
+  });
+  const t = document.getElementById('route-title-text');
+  if (t) {
+    const IH = window.I18N;
+    t.textContent = IH ? IH.t('route.title', 'Escolha o Destino') : 'Escolha o Destino';
+  }
+  const sub = document.getElementById('route-sub');
+  if (sub) {
+    const IH = window.I18N;
+    sub.textContent = IH ? IH.t('route.sub', 'Um desvio opcional apareceu no seu caminho. Para onde vamos?') : 'Um desvio opcional apareceu no seu caminho. Para onde vamos?';
+  }
+  ov.hidden = false;
+  AudioSys.sfx('click');
+}
+
+function chooseRoute(idx) {
+  const ov = document.getElementById('route');
+  if (ov) ov.hidden = true;
+  AudioSys.sfx('click');
+  Game.routeDest = idx;
   startDeparture();
 }
 
@@ -5343,13 +5617,15 @@ function startTravel() {
   /* Fase real: esconde o "carregando" antigo e desenha tudo no canvas */
   const tw = document.getElementById('travel-wrap');
   if (tw) tw.hidden = true;
+  const dest = Game.routeDest != null ? Game.routeDest : Math.min(Game.levelIndex + 1, FINAL_INDEX);
+  Game.routeDest = null;
   Game.travel = {
     t: 0, dur: TRAVEL_DUR,
     ship: { x: VIEW_W * 0.18, y: VIEW_H / 2, invuln: 0.5, tilt: 0, flame: 0, trailT: 0 },
     hazards: [], spawnT: 0.7,
     arriving: null, faded: false,
     tipIdx: randInt(0, TRAVEL_TIPS.length - 1), tipT: 0,
-    nextIdx: Math.min(Game.levelIndex + 1, LEVELS.length - 1)
+    nextIdx: dest
   };
   camX = 0; camY = 0;
   updateTravelFill();
@@ -6085,11 +6361,7 @@ function finishTravel() {
   if (tw) tw.hidden = true;
   Game.travel = null;
   AudioSys.sfx('victory');
-  if (tr.nextIdx >= LEVELS.length - 1) {
-    startLevel(LEVELS.length - 1);
-  } else {
-    startLevel(tr.nextIdx);
-  }
+  startLevel(tr.nextIdx);
   startFadeIn(0.5);
 }
 
@@ -7343,7 +7615,7 @@ function showScreen(name) {
 
 /* Esconde os overlays do ciclo novo (diálogo/fusão/quiz/missão/viagem) */
 function hideOverhaulOverlays() {
-  ['dialog', 'fusion', 'quiz', 'mission', 'results', 'credits', 'periodic-table'].forEach(id => {
+  ['dialog', 'fusion', 'quiz', 'mission', 'results', 'credits', 'periodic-table', 'route'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.hidden = true;
@@ -7497,8 +7769,13 @@ function updateHudTime() {
   document.getElementById('hud-time').textContent = fmtTime(Game.levelTime);
 }
 function updateHudProgress() {
-  const done = Game.run.completed.filter(Boolean).length;
-  document.getElementById('hud-progress').style.width = (done / LEVELS.length * 100) + '%';
+  /* Progresso mede a CAMPANHA PRINCIPAL (desvios opcionais não são exigidos) */
+  let done = 0;
+  for (let i = 0; i <= FINAL_INDEX; i++) {
+    if (Game.run.completed[i]) done++;
+  }
+  document.getElementById('hud-progress').style.width =
+    Math.min(100, done / (FINAL_INDEX + 1) * 100) + '%';
 }
 
 function updateObjectiveHud() {
@@ -7532,15 +7809,20 @@ function renderGalaxy() {
   track.innerHTML = '';
   LEVELS.forEach((lv, i) => {
     const done = Save.data.completed[i];
-    const unlocked = i === 0 || Save.data.completed[i - 1];
+    /* Side quests têm desbloqueio próprio e NUNCA travam o fluxo principal */
+    const unlocked = isSideQuest(i)
+      ? sideQuestUnlocked(i)
+      : (i === 0 || Save.data.completed[i - 1]);
+    const status = done ? (pixIcon('star', 1) + ' Restaurado')
+      : (unlocked ? (isSideQuest(i) ? '★ Opcional' : 'Disponível') : 'Bloqueado');
     const btn = document.createElement('button');
-    btn.className = 'planet-btn' + (i === selectedPlanet ? ' selected' : '');
+    btn.className = 'planet-btn' + (isSideQuest(i) ? ' side' : '') + (i === selectedPlanet ? ' selected' : '');
     btn.disabled = !unlocked;
     btn.setAttribute('role', 'option');
     btn.innerHTML =
       '<div class="planet-dot" style="background:radial-gradient(circle at 35% 35%, ' + lv.planetColor + ', #1a1030);"></div>' +
       '<div class="planet-name">' + lv.name + '</div>' +
-      '<div class="planet-status' + (done ? ' done' : '') + '">' + (done ? pixIcon('star', 1) + ' Restaurado' : (unlocked ? 'Disponível' : 'Bloqueado')) + '</div>' +
+      '<div class="planet-status' + (done ? ' done' : '') + '">' + status + '</div>' +
       (unlocked ? '' : '<div class="lock">' + pixIcon('lock', 2) + '</div>');
     btn.addEventListener('click', () => {
       selectedPlanet = i;
@@ -7761,6 +8043,7 @@ function startLevel(idx) {
   Game.arrival = null;
   Game.dialog = null;
   Game.travel = null;
+  Game.routeDest = null;
   Game.quizStats = { correct: 0, total: 0 };
   Game.phase = 'explore';
   hideOverhaulOverlays();
@@ -7848,12 +8131,21 @@ function completeLevel() {
   }
 
   /* Recompensa do planeta */
-  selectedPlanet = Math.min(idx + 1, LEVELS.length - 1);
+  selectedPlanet = isSideQuest(idx) ? SIDE_QUESTS[idx].next : Math.min(idx + 1, FINAL_INDEX);
   if (unlockItemWithPopup(LEVEL_REWARDS[idx])) {
     pendingLevelComplete = true;
   } else {
     showScreen('galaxy');
   }
+}
+
+/* Condição da conquista Colecionador: itens exclusivos de SIDE QUESTS não
+   são exigidos — terminar o jogo nunca depende dos desvios opcionais. */
+function meetsCollectorCondition() {
+  return allCosmetics().every(c =>
+    c.unlock === 'ach:collector' ||
+    (c.unlock.indexOf('level:') === 0 && isSideQuest(parseInt(c.unlock.split(':')[1], 10))) ||
+    isUnlocked(c.id));
 }
 
 /* Recompensas finais: conquistas, capacete dourado e recorde */
@@ -7870,7 +8162,7 @@ function applyFinalRewards() {
   if (Game.run.deaths === 0) unlockAchievement('flawless', true);
   if (Game.run.wrong === 0) unlockAchievement('perfect', true);
   if (Game.run.time < 15 * 60) unlockAchievement('speedrun', true);
-  if (allCosmetics().every(c => c.unlock === 'ach:collector' || isUnlocked(c.id))) unlockAchievement('collector', true);
+  if (meetsCollectorCondition()) unlockAchievement('collector', true);
 
   /* Recompensa final (Capacete Dourado) */
   if (!Save.hasItem('h_gold')) {
@@ -8538,7 +8830,9 @@ function init() {
   showScreen('menu');
   renderGalaxy();
   renderAchievements();
-  selectedPlanet = Math.min(Math.max(Save.data.completed.indexOf(false), 0), LEVELS.length - 1);
+  /* Pré-seleciona o primeiro planeta principal não concluído */
+  const firstIncomplete = Save.data.completed.findIndex((c, i) => !c && !isSideQuest(i));
+  selectedPlanet = firstIncomplete >= 0 ? firstIncomplete : FINAL_INDEX;
   lastTime = performance.now();
   requestAnimationFrame(loop);
   /* Camada 3D/2.5D complementar (Three.js) — nunca interfere no gameplay */

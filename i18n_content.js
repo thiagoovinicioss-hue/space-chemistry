@@ -45,6 +45,18 @@
           intro: 'The Cosmic Core needs you to apply EVERYTHING you have learned. Sort the bonds in the portals and restore the galaxy!',
           objective: 'Sort the bonds and reactivate the reactor',
           chem: 'Chemistry: review of ionic, covalent and metallic bonds.'
+        },
+        kinder: {
+          name: 'Kinder Planet',
+          intro: 'Kinder is an OPTIONAL DETOUR between the Orbital Station and the Ionic Planet. Here the ionic challenge is elite: cross the charges and make the sum zero to assemble Na₂S, CaF₂ and AlCl₃.',
+          objective: 'Ionic detour: assemble the advanced compounds',
+          chem: 'Chemistry: advanced IONIC bond — ions, charges and the crossing that makes the total charge zero.'
+        },
+        bueno: {
+          name: 'Bueno Planet',
+          intro: 'Bueno is an OPTIONAL DETOUR between the Covalent Planet and the Metallic Planet. Master valence and simple, double and triple bonds to assemble CH₄, N₂ and HCl.',
+          objective: 'Covalent detour: assemble CH₄, N₂ and HCl',
+          chem: 'Chemistry: advanced COVALENT bond — valence, single/double/triple bonds and molecular formulas.'
         }
       },
 
@@ -88,6 +100,22 @@
           'METALLIC = metals with free "electron sea".',
           'Sort the bonds in the portals, assemble NaCl in the reactor...',
           '...and answer the final quiz to restore the galaxy!'
+        ],
+        [
+          'Welcome to Kinder Planet, recruit!',
+          'This world is an OPTIONAL DETOUR — here the ionic challenge is elite.',
+          'Remember: the metal becomes a CATION (+) and the non-metal becomes an ANION (−).',
+          'When crossing charges, the compound\'s total sum must be ZERO.',
+          'Assemble Na₂S, CaF₂ and AlCl₃ in the Ion Forge — cross those charges carefully!',
+          'If you prefer to skip, the route to Krystália stays open. Good luck!'
+        ],
+        [
+          'This is Bueno Planet, recruit!',
+          'An optional detour for masters of the COVALENT bond.',
+          'Here you build molecules with single, double and triple bonds.',
+          'Compare the representations: Lewis uses DOTS; the structural formula uses DASHES.',
+          'Assemble CH₄, N₂ and HCl in the Molecular Synthesizer.',
+          'Complete it and take the exclusive reward — or head straight to Ferravil!'
         ]
       ],
 
@@ -405,6 +433,18 @@
           intro: 'El Núcleo Cósmico necesita que apliques TODO lo que aprendiste. Clasifica los enlaces en los portales ¡y restaura la galaxia!',
           objective: 'Clasifica los enlaces y reactiva el reactor',
           chem: 'Química: repaso de los enlaces iónico, covalente y metálico.'
+        },
+        kinder: {
+          name: 'Planeta Kinder',
+          intro: 'Kinder es un DESVÍO OPCIONAL entre la Estación Orbital y el Planeta Iónico. Aquí el desafío iónico es de élite: cruza las cargas y haz que la suma dé cero para montar Na₂S, CaF₂ y AlCl₃.',
+          objective: 'Desvío iónico: monta los compuestos avanzados',
+          chem: 'Química: enlace IÓNICO avanzado — iones, cargas y el cruzamiento que hace cero la carga total.'
+        },
+        bueno: {
+          name: 'Planeta Bueno',
+          intro: 'Bueno es un DESVÍO OPCIONAL entre el Planeta Covalente y el Planeta Metálico. Domina la valencia y los enlaces simples, dobles y triples para montar CH₄, N₂ y HCl.',
+          objective: 'Desvío covalente: monta CH₄, N₂ y HCl',
+          chem: 'Química: enlace COVALENTE avanzado — valencia, enlaces simples/dobles/triples y las fórmulas de la molécula.'
         }
       },
 
@@ -448,6 +488,22 @@
           'METÁLICO = metales con "mar de electrones" libres.',
           'Clasifica los enlaces en los portales, monta el NaCl en el reactor...',
           '...y responde al cuestionario final para restaurar la galaxia.'
+        ],
+        [
+          '¡Bienvenido al Planeta Kinder, recluta!',
+          'Este mundo es un DESVÍO OPCIONAL — aquí el desafío iónico es de élite.',
+          'Recuerda: el metal se vuelve CATIÓN (+) y el no metal se vuelve ANIÓN (−).',
+          'Al cruzar las cargas, la suma total del compuesto debe dar CERO.',
+          '¡Monta Na₂S, CaF₂ y AlCl₃ en la Forja de Iones — cruza las cargas con cuidado!',
+          'Si prefieres saltarlo, la ruta hacia Krystália sigue abierta. ¡Buena suerte!'
+        ],
+        [
+          '¡Este es el Planeta Bueno, recluta!',
+          'Un desvío opcional para maestros del enlace COVALENTE.',
+          'Aquí montas moléculas con enlaces simples, dobles y triples.',
+          'Compara las representaciones: Lewis usa PUNTOS; la estructural usa RAYAS.',
+          'Monta CH₄, N₂ y HCl en el Sintetizador Molecular.',
+          '¡Complétalo y llévate la recompensa exclusiva — o ve directo a Ferravil!'
         ]
       ],
 

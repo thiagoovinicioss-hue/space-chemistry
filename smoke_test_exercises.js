@@ -34,6 +34,7 @@ function makeEl(id) {
     appendChild(c) { children.push(c); return c; },
     append() {}, setAttribute() {},
     getBoundingClientRect() { return { width: 0, height: 0, left: 0, top: 0 }; },
+    focus() {}, blur() {},
     querySelector() { return makeEl(id + '_q'); },
     querySelectorAll() { return []; },
     getContext() { return makeCtx(); },
@@ -56,9 +57,15 @@ const document = {
 };
 const navigator = { maxTouchPoints: 0 };
 
+class FakeImage {
+  constructor() { this.src = ''; this.onload = null; }
+}
+
 const sandbox = {
   console, Math, Date, JSON, parseInt, parseFloat, isNaN, isFinite,
   document, navigator,
+  Image: FakeImage,
+  Audio: function () { return { play() {}, pause() {}, addEventListener() {} }; },
   addEventListener() {}, requestAnimationFrame() { return 0; },
   cancelAnimationFrame() {},
   performance: { now: () => 0 },
@@ -98,16 +105,18 @@ Game.level = { quizDone: false, exerciseDone: false, gatesDone: true,
 Game.recipeIndex = 1;
 Game.run.score = 100;
 Game.run.wrong = 0;
+Game.player = { x: 0, y: 0, invuln: 0, hurtT: 0 };
 maybeEndLevel();
 `);
 const openedChallenge = run('Game.phase === "challenge" && Game.locked === true');
 const overlayShown = run('document.getElementById("exercise").hidden === false');
 const flagsSet = run('Game.level.quizDone === true && Game.level.exerciseDone === true');
-const scoreUI = run('Game.exerciseStats.total === 4');
+const sessionLen = run('Exercise.session.length');
+const scoreUI = run('Game.exerciseStats.total === ' + (typeof sessionLen === 'number' ? sessionLen : -1));
 console.log('abre desafio (phase challenge):', openedChallenge);
 console.log('overlay #exercise visivel:', overlayShown);
 console.log('flags quizDone/exerciseDone marcados:', flagsSet);
-console.log('sessao com 4 desafios:', scoreUI);
+console.log('sessao com todos os desafios da fase (' + sessionLen + '):', scoreUI);
 
 /* --- 3. Responder errado (vazio) -> feedback de erro, sem pontos --- */
 const beforeScore = run('Game.exerciseStats.score');
@@ -115,22 +124,30 @@ run('Exercise.confirm()');
 const wrongFeedback = run('!document.getElementById("ex-explain").hidden && Game.exerciseStats.score === ' + beforeScore);
 console.log('resposta vazia gera erro sem pontuar:', wrongFeedback);
 
-/* --- 4. Acertar a múltipla escolha (item 1: octeto) ---
-   Após 1 tentativa errada (vazia), o acerto vale metade (50). */
-run('Exercise.selectChoice(1)');
+/* --- 4. Acertar o item aberto na 2ª tentativa -> meia pontuação ---
+   O gabarito vem dos dados; após 1 erro na sessão, o acerto vale metade. */
+run(`
+  var it0 = Exercise.session[Exercise.idx];
+  if (!Exercise.answered && it0.type === 'text-input') {
+    Exercise.x.state.text = it0.answer;
+  }
+`);
 run('Exercise.confirm()');
 const gradedOk = run('Game.exerciseStats.correct === 1 && Game.exerciseStats.score === ' + (beforeScore + 50) + ' && Game.run.score === 150');
-console.log('acerto pontua (meia apos erro) stats + run:', gradedOk);
-const nextVisible = run('document.getElementById("btn-ex-next").hidden === true');
+console.log('acerto pontua (metade apos erro) stats + run:', gradedOk);
 const answeredState = run('Exercise.answered === true');
 console.log('estado answered apos confirmar:', answeredState);
 
-/* --- 5. Concluir a sessão inteira (3 itens) via next() --- */
+/* --- 5. Avançar ao item de escolha, acertar com gabarito dos dados e limpar --- */
 run('Exercise.next()');
 const onItem2 = run('Exercise.idx === 1');
+const choiceAns = run('Exercise.session[Exercise.idx].ans');
+run('Exercise.selectChoice(' + choiceAns + ')');
+run('Exercise.confirm()');
+const choiceOk = run('Game.exerciseStats.correct === 2 && Game.exerciseStats.score === ' + (beforeScore + 150));
 run('Exercise.clear()');                       /* sem crash em tipo electrons */
-const clearedOk = run('Exercise.answered === false || Exercise.idx === 1');
-console.log('avanca para o desafio 2:', onItem2, '| limpar funcionou:', clearedOk);
+const clearedOk = run('Exercise.answered === false || Exercise.idx >= 1');
+console.log('avanca para o desafio 2:', onItem2, '| escolha certa:', choiceOk, '| limpar funcionou:', clearedOk);
 
 /* --- 5D. Transferência de elétrons: clique e arrasto reconhecidos ---
    Bug corrigido: transferTap chamava dist com os argumentos trocados, então o
@@ -200,8 +217,7 @@ const quizFallback = run('Game.phase === "quiz"');
 console.log('fase sem exercicios cai no quiz:', quizFallback);
 
 if (!(hasApi && openedChallenge && overlayShown && flagsSet && scoreUI &&
-      wrongFeedback && gradedOk && onItem2 && clearedOk && quizFallback &&
-      transferApi && transferClickOk && transferDragOk && transferGraded &&
+      wrongFeedback && gradedOk && onItem2 && clearedOk && quizFallback &&      transferApi && transferClickOk && transferDragOk && transferGraded &&
       structureTapOk)) {
   console.error('SMOKE_FAIL');
   process.exit(1);

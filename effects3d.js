@@ -1083,13 +1083,22 @@
     try { if (Game.phase) return Game.phase; } catch (e) {}
     return '';
   }
+  function readTravelDestIdx() {
+    /* Durante a viagem, o destino real pode ser um desvio opcional
+       (Game.travel.nextIdx) — não apenas levelIndex+1. */
+    try {
+      if (Game && Game.travel && Game.travel.nextIdx != null) return Game.travel.nextIdx;
+    } catch (e) {}
+    var idx = 0;
+    try { idx = (Game.levelIndex || 0) + 1; } catch (e) { idx = 1; }
+    return Math.min(idx, LEVELS.length - 1);
+  }
   function readLevelTheme() {
     try {
       if (!Game) return '';
       var phase = readPhase();
       if (phase === 'travel') {
-        var idx = Math.min((Game.levelIndex || 0) + 1, LEVELS.length - 1);
-        var lv = LEVELS[idx];
+        var lv = LEVELS[readTravelDestIdx()];
         if (lv && lv.theme) return lv.theme;
         return '';
       }
@@ -1106,8 +1115,7 @@
       if (!Game) return;
       var phase = readPhase();
       if (phase === 'travel') {
-        var nextIdx = Math.min((Game.levelIndex || 0) + 1, 4);
-        var lv = LEVELS[nextIdx];
+        var lv = LEVELS[readTravelDestIdx()];
         var th = lv && THEMES[lv.theme];
         if (th) { levelColor = th.planet || th.accent || levelColor; return; }
       }

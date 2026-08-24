@@ -1246,6 +1246,159 @@
         explainWrong: 'Quase! Si e O são ametais, portanto formam uma ligação covalente. A proporção em SiO₂ é de 1 átomo de Si para 2 átomos de O.',
         pts: 100
       }
+    ],
+
+    /* ===== Fase 5 · SIDE QUEST — Planeta Kinder (iônica avançada) ===== */
+    [
+      {
+        type: 'transfer',
+        instruction: 'Desvio avançado: transfira os elétrons que o CÁLCIO (metal) doa para os átomos de FLÚOR (ametais) na ligação iônica.',
+        donor: { el: 'Ca', valence: 2, label: 'Cálcio (metal)' },
+        acceptors: [
+          { el: 'F', valence: 7, label: 'Flúor (ametal)' },
+          { el: 'F', valence: 7, label: 'Flúor (ametal)' }
+        ],
+        need: 2,
+        explain: 'Correto! O cálcio perde 2 elétrons e vira Ca²⁺; cada flúor recebe 1 e vira F⁻. Formam-se Ca²⁺ + 2 F⁻ → o fluoreto de cálcio, CaF₂.',
+        pts: 150
+      },
+      {
+        type: 'lewis',
+        instruction: 'Monte a Fórmula de Lewis do CLORO (Cl): toque nas regiões ao redor do símbolo para posicionar os 7 elétrons de valência.',
+        symbol: 'Cl',
+        valence: 7,
+        answerKey: [2, 2, 2, 1],
+        explain: 'Correto! O cloro tem 7 elétrons de valência: três pares e um elétron sozinho. É esse elétron faltante que ele recebe ao virar Cl⁻ na ligação iônica.',
+        pts: 150
+      },
+      {
+        type: 'electrons',
+        instruction: 'Distribua os 16 elétrons do ENXOFRE (Z = 16) nas camadas K, L e M.',
+        symbol: 'S',
+        z: 16,
+        shells: [
+          { label: 'K', max: 2, answer: 2 },
+          { label: 'L', max: 8, answer: 8 },
+          { label: 'M', max: 8, answer: 6 }
+        ],
+        explain: 'Correto! S: 2-8-6. Com 6 elétrons na camada de valência, o enxofre RECEBE 2 elétrons para completar o octeto e vira S²⁻.',
+        pts: 150
+      },
+      {
+        type: 'drag',
+        instruction: 'Classifique cada conceito da ligação iônica arrastando os cartões para as lacunas corretas.',
+        slots: [
+          { label: 'Íon POSITIVO (perde elétrons)' },
+          { label: 'Íon NEGATIVO (ganha elétrons)' },
+          { label: 'Atração entre íons' }
+        ],
+        items: [
+          { id: 'cation', label: 'CÁTION', color: '#3aa0ff' },
+          { id: 'anion', label: 'ÂNION', color: '#ff5252' },
+          { id: 'bond', label: 'LIGAÇÃO IÔNICA', color: '#ffd166' }
+        ],
+        answerKey: { cation: 0, anion: 1, bond: 2 },
+        explain: 'Correto! Cátion = íon positivo (metal que PERDE elétrons); ânion = íon negativo (ametal que GANHA); a atração eletrostática entre eles é a ligação iônica.',
+        pts: 150
+      },
+      {
+        type: 'choice',
+        instruction: 'Na Forja de Íons, você combina Al³⁺ com S²⁻. Qual a fórmula do composto formado?',
+        opts: ['AlS', 'Al₂S₃', 'Al₃S₂', 'AlS₂'],
+        ans: 1,
+        explain: 'Correto! Cruzando as cargas: o índice de cada carga vira a quantidade do outro íon → 2 Al³⁺ (+6) com 3 S²⁻ (−6). Soma zero: Al₂S₃!',
+        explainWrong: 'Quase! Cruze as cargas: o 3 do Al³⁺ vai como índice do S, e o 2 do S²⁻ vai como índice do Al → Al₂S₃.',
+        pts: 150
+      },
+      {
+        type: 'choice',
+        instruction: 'Uma barra de NaCl sólida não acende uma lâmpada, mas o NaCl FUNDIDO acende. Por quê?',
+        opts: [
+          'Porque no sólido os elétrons livres do metal circulam melhor.',
+          'Porque fundido os íons Na⁺ e Cl⁻ ficam LIVRES e podem conduzir corrente.',
+          'Porque o calor transforma o NaCl em metal condutor.',
+          'Porque a lâmpada só funciona com compostos covalentes.'
+        ],
+        ans: 1,
+        explain: 'Correto! Compostos iônicos conduzem apenas quando fundidos ou dissolvidos: os íons precisam estar livres para migrar. No sólido, ficam presos na rede cristalina.',
+        pts: 150
+      }
+    ],
+
+    /* ===== Fase 6 · SIDE QUEST — Planeta Bueno (covalente avançada) ===== */
+    [
+      {
+        type: 'structure',
+        instruction: 'Monte a estrutura do GÁS CARBÔNICO (CO₂): toque num átomo da bandeja e depois no círculo correspondente. As duas ligações já estão desenhadas.',
+        anchors: [
+          { x: 0.18, y: 0.5, el: 'O' },
+          { x: 0.5, y: 0.5, el: 'C' },
+          { x: 0.82, y: 0.5, el: 'O' }
+        ],
+        bonds: [{ a: 0, b: 1 }, { a: 1, b: 2 }],
+        tray: ['C', 'O', 'H', 'N'],
+        explain: 'Correto! O=C=O: o carbono no centro compartilha 2 pares com cada oxigênio — DUAS ligações duplas, e todos completam o octeto.',
+        pts: 150
+      },
+      {
+        type: 'lewis',
+        instruction: 'Monte a Fórmula de Lewis do NITROGÊNIO (N): distribua os 5 elétrons de valência ao redor do símbolo.',
+        symbol: 'N',
+        valence: 5,
+        answerKey: [2, 1, 1, 1],
+        explain: 'Correto! N tem 5 elétrons de valência (um par + 3 solitários). São esses 3 solitários que formam a LIGAÇÃO TRIPLA do N₂.',
+        pts: 150
+      },
+      {
+        type: 'electrons',
+        instruction: 'Distribua os 8 elétrons do OXIGÊNIO (Z = 8) nas camadas K e L.',
+        symbol: 'O',
+        z: 8,
+        shells: [
+          { label: 'K', max: 2, answer: 2 },
+          { label: 'L', max: 8, answer: 6 }
+        ],
+        explain: 'Correto! O: 2-6. Com 6 elétrons de valência, o oxigênio precisa COMPARTILHAR 2 pares (ou receber 2 elétrons) para completar o octeto.',
+        pts: 150
+      },
+      {
+        type: 'drag',
+        instruction: 'Combine cada representação de molécula ao seu tipo arrastando os cartões.',
+        slots: [
+          { label: 'Elétrons como PONTOS' },
+          { label: 'Pares compartilhados como TRAÇOS' },
+          { label: 'Contagem dos átomos' }
+        ],
+        items: [
+          { id: 'lewis', label: 'FÓRMULA DE LEWIS', color: '#ffd166' },
+          { id: 'structural', label: 'FÓRMULA ESTRUTURAL', color: '#59d3ff' },
+          { id: 'molecular', label: 'FÓRMULA MOLECULAR', color: '#ff9df2' }
+        ],
+        answerKey: { lewis: 0, structural: 1, molecular: 2 },
+        explain: 'Correto! Lewis desenha PONTOS (elétrons), a estrutural desenha TRAÇOS (pares compartilhados) e a molecular resume a CONTAGEM (ex.: H₂O).',
+        pts: 150
+      },
+      {
+        type: 'text-input',
+        instruction: 'Na molécula de N₂, quantos pares de elétrons são COMPARTILHADOS entre os dois nitrogênios? Digite o número.',
+        placeholder: 'Digite um número...',
+        answer: '3',
+        explain: 'Correto! N≡N: a ligação tripla do nitrogênio gasoso compartilha 3 pares (6 elétrons) — uma das ligações mais fortes da química!',
+        pts: 150
+      },
+      {
+        type: 'choice',
+        instruction: 'Comparando CH₄, H₂O e HCl, todas essas moléculas se formam porque:',
+        opts: [
+          'metais doam elétrons definitivamente aos ametais.',
+          'ametais COMPARTILHAM pares de elétrons entre si (ligação covalente).',
+          'cátions flutuam num mar de elétrons.',
+          'os átomos trocam prótons até ficarem estáveis.'
+        ],
+        ans: 1,
+        explain: 'Correto! C, H, O, N e Cl são ametais: todas essas ligações são COVALENTES — pares de elétrons compartilhados (simples nas três moléculas).',
+        pts: 150
+      }
     ]
   ];
 

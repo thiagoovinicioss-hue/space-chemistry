@@ -128,13 +128,13 @@ check('idiomas: loading é OVERLAY independente (regressão tela azul/espremida)
   i18nSrc.includes("addEventListener('keydown', guard, true)") &&
   css.includes('.lang-overlay[hidden] { display: none !important; }'));
 check('idiomas: cena da nave orbitando planeta (3D three.js + fallback 2D)',
-  html.includes('loading_scene.js?v=20260823l') &&
+  html.includes('loading_scene.js?v=20260824a') &&
   lscene.includes('THREE.WebGLRenderer') && lscene.includes('start2D'));
 check('idiomas: refresh de labels dinâmicos pós-troca (script+classroom)',
   src.includes('__scLangRefresh') && src.includes(".t('menu.sound.on'") &&
   classroomSrc.includes("addEventListener('sc:language'"));
 check('idiomas: i18n.js antes do script.js, persistência e evento sc:language',
-  html.indexOf('i18n.js?v=20260823l') < html.indexOf('i18n_content.js?v=20260823l') && html.indexOf('i18n_content.js?v=20260823l') < html.indexOf('script.js?v=20260823l') &&
+  html.indexOf('i18n.js?v=20260824a') < html.indexOf('i18n_content.js?v=20260824a') && html.indexOf('i18n_content.js?v=20260824a') < html.indexOf('script.js?v=20260824a') &&
   i18nSrc.includes("localStorage.setItem(LS_KEY") && i18nSrc.includes("sc_lang") &&
   i18nSrc.includes("'sc:language'"));
 check('idiomas: dicionário cobre pt/en/es e labels dinâmicos com fallback',
@@ -279,16 +279,19 @@ check('conteúdo: estrutura EN/ES espelha EXATAMENTE as lições PT',
     }
     return true;
   })());
-check('conteúdo: diálogos de chegada + planetas traduzidos (5 níveis)',
+check('conteúdo: diálogos de chegada + planetas traduzidos (5 níveis + 2 desvios)',
   (() => {
     const C = run('window.I18N_CONTENT');
     if (!C) return false;
     for (const lang of ['en', 'es']) {
-      if (!C[lang] || C[lang].dialogues.length !== 5) return false;
-      for (const k of ['tutorial','ionic','covalent','metallic','final']) {
+      if (!C[lang] || C[lang].dialogues.length !== 7) return false;
+      for (const k of ['tutorial','ionic','covalent','metallic','final','kinder','bueno']) {
         const lv = C[lang].levels[k];
         if (!lv || !lv.name || !lv.intro || !lv.objective || !lv.chem) return false;
       }
+      /* diálogos dos desvios devem ter o MESMO comprimento do original PT (6) */
+      if (C[lang].dialogues[5] && C[lang].dialogues[5].length !== 6) return false;
+      if (C[lang].dialogues[6] && C[lang].dialogues[6].length !== 6) return false;
     }
     return true;
   })());
