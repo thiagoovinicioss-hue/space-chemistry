@@ -1263,15 +1263,6 @@
         pts: 150
       },
       {
-        type: 'lewis',
-        instruction: 'Monte a Fórmula de Lewis do CLORO (Cl): toque nas regiões ao redor do símbolo para posicionar os 7 elétrons de valência.',
-        symbol: 'Cl',
-        valence: 7,
-        answerKey: [2, 2, 2, 1],
-        explain: 'Correto! O cloro tem 7 elétrons de valência: três pares e um elétron sozinho. É esse elétron faltante que ele recebe ao virar Cl⁻ na ligação iônica.',
-        pts: 150
-      },
-      {
         type: 'electrons',
         instruction: 'Distribua os 16 elétrons do ENXOFRE (Z = 16) nas camadas K, L e M.',
         symbol: 'S',
@@ -1282,23 +1273,6 @@
           { label: 'M', max: 8, answer: 6 }
         ],
         explain: 'Correto! S: 2-8-6. Com 6 elétrons na camada de valência, o enxofre RECEBE 2 elétrons para completar o octeto e vira S²⁻.',
-        pts: 150
-      },
-      {
-        type: 'drag',
-        instruction: 'Classifique cada conceito da ligação iônica arrastando os cartões para as lacunas corretas.',
-        slots: [
-          { label: 'Íon POSITIVO (perde elétrons)' },
-          { label: 'Íon NEGATIVO (ganha elétrons)' },
-          { label: 'Atração entre íons' }
-        ],
-        items: [
-          { id: 'cation', label: 'CÁTION', color: '#3aa0ff' },
-          { id: 'anion', label: 'ÂNION', color: '#ff5252' },
-          { id: 'bond', label: 'LIGAÇÃO IÔNICA', color: '#ffd166' }
-        ],
-        answerKey: { cation: 0, anion: 1, bond: 2 },
-        explain: 'Correto! Cátion = íon positivo (metal que PERDE elétrons); ânion = íon negativo (ametal que GANHA); a atração eletrostática entre eles é a ligação iônica.',
         pts: 150
       },
       {

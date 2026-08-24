@@ -355,11 +355,13 @@ check('6 questões novas por categoria, com gabarito válido',
     }
     return true;
   })());
-check('EXERCISE_LEVELS[5] e [6] com 6 desafios cada e estruturas válidas',
+check('EXERCISE_LEVELS[5] com 4 desafios e [6] com 6, estruturas válidas',
   (() => {
     const lists = JSON.parse(run('JSON.stringify([EXERCISE_LEVELS[KINDER_INDEX], EXERCISE_LEVELS[BUENO_INDEX]])'));
-    for (const list of lists) {
-      if (!list || list.length !== 6) return false;
+    const expected = [4, 6];
+    for (let li = 0; li < lists.length; li++) {
+      const list = lists[li];
+      if (!list || list.length !== expected[li]) return false;
       for (const it of list) {
         if (!it.instruction || !it.explain || !it.pts) return false;
         if (it.type === 'choice') {
@@ -417,8 +419,8 @@ const css = fs.readFileSync(__dirname + '/style.css', 'utf8');
 const src = fs.readFileSync(__dirname + '/script.js', 'utf8');
 check('#route presente no HTML com opções e título',
   html.includes('id="route"') && html.includes('id="route-options"') && html.includes('id="route-title-text"'));
-check('cache bumpado para 20260824d em todos os assets',
-  html.includes('?v=20260824d') && !html.includes('?v=20260824b') && !html.includes('?v=20260823'));
+check('cache bumpado para 20260824e em todos os assets',
+  html.includes('?v=20260824e') && !html.includes('?v=20260824b') && !html.includes('?v=20260823'));
 check('CSS estiliza painel de rota e cartões de planeta opcional',
   css.includes('.route-panel') && css.includes('.route-btn.route-side') && css.includes('.planet-btn.side'));
 check('overlay route é escondido nas trocas de tela (hideOverhaulOverlays)',
