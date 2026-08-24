@@ -3951,7 +3951,8 @@ function openDialog(opts) {
 }
 
 function startDialog(onEnd) {
-  openDialog({ lines: DIALOGUES[Game.levelIndex] || [], onEnd: onEnd || beginExploration });
+  const dlgSrc = DIALOGUES[Game.levelIndex] || [];
+  openDialog({ lines: (window.I18N ? I18N.dialogueFor(Game.levelIndex, dlgSrc) : dlgSrc), onEnd: onEnd || beginExploration });
 }
 
 /* Retrato animado: balanço idle + piscada + boca falando */
@@ -7778,11 +7779,13 @@ function startLevel(idx) {
 
   /* Cartão de introdução em etapas (fade → planeta → missão → química → objetivo) */
   const lv = Game.level;
-  document.getElementById('intro-title').textContent = lv.lv.name;
+  document.getElementById('intro-title').textContent = window.I18N ? I18N.levelText(lv.lv.id, 'name', lv.lv.name) : lv.lv.name;
   document.getElementById('intro-planet').style.background =
     'radial-gradient(circle at 35% 35%, ' + lv.lv.planetColor + ', #1a1030)';
-  document.getElementById('intro-text').textContent = lv.lv.intro;
-  document.getElementById('intro-chem').textContent = INTRO_CHEM[lv.lv.id] || '';
+  document.getElementById('intro-text').textContent = window.I18N ? I18N.levelText(lv.lv.id, 'intro', lv.lv.intro) : lv.lv.intro;
+  document.getElementById('intro-chem').textContent = window.I18N
+    ? I18N.levelText(lv.lv.id, 'chem', INTRO_CHEM[lv.lv.id] || '')
+    : (INTRO_CHEM[lv.lv.id] || '');
   const IH = window.I18N;
   document.getElementById('intro-hint').innerHTML = IS_TOUCH
     ? (IH ? IH.t('dyn.touch.start', 'Toque para começar') : 'Toque para começar')
@@ -7792,7 +7795,7 @@ function startLevel(idx) {
   lv.lv.recipes.forEach(rid => {
     const chip = document.createElement('span');
     chip.className = 'obj-chip';
-    chip.innerHTML = 'Montar <span class="formula">' + chem(RECIPES[rid].formula) + '</span>';
+    chip.innerHTML = (window.I18N ? I18N.mountWord() : 'Montar') + ' <span class="formula">' + chem(RECIPES[rid].formula) + '</span>';
     obj.appendChild(chip);
   });
   if (lv.lv.gateSequence) {

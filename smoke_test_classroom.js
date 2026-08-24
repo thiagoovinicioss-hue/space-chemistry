@@ -128,13 +128,13 @@ check('idiomas: loading é OVERLAY independente (regressão tela azul/espremida)
   i18nSrc.includes("addEventListener('keydown', guard, true)") &&
   css.includes('.lang-overlay[hidden] { display: none !important; }'));
 check('idiomas: cena da nave orbitando planeta (3D three.js + fallback 2D)',
-  html.includes('loading_scene.js?v=20260823k') &&
+  html.includes('loading_scene.js?v=20260823l') &&
   lscene.includes('THREE.WebGLRenderer') && lscene.includes('start2D'));
 check('idiomas: refresh de labels dinâmicos pós-troca (script+classroom)',
   src.includes('__scLangRefresh') && src.includes(".t('menu.sound.on'") &&
   classroomSrc.includes("addEventListener('sc:language'"));
 check('idiomas: i18n.js antes do script.js, persistência e evento sc:language',
-  html.indexOf('i18n.js?v=20260823k') < html.indexOf('script.js?v=20260823k') &&
+  html.indexOf('i18n.js?v=20260823l') < html.indexOf('i18n_content.js?v=20260823l') && html.indexOf('i18n_content.js?v=20260823l') < html.indexOf('script.js?v=20260823l') &&
   i18nSrc.includes("localStorage.setItem(LS_KEY") && i18nSrc.includes("sc_lang") &&
   i18nSrc.includes("'sc:language'"));
 check('idiomas: dicionário cobre pt/en/es e labels dinâmicos com fallback',
@@ -252,13 +252,55 @@ sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
 
 /* script.js e classroom.js compartilham o mesmo escopo global */
-for (const f of ['script.js', 'classroom.js']) {
+for (const f of ['i18n_content.js', 'script.js', 'classroom.js']) {
   const code = fs.readFileSync(__dirname + '/' + f, 'utf8');
   vm.runInContext(code, sandbox, { filename: f });
 }
 const CLS = () => 'window.Classroom._dbg';
 
 const run = expr => vm.runInContext(expr, sandbox);
+
+/* ---- checagens de conteúdo traduzido (usam o sandbox) ---- */
+check('conteúdo: estrutura EN/ES espelha EXATAMENTE as lições PT',
+  (() => {
+    const LESSONS = run('window.Classroom._dbg.LESSONS');
+    const C = run('window.I18N_CONTENT');
+    if (!LESSONS || !C) return false;
+    for (const lang of ['en', 'es']) {
+      for (const bond of Object.keys(LESSONS)) {
+        const base = LESSONS[bond], tr = C[lang].lessons[bond];
+        if (!tr || !tr.slides || tr.slides.length !== base.slides.length) return false;
+        for (let i = 0; i < base.slides.length; i++) {
+          const b = base.slides[i], s2 = tr.slides[i];
+          if (!s2.lines || s2.lines.length !== b.lines.length) return false;
+          if (!s2.say || s2.say.length !== b.say.length) return false;
+        }
+      }
+    }
+    return true;
+  })());
+check('conteúdo: diálogos de chegada + planetas traduzidos (5 níveis)',
+  (() => {
+    const C = run('window.I18N_CONTENT');
+    if (!C) return false;
+    for (const lang of ['en', 'es']) {
+      if (!C[lang] || C[lang].dialogues.length !== 5) return false;
+      for (const k of ['tutorial','ionic','covalent','metallic','final']) {
+        const lv = C[lang].levels[k];
+        if (!lv || !lv.name || !lv.intro || !lv.objective || !lv.chem) return false;
+      }
+    }
+    return true;
+  })());
+check('conteúdo: classroom usa lessonFor e recarrega slide ao trocar idioma',
+  classroomSrc.includes('I18N.lessonFor(S.bond, base)') &&
+  classroomSrc.includes('goSlide(S.idx)'));
+check('conteúdo: script.js usa dialogueFor/levelText/mountWord',
+  src.includes('I18N.dialogueFor(Game.levelIndex, dlgSrc)') &&
+  src.includes("I18N.levelText(lv.lv.id, 'intro'") &&
+  src.includes('I18N.mountWord()'));
+
+
 function pumpFrames(seconds, stepMs) {
   const step = stepMs || 33;
   for (let t = 0; t < seconds * 1000; t += step) {

@@ -12,6 +12,7 @@
   /* ---------------- Dicionário ---------------- */
   var DICT = {
     pt: {
+      'dyn.mount': 'Montar',
       'menu.start': 'Iniciar Missão',
       'menu.rules': 'Regras',
       'menu.wardrobe': 'Vestiário',
@@ -118,6 +119,7 @@
     },
 
     en: {
+      'dyn.mount': 'Build',
       'menu.start': 'Start Mission',
       'menu.rules': 'Rules',
       'menu.wardrobe': 'Wardrobe',
@@ -224,6 +226,7 @@
     },
 
     es: {
+      'dyn.mount': 'Montar',
       'menu.start': 'Iniciar Misión',
       'menu.rules': 'Reglas',
       'menu.wardrobe': 'Vestuario',
@@ -464,11 +467,63 @@
       if (LANGS.indexOf(lang) < 0) return false;
       this.lang = lang;
       try { localStorage.setItem(LS_KEY, lang); } catch (e) {}
+      this.lessonCache = null;
       this.apply(document);
       /* Refresca labels dinâmicos do jogo imediatamente */
       if (window.__scLangRefresh) { try { window.__scLangRefresh(); } catch (e) {} }
-      document.dispatchEvent(new CustomEvent('sc:language', { detail: { lang: lang } }));
+      try {
+        document.dispatchEvent(new CustomEvent('sc:language', { detail: { lang: lang } }));
+      } catch (e) {}
       return true;
+    },
+
+    /* ---------- Conteúdo traduzido (i18n_content.js) ---------- */
+    _content: function () {
+      var C = window.I18N_CONTENT;
+      return (C && C[this.lang]) || null;
+    },
+
+    levelText: function (id, field, fallback) {
+      var c = this._content();
+      if (c && c.levels && c.levels[id] && c.levels[id][field]) return c.levels[id][field];
+      return fallback;
+    },
+
+    dialogueFor: function (idx, fallbackArr) {
+      var c = this._content();
+      if (c && c.dialogues && c.dialogues[idx] &&
+          (!fallbackArr || c.dialogues[idx].length === fallbackArr.length)) {
+        return c.dialogues[idx];
+      }
+      return fallbackArr;
+    },
+
+    mountWord: function () { return this.t('dyn.mount', 'Montar'); },
+
+    lessonCache: null,
+    lessonFor: function (bond, base) {
+      var c = this._content();
+      if (!c || !c.lessons || !c.lessons[bond]) return null;
+      var key = this.lang + '::' + bond;
+      this.lessonCache = this.lessonCache || {};
+      if (this.lessonCache[key]) return this.lessonCache[key];
+      var src = c.lessons[bond];
+      var out = {
+        label: src.label || base.label,
+        accent: base.accent,
+        slides: base.slides.map(function (sl, i) {
+          var t = src.slides[i];
+          if (!t) return sl;
+          return {
+            title: t.title || sl.title,
+            lines: (t.lines && t.lines.length === sl.lines.length) ? t.lines : sl.lines,
+            say: (t.say && t.say.length === sl.say.length) ? t.say : sl.say,
+            hl: sl.hl, diagram: sl.diagram, training: sl.training
+          };
+        })
+      };
+      this.lessonCache[key] = out;
+      return out;
     },
 
     boot: function () {

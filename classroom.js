@@ -1093,7 +1093,14 @@ const S = {
 
 const els = {};
 
-function lesson() { return LESSONS[S.bond]; }
+function lesson() {
+  const base = LESSONS[S.bond];
+  if (window.I18N && I18N.lessonFor) {
+    const loc = I18N.lessonFor(S.bond, base);
+    if (loc) return loc;
+  }
+  return base;
+}
 function slide() { return lesson().slides[S.idx]; }
 function slideCount() { return lesson().slides.length; }
 
@@ -1470,6 +1477,8 @@ document.addEventListener('sc:language', function () {
     els.progress.textContent =
       (window.I18N ? I18N.t('cls.progress.board', 'QUADRO') : 'QUADRO') +
       ' ' + (S.idx + 1) + '/' + slideCount();
+    els.lessonTitle.textContent = lesson().label;
+    goSlide(S.idx);
   } catch (e) {}
 });
 })();
