@@ -1162,7 +1162,8 @@ function renderSlide(instant) {
     els.lines.appendChild(li);
   });
 
-  els.progress.textContent = 'QUADRO ' + (S.idx + 1) + '/' + slideCount();
+  const boardW = window.I18N ? I18N.t('cls.progress.board', 'QUADRO') : 'QUADRO';
+  els.progress.textContent = boardW + ' ' + (S.idx + 1) + '/' + slideCount();
   els.next.hidden = S.idx === slideCount() - 1;
 
   if (instant) {
@@ -1202,9 +1203,9 @@ function onSlideFullyRevealed() {
   const sl = slide();
   els.hint.hidden = false;
   if (S.idx === slideCount() - 1) {
-    els.hint.textContent = 'aula concluída ✔ volte ao conteúdo quando quiser';
+    els.hint.textContent = window.I18N ? I18N.t('cls.hint.done', 'aula concluída ✔ volte ao conteúdo quando quiser') : 'aula concluída ✔ volte ao conteúdo quando quiser';
   } else {
-    els.hint.textContent = '[ESPAÇO] ▸ próximo quadro';
+    els.hint.textContent = window.I18N ? I18N.t('cls.hint.nextBoard', '[ESPAÇO] ▸ próximo quadro') : '[ESPAÇO] ▸ próximo quadro';
   }
   if (sl.training) els.training.hidden = false;
 }

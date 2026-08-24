@@ -48,6 +48,10 @@ check('menu: botão Tela Cheia presente', /id="btn-fullscreen-menu"/.test(menuBl
 
 /* fonte limpa no quadro (não pixel-art) */
 const css = fs.readFileSync(__dirname + '/style.css', 'utf8');
+const i18nSrc = fs.readFileSync(__dirname + '/i18n.js', 'utf8');
+const lscene = fs.readFileSync(__dirname + '/loading_scene.js', 'utf8');
+const classroomSrc = fs.readFileSync(__dirname + '/classroom.js', 'utf8');
+const src = fs.readFileSync(__dirname + '/script.js', 'utf8');
 const chalkLinesCss = css.slice(css.indexOf('.chalk-lines {'), css.indexOf('.chalk-lines li'));
 check('quadro: fonte limpa (--font-clean) no conteúdo', chalkLinesCss.includes('var(--font-clean)') && !chalkLinesCss.includes('Pixelify'));
 check('quadro: espaçamento confortável definido', chalkLinesCss.includes('line-height: 1.65') && chalkLinesCss.includes('word-spacing'));
@@ -113,6 +117,26 @@ check('jogo: painéis e cartões em vidro escuro sofisticado',
 const mgjs = fs.readFileSync(__dirname + '/menu_glass.js', 'utf8');
 check('transição: pressionar -> recuar -> cortina branca -> trocar tela',
   mgjs.includes("id = 'glass-fade'") && mgjs.includes('_glassReplay') && mgjs.includes("'is-pressed'") && mgjs.includes('replayClick'));
+check('idiomas: dock liquid glass no menu E na pausa',
+  html.includes('class="lang-dock" role="toolbar"') &&
+  html.includes('lang-dock lang-dock--row') &&
+  (html.match(/data-lang="en"/g) || []).length === 2 &&
+  (html.match(/data-lang="pt"/g) || []).length === 2);
+check('idiomas: tela de loading com nave orbitando planeta (3D + fallback 2D)',
+  html.includes('id="screen-loading"') && html.includes('id="loading-scene"') &&
+  html.includes('loading_scene.js?v=20260823j') &&
+  lscene.includes('THREE.WebGLRenderer') && lscene.includes('start2D'));
+check('idiomas: i18n.js antes do script.js, persistência e evento sc:language',
+  html.indexOf('i18n.js?v=20260823j') < html.indexOf('script.js?v=20260823j') &&
+  i18nSrc.includes("localStorage.setItem(LS_KEY") && i18nSrc.includes("sc_lang") &&
+  i18nSrc.includes("'sc:language'"));
+check('idiomas: dicionário cobre pt/en/es e labels dinâmicos com fallback',
+  i18nSrc.includes("'menu.start': 'Iniciar Missão'") &&
+  i18nSrc.includes("'menu.start': 'Start Mission'") &&
+  i18nSrc.includes("'menu.start': 'Iniciar Misión'") &&
+  src.includes(".t('menu.sound.on'") && src.includes("'menu.fs.exit'") &&
+  classroomSrc.includes("I18N.t('cls.progress.board'"));
+
 check('transição: som, Tela Cheia e Efeitos 3D NÃO têm fade',
   mgjs.includes("'btn-sound': 1") && mgjs.includes("'btn-fullscreen-menu': 1") && mgjs.includes("'btn-effects3d': 1"));
 const speechColCss = css.slice(css.indexOf('.speech-col {'), css.indexOf('/* Balão estilo'));

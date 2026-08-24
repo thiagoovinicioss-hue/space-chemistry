@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#070b1d">
 <title>Space Chemistry: Mission Bonds</title>
 <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
-<link rel="stylesheet" href="style.css?v=20260823i">
+<link rel="stylesheet" href="style.css?v=20260823j">
 </head>
 <body>
 
@@ -23,16 +23,24 @@
       <p class="game-subtitle">MISSION BONDS</p>
     </div>
     <nav class="menu-buttons" aria-label="Menu">
-      <button class="btn btn-primary" data-nav="galaxy"><img class="pix-icon" data-icon="arrowR" data-scale="2" alt=""> Iniciar Missão</button>
-      <button class="btn" data-nav="rules"><img class="pix-icon" data-icon="scroll" data-scale="1" alt=""> Regras</button>
-      <button class="btn" data-nav="wardrobe"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> Vestiário</button>
-      <button class="btn" data-nav="achievements"><img class="pix-icon" data-icon="trophy" data-scale="1" alt=""> Conquistas</button>
-      <button class="btn" data-nav="bonds"><img class="pix-icon" data-icon="board" data-scale="1" alt=""> Conteúdo de Ligações</button>
+      <button class="btn btn-primary" data-nav="galaxy"><img class="pix-icon" data-icon="arrowR" data-scale="2" alt=""> <span data-i18n="menu.start">Iniciar Missão</span></button>
+      <button class="btn" data-nav="rules"><img class="pix-icon" data-icon="scroll" data-scale="1" alt=""> <span data-i18n="menu.rules">Regras</span></button>
+      <button class="btn" data-nav="wardrobe"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> <span data-i18n="menu.wardrobe">Vestiário</span></button>
+      <button class="btn" data-nav="achievements"><img class="pix-icon" data-icon="trophy" data-scale="1" alt=""> <span data-i18n="menu.achievements">Conquistas</span></button>
+      <button class="btn" data-nav="bonds"><img class="pix-icon" data-icon="board" data-scale="1" alt=""> <span data-i18n="menu.bonds">Conteúdo de Ligações</span></button>
       <button class="btn" id="btn-sound"><img class="pix-icon" data-icon="soundOn" data-scale="1" alt=""> Som: Ligado</button>
       <button class="btn" id="btn-effects3d"><img class="pix-icon" data-icon="galaxy" data-scale="1" alt=""> Efeitos 3D: Ligado</button>
       <button class="btn" id="btn-fullscreen-menu"><span class="fs-glyph" aria-hidden="true">⛶</span> Tela Cheia</button>
     </nav>
-    <p class="menu-hint">Use as setas ou WASD e ENTER para navegar · ESC volta</p>
+    <p class="menu-hint" data-i18n="menu.hint">Use as setas ou WASD e ENTER para navegar · ESC volta</p>
+  </div>
+
+  <!-- DOCK DE IDIOMAS: barra liquid glass grudada na parede esquerda -->
+  <div class="lang-dock" role="toolbar" aria-label="Idioma / Language / Idioma">
+    <span class="lang-dock-grip" aria-hidden="true"></span>
+    <button class="lang-btn" type="button" data-lang="en" title="English"><span class="lang-flag lang-flag-en" aria-hidden="true"></span><span class="lang-code">EN</span></button>
+    <button class="lang-btn" type="button" data-lang="es" title="Español"><span class="lang-flag lang-flag-es" aria-hidden="true"></span><span class="lang-code">ES</span></button>
+    <button class="lang-btn active" type="button" data-lang="pt" title="Português (BR)"><span class="lang-flag lang-flag-pt" aria-hidden="true"></span><span class="lang-code">PT</span></button>
   </div>
 </section>
 
@@ -43,47 +51,47 @@
   <div class="starfield" aria-hidden="true"></div>
   <div id="fx3d-rules" class="fx3d" aria-hidden="true"></div>
   <div class="panel rules-panel">
-    <h2 class="panel-title"><img class="pix-icon" data-icon="scroll" data-scale="2" alt=""> Como Jogar</h2>
+    <h2 class="panel-title"><img class="pix-icon" data-icon="scroll" data-scale="2" alt=""> <span data-i18n="rules.title">Como Jogar</span></h2>
     <div class="rules-grid">
       <article class="rule-card">
-        <h3><img class="pix-icon" data-icon="target" data-scale="1" alt=""> Objetivo</h3>
-        <p>Explore a galáxia e restaure os 5 planetas aprendendo os <strong>3 tipos de ligações químicas</strong>: iônica, covalente e metálica.</p>
+        <h3><img class="pix-icon" data-icon="target" data-scale="1" alt=""> <span data-i18n="rules.goal.title">Objetivo</span></h3>
+        <p data-i18n-html="rules.goal.body">Explore a galáxia e restaure os 5 planetas aprendendo os <strong>3 tipos de ligações químicas</strong>: iônica, covalente e metálica.</p>
       </article>
       <article class="rule-card">
-        <h3><img class="pix-icon" data-icon="gamepad" data-scale="1" alt=""> Controles</h3>
+        <h3><img class="pix-icon" data-icon="gamepad" data-scale="1" alt=""> <span data-i18n="rules.controls.title">Controles</span></h3>
         <ul class="rule-list">
-          <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ou <kbd>←↑↓→</kbd> — mover</li>
-          <li><kbd>J</kbd> ou clique — atacar com o sabre de luz</li>
-          <li><kbd>ESPAÇO</kbd> — interagir com máquinas</li>
-          <li><kbd>ENTER</kbd>/<kbd>ESPAÇO</kbd> — avançar diálogos e questionário</li>
-          <li><kbd>ESC</kbd> — pausar</li>
+          <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ou <kbd>←↑↓→</kbd> <span data-i18n="rules.controls.m1">— mover</span></li>
+          <li><kbd>J</kbd> ou clique <span data-i18n="rules.controls.m2">— atacar com o sabre de luz</span></li>
+          <li><kbd>ESPAÇO</kbd> <span data-i18n="rules.controls.m3">— interagir com máquinas</span></li>
+          <li><kbd>ENTER</kbd>/<kbd>ESPAÇO</kbd> <span data-i18n="rules.controls.m4">— avançar diálogos e questionário</span></li>
+          <li><kbd>ESC</kbd> <span data-i18n="rules.controls.m5">— pausar</span></li>
         </ul>
       </article>
       <article class="rule-card">
-        <h3><img class="pix-icon" data-icon="check" data-scale="1" alt=""> Como vencer</h3>
-        <p>Em cada planeta: converse com o <strong>cientista</strong>, explore o mapa, derrote os <strong>alienígenas</strong> com seu sabre, monte os compostos na <strong>Máquina de Fusão</strong>, responda ao <strong>questionário</strong> e viaje de nave até o próximo planeta.</p>
+        <h3><img class="pix-icon" data-icon="check" data-scale="1" alt=""> <span data-i18n="rules.win.title">Como vencer</span></h3>
+        <p data-i18n-html="rules.win.body">Em cada planeta: converse com o <strong>cientista</strong>, explore o mapa, derrote os <strong>alienígenas</strong> com seu sabre, monte os compostos na <strong>Máquina de Fusão</strong>, responda ao <strong>questionário</strong> e viaje de nave até o próximo planeta.</p>
       </article>
       <article class="rule-card">
-        <h3><img class="pix-icon" data-icon="cross" data-scale="1" alt=""> Como perder</h3>
-        <p>Você tem <strong>3 vidas</strong>. Atingir asteroides, armadilhas, alienígenas ou detritos espaciais custa 1 vida. Erros em exercícios e questionários também custam vida. Alguns trajes desbloqueados concedem <strong>corações extras</strong> para te ajudar. Sem vidas = missão falhou.</p>
+        <h3><img class="pix-icon" data-icon="cross" data-scale="1" alt=""> <span data-i18n="rules.lose.title">Como perder</span></h3>
+        <p data-i18n-html="rules.lose.body">Você tem <strong>3 vidas</strong>. Atingir asteroides, armadilhas, alienígenas ou detritos espaciais custa 1 vida. Erros em exercícios e questionários também custam vida. Alguns trajes desbloqueados concedem <strong>corações extras</strong> para te ajudar. Sem vidas = missão falhou.</p>
       </article>
       <article class="rule-card">
-        <h3><img class="pix-icon" data-icon="star" data-scale="1" alt=""> Pontuação</h3>
+        <h3><img class="pix-icon" data-icon="star" data-scale="1" alt=""> <span data-i18n="rules.score.title">Pontuação</span></h3>
         <ul class="rule-list">
-          <li>Coletar átomo: <strong>+10</strong></li>
-          <li>Composto correto na fusão: <strong>+100</strong></li>
-          <li>Derrotar alienígena: <strong>+50</strong></li>
-          <li>Resposta certa no questionário: <strong>+150</strong></li>
-          <li>Erro: <strong>−20</strong></li>
-          <li>Bônus de tempo ao terminar a fase</li>
+          <li><span data-i18n-html="rules.score.l1">Coletar átomo: <strong>+10</strong></span></li>
+          <li><span data-i18n-html="rules.score.l2">Composto correto na fusão: <strong>+100</strong></span></li>
+          <li><span data-i18n-html="rules.score.l3">Derrotar alienígena: <strong>+50</strong></span></li>
+          <li><span data-i18n-html="rules.score.l4">Resposta certa no questionário: <strong>+150</strong></span></li>
+          <li><span data-i18n-html="rules.score.l5">Erro: <strong>−20</strong></span></li>
+          <li data-i18n="rules.score.bonus">Bônus de tempo ao terminar a fase</li>
         </ul>
       </article>
       <article class="rule-card">
-        <h3><img class="pix-icon" data-icon="gift" data-scale="1" alt=""> Desbloqueios</h3>
-        <p>Ao concluir cada planeta você desbloqueia <strong>itens cosméticos</strong> (capacetes, trajes, naves e rastros). Troque-os no <strong>Vestiário</strong>. Alguns trajes oferecem <strong>corações extras</strong> que aumentam suas vidas!</p>
+        <h3><img class="pix-icon" data-icon="gift" data-scale="1" alt=""> <span data-i18n="rules.unlock.title">Desbloqueios</span></h3>
+        <p data-i18n-html="rules.unlock.body">Ao concluir cada planeta você desbloqueia <strong>itens cosméticos</strong> (capacetes, trajes, naves e rastros). Troque-os no <strong>Vestiário</strong>. Alguns trajes oferecem <strong>corações extras</strong> que aumentam suas vidas!</p>
       </article>
     </div>
-    <button class="btn btn-primary" data-nav="menu">← Voltar</button>
+    <button class="btn btn-primary" data-nav="menu"><span data-i18n="back.voltar">← Voltar</span></button>
   </div>
 </section>
 
@@ -94,19 +102,19 @@
   <div class="starfield" aria-hidden="true"></div>
   <div id="fx3d-galaxy" class="fx3d" aria-hidden="true"></div>
   <div class="panel">
-    <h2 class="panel-title"><img class="pix-icon" data-icon="galaxy" data-scale="2" alt=""> Mapa da Galáxia</h2>
-    <p class="galaxy-sub">Complete os planetas para restaurar a galáxia.</p>
+    <h2 class="panel-title"><img class="pix-icon" data-icon="galaxy" data-scale="2" alt=""> <span data-i18n="galaxy.title">Mapa da Galáxia</span></h2>
+    <p class="galaxy-sub" data-i18n="galaxy.sub">Complete os planetas para restaurar a galáxia.</p>
 
     <div class="galaxy-track" id="galaxy-track" role="listbox" aria-label="Planetas"></div>
 
     <div class="galaxy-footer">
       <div class="ship-preview" id="ship-preview" aria-hidden="true">
         <canvas id="ship-preview-canvas" width="120" height="90"></canvas>
-        <span>Minha nave</span>
+        <span data-i18n="galaxy.myship">Minha nave</span>
       </div>
-      <button class="btn btn-primary" id="btn-start-level"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> Lançar Missão</button>
+      <button class="btn btn-primary" id="btn-start-level"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> <span data-i18n="galaxy.launch">Lançar Missão</span></button>
     </div>
-    <button class="btn btn-back" data-nav="menu">← Menu</button>
+    <button class="btn btn-back" data-nav="menu"><span data-i18n="back.menu">← Menu</span></button>
   </div>
 </section>
 
@@ -117,17 +125,17 @@
   <div class="starfield" aria-hidden="true"></div>
   <div id="fx3d-wardrobe" class="fx3d" aria-hidden="true"></div>
   <div class="panel">
-    <h2 class="panel-title"><img class="pix-icon" data-icon="rocket" data-scale="2" alt=""> Vestiário</h2>
+    <h2 class="panel-title"><img class="pix-icon" data-icon="rocket" data-scale="2" alt=""> <span data-i18n="wardrobe.title">Vestiário</span></h2>
     <div class="wardrobe-preview" id="wardrobe-preview" aria-hidden="true">
       <canvas id="wardrobe-canvas" width="96" height="112"></canvas>
       <div class="preview-info" id="wardrobe-info"></div>
     </div>
 
     <div class="wardrobe-tabs" role="tablist" id="wardrobe-tabs">
-      <button class="tab active" data-cat="helmets">Capacetes</button>
-      <button class="tab" data-cat="suits">Trajes</button>
-      <button class="tab" data-cat="ships">Naves</button>
-      <button class="tab" data-cat="trails">Rastros</button>
+      <button class="tab active" data-cat="helmets" data-i18n="wardrobe.tab.helmets">Capacetes</button>
+      <button class="tab" data-cat="suits" data-i18n="wardrobe.tab.suits">Trajes</button>
+      <button class="tab" data-cat="ships" data-i18n="wardrobe.tab.ships">Naves</button>
+      <button class="tab" data-cat="trails" data-i18n="wardrobe.tab.trails">Rastros</button>
     </div>
 
     <div class="wardrobe-grid" id="wardrobe-grid"></div>
@@ -142,7 +150,7 @@
   <div class="starfield" aria-hidden="true"></div>
   <div id="fx3d-achievements" class="fx3d" aria-hidden="true"></div>
   <div class="panel">
-    <h2 class="panel-title"><img class="pix-icon" data-icon="trophy" data-scale="2" alt=""> Conquistas</h2>
+    <h2 class="panel-title"><img class="pix-icon" data-icon="trophy" data-scale="2" alt=""> <span data-i18n="ach.title">Conquistas</span></h2>
     <p class="galaxy-sub" id="achievement-count"></p>
     <div class="achieve-grid" id="achieve-grid"></div>
     <button class="btn btn-back" data-nav="menu">← Menu</button>
@@ -155,8 +163,8 @@
 <section id="screen-lewis" class="screen" role="application" aria-label="Praticar Fórmulas de Lewis">
   <div class="starfield" aria-hidden="true"></div>
   <div class="panel lewis-panel">
-    <h2 class="panel-title"><img class="pix-icon" data-icon="flask" data-scale="2" alt=""> Praticar Fórmula de Lewis</h2>
-    <p class="galaxy-sub">Monte a estrutura completa em 6 etapas: elétrons são PONTOS, nunca traços.</p>
+    <h2 class="panel-title"><img class="pix-icon" data-icon="flask" data-scale="2" alt=""> <span data-i18n="lewis.title">Praticar Fórmula de Lewis</span></h2>
+    <p class="galaxy-sub" data-i18n="lewis.sub">Monte a estrutura completa em 6 etapas: elétrons são PONTOS, nunca traços.</p>
 
     <div class="lewis-layout">
       <div class="lewis-main">
@@ -176,13 +184,13 @@
         <p class="lewis-dica" id="lewis-dica"></p>
         <p class="lewis-msg" id="lewis-msg" hidden></p>
         <div class="lewis-buttons">
-          <button class="btn" id="btn-lewis-reset"><img class="pix-icon" data-icon="cross" data-scale="1" alt=""> Recomeçar</button>
-          <button class="btn" id="btn-lewis-refresh">↻ Refazer etapa</button>
-          <button class="btn btn-primary" id="btn-lewis-confirm"><img class="pix-icon" data-icon="check" data-scale="1" alt=""> Confirmar etapa</button>
+          <button class="btn" id="btn-lewis-reset"><img class="pix-icon" data-icon="cross" data-scale="1" alt=""> <span data-i18n="lewis.reset">Recomeçar</span></button>
+          <button class="btn" id="btn-lewis-refresh" data-i18n="lewis.refresh">↻ Refazer etapa</button>
+          <button class="btn btn-primary" id="btn-lewis-confirm"><img class="pix-icon" data-icon="check" data-scale="1" alt=""> <span data-i18n="lewis.confirm">Confirmar etapa</span></button>
         </div>
       </div>
     </div>
-    <button class="btn btn-back" id="btn-lewis-back" data-nav="menu"><span id="btn-lewis-back-label">← Menu</span></button>
+    <button class="btn btn-back" id="btn-lewis-back" data-nav="menu"><span id="btn-lewis-back-label" data-i18n="back.menu">← Menu</span></button>
   </div>
 </section>
 
@@ -192,8 +200,8 @@
 <section id="screen-structural" class="screen" role="application" aria-label="Praticar Fórmulas Estruturais">
   <div class="starfield" aria-hidden="true"></div>
   <div class="panel lewis-panel">
-    <h2 class="panel-title"><img class="pix-icon" data-icon="flask" data-scale="2" alt=""> Praticar Fórmula Estrutural</h2>
-    <p class="galaxy-sub">Ligações covalentes são TRAÇOS: — simples, = dupla, ≡ tripla. Nunca pontos de elétrons.</p>
+    <h2 class="panel-title"><img class="pix-icon" data-icon="flask" data-scale="2" alt=""> <span data-i18n="structural.title">Praticar Fórmula Estrutural</span></h2>
+    <p class="galaxy-sub" data-i18n="structural.sub">Ligações covalentes são TRAÇOS: — simples, = dupla, ≡ tripla. Nunca pontos de elétrons.</p>
 
     <div class="lewis-layout">
       <div class="lewis-main">
@@ -208,12 +216,12 @@
         <p class="lewis-dica" id="structural-dica"></p>
         <p class="lewis-msg" id="structural-msg" hidden></p>
         <div class="lewis-buttons">
-          <button class="btn" id="btn-structural-reset"><img class="pix-icon" data-icon="cross" data-scale="1" alt=""> Recomeçar</button>
-          <button class="btn btn-primary" id="btn-structural-check"><img class="pix-icon" data-icon="check" data-scale="1" alt=""> Conferir resposta</button>
+          <button class="btn" id="btn-structural-reset"><img class="pix-icon" data-icon="cross" data-scale="1" alt=""> <span data-i18n="structural.reset">Recomeçar</span></button>
+          <button class="btn btn-primary" id="btn-structural-check"><img class="pix-icon" data-icon="check" data-scale="1" alt=""> <span data-i18n="structural.check">Conferir resposta</span></button>
         </div>
       </div>
     </div>
-    <button class="btn btn-back" id="btn-structural-back" data-nav="menu"><span id="btn-structural-back-label">← Menu</span></button>
+    <button class="btn btn-back" id="btn-structural-back" data-nav="menu"><span id="btn-structural-back-label" data-i18n="back.menu">← Menu</span></button>
   </div>
 </section>
 
@@ -224,32 +232,32 @@
   <div class="starfield" aria-hidden="true"></div>
   <div id="fx3d-bonds" class="fx3d" aria-hidden="true"></div>
   <div class="panel bonds-panel">
-    <h2 class="panel-title"><img class="pix-icon" data-icon="board" data-scale="2" alt=""> Conteúdo de Ligações</h2>
-    <p class="galaxy-sub">Estude com o Prof. Sérgio antes ou depois das missões.</p>
+    <h2 class="panel-title"><img class="pix-icon" data-icon="board" data-scale="2" alt=""> <span data-i18n="bonds.title">Conteúdo de Ligações</span></h2>
+    <p class="galaxy-sub" data-i18n="bonds.sub">Estude com o Prof. Sérgio antes ou depois das missões.</p>
     <div class="bonds-grid">
       <button class="btn bond-card bond-ionic" type="button" data-bond="ionica">
         <img class="pix-icon" data-icon="flask" data-scale="2" alt="">
         <span class="bond-card-text">
-          <strong>Ligações Iônicas</strong>
-          <small>Transferência de elétrons · cátions e ânions</small>
+          <strong data-i18n="bonds.ionic.title">Ligações Iônicas</strong>
+          <small data-i18n="bonds.ionic.sub">Transferência de elétrons · cátions e ânions</small>
         </span>
       </button>
       <button class="btn bond-card bond-covalent" type="button" data-bond="covalente">
         <img class="pix-icon" data-icon="flask" data-scale="2" alt="">
         <span class="bond-card-text">
-          <strong>Ligações Covalentes</strong>
-          <small>Compartilhamento de elétrons · moléculas</small>
+          <strong data-i18n="bonds.covalent.title">Ligações Covalentes</strong>
+          <small data-i18n="bonds.covalent.sub">Compartilhamento de elétrons · moléculas</small>
         </span>
       </button>
       <button class="btn bond-card bond-metallic" type="button" data-bond="metalica">
         <img class="pix-icon" data-icon="flask" data-scale="2" alt="">
         <span class="bond-card-text">
-          <strong>Ligações Metálicas</strong>
-          <small>Mar de elétrons · propriedades dos metais</small>
+          <strong data-i18n="bonds.metallic.title">Ligações Metálicas</strong>
+          <small data-i18n="bonds.metallic.sub">Mar de elétrons · propriedades dos metais</small>
         </span>
       </button>
     </div>
-    <button class="btn btn-back" data-nav="menu">← Voltar</button>
+    <button class="btn btn-back" data-nav="menu"><span data-i18n="back.voltar">← Voltar</span></button>
   </div>
 </section>
 
@@ -259,7 +267,7 @@
 <section id="screen-classroom" class="screen" role="application" aria-label="Sala de Aula do Prof. Sérgio">
   <div class="classroom-wrap">
     <header class="classroom-topbar">
-      <span class="classroom-badge"><img class="pix-icon" data-icon="chalkW" data-scale="1" alt=""> <span id="cls-lesson-title">AULA</span></span>
+      <span class="classroom-badge"><img class="pix-icon" data-icon="chalkW" data-scale="1" alt=""> <span id="cls-lesson-title" data-i18n="cls.badge">AULA</span></span>
       <span class="classroom-progress" id="cls-progress">QUADRO 1/1</span>
     </header>
 
@@ -269,7 +277,7 @@
           <h3 class="chalk-title" id="cls-board-title"></h3>
           <ul class="chalk-lines" id="cls-board-lines"></ul>
           <canvas id="cls-diagram" width="560" height="250" aria-hidden="true"></canvas>
-          <div class="chalk-hint" id="cls-hint">[ESPAÇO] continuar ▸</div>
+          <div class="chalk-hint" id="cls-hint" data-i18n="cls.hint.next">[ESPAÇO] continuar ▸</div>
         </div>
         <div class="chalk-tray" aria-hidden="true">
           <i class="chalk-stick chalk-w"></i><i class="chalk-stick chalk-y"></i><i class="chalk-stick chalk-p"></i><i class="board-eraser"></i>
@@ -292,20 +300,33 @@
     </div>
 
     <div class="training-box" id="cls-training" hidden>
-      <span class="training-label"><img class="pix-icon" data-icon="brain" data-scale="1" alt=""> TREINAMENTO</span>
+      <span class="training-label"><img class="pix-icon" data-icon="brain" data-scale="1" alt=""> <span data-i18n="training.label">TREINAMENTO</span></span>
       <div class="training-buttons">
-        <button class="btn btn-primary" type="button" id="btn-open-lewis">Praticar Lewis</button>
-        <button class="btn btn-primary" type="button" id="btn-open-structural">Praticar Estrutural</button>
+        <button class="btn btn-primary" type="button" id="btn-open-lewis" data-i18n="training.lewis">Praticar Lewis</button>
+        <button class="btn btn-primary" type="button" id="btn-open-structural" data-i18n="training.structural">Praticar Estrutural</button>
       </div>
     </div>
 
     <footer class="classroom-controls">
-      <button class="btn btn-small" type="button" id="btn-cls-prev">◀ Anterior</button>
-      <button class="btn btn-small" type="button" id="btn-cls-skip">Pular aula ⏭</button>
-      <button class="btn btn-small" type="button" id="btn-cls-back" data-nav="bonds">Voltar para Conteúdo</button>
-      <button class="btn btn-primary btn-small" type="button" id="btn-cls-next">Próximo ▶</button>
+      <button class="btn btn-small" type="button" id="btn-cls-prev" data-i18n="cls.prev">◀ Anterior</button>
+      <button class="btn btn-small" type="button" id="btn-cls-skip" data-i18n="cls.skip">Pular aula ⏭</button>
+      <button class="btn btn-small" type="button" id="btn-cls-back" data-nav="bonds" data-i18n="cls.back">Voltar para Conteúdo</button>
+      <button class="btn btn-primary btn-small" type="button" id="btn-cls-next" data-i18n="cls.next">Próximo ▶</button>
     </footer>
   </div>
+</section>
+
+<!-- ============================================================
+     SCREEN: LOADING DE IDIOMA (nave orbitando um planeta em 3D)
+============================================================ -->
+<section id="screen-loading" class="screen" role="status" aria-label="Carregando idioma">
+  <div class="starfield" aria-hidden="true"></div>
+  <div id="loading-scene" aria-hidden="true"></div>
+  <div class="loading-copy">
+    <p class="loading-caption" id="loading-caption">Aplicando novo idioma…</p>
+    <p class="loading-sub" id="loading-sub">Preparando a galáxia no seu idioma</p>
+  </div>
+  <div id="loading-fade" aria-hidden="true"></div>
 </section>
 
 <!-- ============================================================
@@ -373,13 +394,20 @@
   <!-- OVERLAY: pausa -->
   <div id="pause" class="overlay" hidden>
     <div class="panel pause-panel">
-      <h2 class="panel-title">⏸ Pausa</h2>
+      <h2 class="panel-title" data-i18n="pause.title">⏸ Pausa</h2>
       <div class="pause-stats" id="pause-stats"></div>
       <div class="pause-buttons">
-        <button class="btn btn-primary" id="btn-resume"><img class="pix-icon" data-icon="arrowR" data-scale="2" alt=""> Continuar</button>
-        <button class="btn" id="btn-ptable">🔬 Tabela Periódica</button>
-        <button class="btn" id="btn-restart">↻ Recomeçar Fase</button>
-        <button class="btn" data-nav="menu" id="btn-exit-level"><img class="pix-icon" data-icon="door" data-scale="1" alt=""> Sair</button>
+        <button class="btn btn-primary" id="btn-resume"><img class="pix-icon" data-icon="arrowR" data-scale="2" alt=""> <span data-i18n="pause.resume">Continuar</span></button>
+        <button class="btn" id="btn-ptable"><span data-i18n="pause.ptable">🔬 Tabela Periódica</span></button>
+        <button class="btn" id="btn-restart"><span data-i18n="pause.restart">↻ Recomeçar Fase</span></button>
+        <button class="btn" data-nav="menu" id="btn-exit-level"><img class="pix-icon" data-icon="door" data-scale="1" alt=""> <span data-i18n="pause.exit">Sair</span></button>
+      </div>
+
+      <!-- Dock de idiomas também na pausa -->
+      <div class="lang-dock lang-dock--row" role="toolbar" aria-label="Idioma / Language / Idioma">
+        <button class="lang-btn" type="button" data-lang="en" title="English"><span class="lang-flag lang-flag-en" aria-hidden="true"></span><span class="lang-code">EN</span></button>
+        <button class="lang-btn" type="button" data-lang="es" title="Español"><span class="lang-flag lang-flag-es" aria-hidden="true"></span><span class="lang-code">ES</span></button>
+        <button class="lang-btn active" type="button" data-lang="pt" title="Português (BR)"><span class="lang-flag lang-flag-pt" aria-hidden="true"></span><span class="lang-code">PT</span></button>
       </div>
     </div>
   </div>
@@ -389,7 +417,7 @@
     <div class="ptable-container">
       <div class="ptable-header">
         <h2 class="panel-title">🔬 Tabela Periódica</h2>
-        <button class="btn" id="btn-pt-close">Fechar</button>
+        <button class="btn" id="btn-pt-close" data-i18n="ptable.close">Fechar</button>
       </div>
       <div class="ptable-body">
         <div class="ptable-left">
@@ -608,15 +636,17 @@
 </div>
 
 <script src="assets/vendor/three.min.js"></script>
-<script src="effects3d.js?v=20260823i"></script>
-<script src="atom3d.js?v=20260823i"></script>
-<script src="questions.js?v=20260823i"></script>
-<script src="periodic_table.js?v=20260823i"></script>
-<script src="script.js?v=20260823i"></script>
-<script src="exercises.js?v=20260823i"></script>
-<script src="lewis_builder.js?v=20260823i"></script>
-<script src="structural_builder.js?v=20260823i"></script>
-<script src="classroom.js?v=20260823i"></script>
-<script src="menu_glass.js?v=20260823i"></script>
+<script src="loading_scene.js?v=20260823j"></script>
+<script src="effects3d.js?v=20260823j"></script>
+<script src="atom3d.js?v=20260823j"></script>
+<script src="questions.js?v=20260823j"></script>
+<script src="periodic_table.js?v=20260823j"></script>
+<script src="i18n.js?v=20260823j"></script>
+<script src="script.js?v=20260823j"></script>
+<script src="exercises.js?v=20260823j"></script>
+<script src="lewis_builder.js?v=20260823j"></script>
+<script src="structural_builder.js?v=20260823j"></script>
+<script src="classroom.js?v=20260823j"></script>
+<script src="menu_glass.js?v=20260823j"></script>
 </body>
 </html>

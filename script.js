@@ -2514,7 +2514,10 @@ function showFeedback(cls, title, text, onClose) {
   box.className = 'feedback-box ' + cls;
   document.getElementById('feedback-title').textContent = title;
   document.getElementById('feedback-text').textContent = text;
-  document.getElementById('feedback-continue').textContent = IS_TOUCH ? 'Toque para continuar' : 'ESPAÇO para continuar';
+  const I = window.I18N;
+  document.getElementById('feedback-continue').textContent = IS_TOUCH
+    ? (I ? I.t('dyn.touch.continue', 'Toque para continuar') : 'Toque para continuar')
+    : (I ? I.t('dyn.kbd.continue', 'ESPAÇO para continuar') : 'ESPAÇO para continuar');
   document.getElementById('feedback').hidden = false;
 }
 
@@ -7370,7 +7373,9 @@ function setPracticeReturn(target) {
     if (!b) return;
     b.dataset.nav = practiceReturn;
     const lbl = document.getElementById('btn-' + k + '-back-label');
-    if (lbl) lbl.textContent = practiceReturn === 'bonds' ? '← Conteúdo de Ligações' : '← Menu';
+    if (lbl) lbl.textContent = practiceReturn === 'bonds'
+      ? (window.I18N ? I18N.t('back.content', '← Conteúdo de Ligações') : '← Conteúdo de Ligações')
+      : (window.I18N ? I18N.t('back.menu', '← Menu') : '← Menu');
   });
 }
 
@@ -7684,8 +7689,9 @@ function renderAchievements() {
       '<div><div class="achieve-name">' + a.name + '</div><div class="achieve-desc">' + a.desc + '</div></div>';
     grid.appendChild(card);
   });
+  const achWord = window.I18N ? I18N.t('ach.count', 'conquistas desbloqueadas') : 'conquistas desbloqueadas';
   document.getElementById('achievement-count').textContent =
-    unlocked + ' de ' + ACHIEVEMENTS.length + ' conquistas desbloqueadas';
+    unlocked + ' / ' + ACHIEVEMENTS.length + ' ' + achWord;
 }
 
 /* --- Toast de conquista --- */
@@ -7777,7 +7783,10 @@ function startLevel(idx) {
     'radial-gradient(circle at 35% 35%, ' + lv.lv.planetColor + ', #1a1030)';
   document.getElementById('intro-text').textContent = lv.lv.intro;
   document.getElementById('intro-chem').textContent = INTRO_CHEM[lv.lv.id] || '';
-  document.getElementById('intro-hint').innerHTML = IS_TOUCH ? 'Toque para começar' : 'Aperte <kbd>ESPAÇO</kbd> para começar';
+  const IH = window.I18N;
+  document.getElementById('intro-hint').innerHTML = IS_TOUCH
+    ? (IH ? IH.t('dyn.touch.start', 'Toque para começar') : 'Toque para começar')
+    : (IH ? IH.t('dyn.kbd.start', 'Aperte <kbd>ESPAÇO</kbd> para começar') : 'Aperte <kbd>ESPAÇO</kbd> para começar');
   const obj = document.getElementById('intro-objective');
   obj.innerHTML = '';
   lv.lv.recipes.forEach(rid => {
@@ -8330,8 +8339,9 @@ document.querySelectorAll('[data-nav]').forEach(b => {
 /* Som */
 function updateSoundButton() {
   const b = document.getElementById('btn-sound');
-  if (AudioSys.sfxOn) b.innerHTML = pixIcon('soundOn', 1) + ' Som: Ligado';
-  else b.innerHTML = pixIcon('soundOff', 1) + ' Som: Desligado';
+  const IS_ = window.I18N;
+  if (AudioSys.sfxOn) b.innerHTML = pixIcon('soundOn', 1) + ' ' + (IS_ ? IS_.t('menu.sound.on', 'Som: Ligado') : 'Som: Ligado');
+  else b.innerHTML = pixIcon('soundOff', 1) + ' ' + (IS_ ? IS_.t('menu.sound.off', 'Som: Desligado') : 'Som: Desligado');
 }
 document.getElementById('btn-sound').addEventListener('click', () => {
   AudioSys.init();
@@ -8350,7 +8360,10 @@ function updateEffects3DButton() {
   if (!b || !window.Effects3D) return;
   if (!Effects3D.supported()) { b.style.display = 'none'; return; }
   b.style.display = '';
-  b.innerHTML = pixIcon('galaxy', 1) + ' Efeitos 3D: ' + (Effects3D.isEnabled() ? 'Ligado' : 'Desligado');
+  const IE = window.I18N;
+  b.innerHTML = pixIcon('galaxy', 1) + ' ' + (IE
+    ? IE.t(Effects3D.isEnabled() ? 'menu.fx3d.on' : 'menu.fx3d.off', 'Efeitos 3D: ' + (Effects3D.isEnabled() ? 'Ligado' : 'Desligado'))
+    : 'Efeitos 3D: ' + (Effects3D.isEnabled() ? 'Ligado' : 'Desligado'));
 }
 document.getElementById('btn-effects3d').addEventListener('click', () => {
   if (!window.Effects3D) return;
@@ -8364,7 +8377,10 @@ function updateFullscreenMenuButton() {
   const b = document.getElementById('btn-fullscreen-menu');
   if (!b) return;
   const active = !!document.fullscreenElement;
-  b.innerHTML = '<span class="fs-glyph" aria-hidden="true">⛶</span> ' + (active ? 'Sair da Tela Cheia' : 'Tela Cheia');
+  const IF = window.I18N;
+  b.innerHTML = '<span class="fs-glyph" aria-hidden="true">⛶</span> ' +
+    (IF ? IF.t(active ? 'menu.fs.exit' : 'menu.fs.enter', active ? 'Sair da Tela Cheia' : 'Tela Cheia')
+        : (active ? 'Sair da Tela Cheia' : 'Tela Cheia'));
 }
 document.getElementById('btn-fullscreen-menu').addEventListener('click', () => {
   AudioSys.unlock();
