@@ -1364,7 +1364,7 @@
     black.a = 1; black.target = 0; black.speed = 2;
     var cb = cin.onBlack;
     cin = null;
-    if (cb) { try { cb(); } catch (e) {} }
+    if (cb) { try { cb(); } catch (e) { console.warn('[Effects3D] cinematic callback error:', e); } }
   }
 
   function updateCinDeparture(dt, k) {

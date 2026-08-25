@@ -3160,6 +3160,20 @@ function update(dt) {
   if (Game.phase === 'dialog') { updateDialog(dt); return; }
   if (Game.phase === 'travel') { updateTravel(dt); updateParticles(dt); return; }
 
+  /* Partida: a camada 3D executa a cena de saída. Se a camada 3D não
+     estiver disponível ou a cena não disparar o callback, iniciamos
+     a viagem diretamente após um curto período para evitar travamento. */
+  if (Game.phase === 'departure') {
+    updateParticles(dt);
+    if (!Game._departTimer) Game._departTimer = 0;
+    Game._departTimer += dt;
+    if (Game._departTimer > 5) {
+      Game._departTimer = 0;
+      startTravel();
+    }
+    return;
+  }
+
   /* Diálogo aberto sem troca de fase (ex.: conversa com um NPC no planeta) */
   if (Game.dialog) { updateDialog(dt); return; }
 
@@ -4037,6 +4051,18 @@ function render() {
   if (Game.phase === 'return') { drawReturnScene(); return; }
   /* Batalha 3D: o canvas WebGL cobre a tela; aqui só um fundo de reserva */
   if (Game.phase === 'boss') { ctx.fillStyle = '#04060f'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); return; }
+  /* Partida: tela preta enquanto a camada 3D executa a cena de saída.
+     Sem este handler, o render caía no desenho completo do nível, fazendo
+     o tilemap aparecer sobre a cena 3D e travando a transição. */
+  if (Game.phase === 'departure') {
+    if (window.Effects3D && Effects3D.isEnabled()) {
+      ctx.fillStyle = '#04060f';
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    } else {
+      drawTravelScene();
+    }
+    return;
+  }
   if (Game.phase === 'classroom') { drawClassroom(); return; }
   if (Game.phase === 'results') {
     /* Mantém a sala de aula visível atrás do overlay de resultados */
@@ -5884,6 +5910,7 @@ function startDeparture() {
   if (!Game.level) return;
   Game.phase = 'departure';
   Game.locked = true;
+  Game._departTimer = 0;
   if (window.Effects3D && Effects3D.supported() && Effects3D.isEnabled()) {
     AudioSys.sfx('takeoff');
     const theme = (Game.level && Game.level.lv && Game.level.lv.id) ||
@@ -5909,6 +5936,7 @@ function startTravel() {
   if (!Game.level) return;
   Game.phase = 'travel';
   Game.locked = true;
+  Game._departTimer = 0;
   /* Fase real: esconde o "carregando" antigo e desenha tudo no canvas */
   const tw = document.getElementById('travel-wrap');
   if (tw) tw.hidden = true;
