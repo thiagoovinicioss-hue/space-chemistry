@@ -8367,7 +8367,7 @@ function showScreen(name) {
 
 /* Esconde os overlays do ciclo novo (diálogo/fusão/quiz/missão/viagem) */
 function hideOverhaulOverlays() {
-  ['dialog', 'fusion', 'quiz', 'mission', 'results', 'credits', 'periodic-table', 'route', 'ballistic'].forEach(id => {
+  ['dialog', 'fusion', 'quiz', 'mission', 'results', 'credits', 'periodic-table', 'route', 'ballistic', 'gabarito-pw', 'gabarito-screen'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.hidden = true;
@@ -9491,6 +9491,158 @@ document.addEventListener('fullscreenchange', () => {
   AudioSys.sfx('click');
   updateFullscreenMenuButton();
 });
+
+/* Gabarito: botão → senha → gabarito completo */
+(function () {
+  var PW = 'Fidelio';
+  var btnGab = document.getElementById('btn-gabarito');
+  var pwOverlay = document.getElementById('gabarito-pw');
+  var gabOverlay = document.getElementById('gabarito-screen');
+  var gabBody = document.getElementById('gabarito-body');
+  var gabInput = document.getElementById('gabarito-input');
+  var gabError = document.getElementById('gabarito-error');
+  if (!btnGab || !pwOverlay || !gabOverlay) return;
+
+  btnGab.addEventListener('click', function () {
+    AudioSys.sfx('click');
+    pwOverlay.hidden = false;
+    gabError.hidden = true;
+    gabInput.value = '';
+    setTimeout(function () { gabInput.focus(); }, 60);
+  });
+  document.getElementById('gabarito-cancel').addEventListener('click', function () {
+    AudioSys.sfx('click');
+    pwOverlay.hidden = true;
+  });
+  document.getElementById('gabarito-submit').addEventListener('click', checkPw);
+  gabInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') checkPw();
+    if (e.key === 'Escape') { pwOverlay.hidden = true; }
+  });
+  function checkPw() {
+    if (gabInput.value.trim() === PW) {
+      AudioSys.sfx('unlock');
+      pwOverlay.hidden = true;
+      buildGabarito();
+      gabOverlay.hidden = false;
+    } else {
+      AudioSys.sfx('hurt');
+      gabError.hidden = false;
+      gabInput.select();
+    }
+  }
+  document.getElementById('gabarito-close').addEventListener('click', function () {
+    AudioSys.sfx('click');
+    gabOverlay.hidden = true;
+  });
+
+  var PLANET_NAMES = {
+    0: 'Estação Orbital (Tutorial)',
+    1: 'Planeta Iônico',
+    2: 'Planeta Covalente',
+    3: 'Planeta Metálico',
+    4: 'Planeta Final (Revisão)',
+    5: 'Planeta Kinder (Desvio Iônico)',
+    6: 'Planeta Bueno (Desvio Covalente)'
+  };
+  var PLANET_NAMES_EN = {
+    0: 'Orbital Station (Tutorial)',
+    1: 'Ionic Planet',
+    2: 'Covalent Planet',
+    3: 'Metallic Planet',
+    4: 'Final Planet (Review)',
+    5: 'Kinder Planet (Ionic Detour)',
+    6: 'Bueno Planet (Covalent Detour)'
+  };
+  var PLANET_NAMES_ES = {
+    0: 'Estación Orbital (Tutorial)',
+    1: 'Planeta Iónico',
+    2: 'Planeta Covalente',
+    3: 'Planeta Metálico',
+    4: 'Planeta Final (Repaso)',
+    5: 'Planeta Kinder (Desvío Iónico)',
+    6: 'Planeta Bueno (Desvío Covalente)'
+  };
+
+  function getPlanetName(idx) {
+    var lang = (window.I18N && I18N.lang) || 'pt';
+    if (lang === 'en') return PLANET_NAMES_EN[idx] || ('Level ' + idx);
+    if (lang === 'es') return PLANET_NAMES_ES[idx] || ('Nivel ' + idx);
+    return PLANET_NAMES[idx] || ('Nível ' + idx);
+  }
+
+  function formatAnswer(item) {
+    var a = item.ans;
+    if (item.type === 'choice' && item.opts) {
+      return item.opts[a] || ('(' + a + ')');
+    }
+    if (item.type === 'text-input') return a;
+    if (item.type === 'periodic-select') return Array.isArray(a) ? a.join(', ') : String(a);
+    if (item.type === 'transfer') {
+      if (a && a.donor) return a.donor + (a.need ? ' (' + a.need + 'e⁻)' : '');
+      return String(a);
+    }
+    if (item.type === 'electrons') {
+      if (a && typeof a === 'object') return 'K=' + a.K + ', L=' + a.L + (a.M != null ? ', M=' + a.M : '');
+      return String(a);
+    }
+    if (item.type === 'structure') {
+      if (item.opts && item.opts.anchors) return item.opts.anchors.map(function (a) { return a.el; }).join(' — ');
+      return String(a);
+    }
+    if (item.type === 'lewis') {
+      if (a && Array.isArray(a)) return 'N=' + a[0] + ', S=' + a[1] + ', E=' + a[2] + ', W=' + a[3];
+      return String(a);
+    }
+    if (item.type === 'drag') {
+      if (a && typeof a === 'object') return Object.keys(a).map(function (k) { return k + '→' + a[k]; }).join(', ');
+      return String(a);
+    }
+    return String(a);
+  }
+
+  function buildGabarito() {
+    gabBody.innerHTML = '';
+    var levels = window.EXERCISE_LEVELS;
+    if (!levels) { gabBody.textContent = 'EXERCISE_LEVELS não encontrado.'; return; }
+    for (var i = 0; i < levels.length; i++) {
+      var items = levels[i];
+      if (!items || !items.length) continue;
+      var sec = document.createElement('div');
+      sec.className = 'gabarito-planet';
+      var title = document.createElement('div');
+      title.className = 'gabarito-planet-title';
+      title.textContent = getPlanetName(i);
+      sec.appendChild(title);
+      for (var j = 0; j < items.length; j++) {
+        var item = items[j];
+        var card = document.createElement('div');
+        card.className = 'gabarito-ex';
+        var num = document.createElement('div');
+        num.className = 'gabarito-ex-num';
+        num.textContent = (j + 1) + '/' + items.length;
+        card.appendChild(num);
+        var q = document.createElement('div');
+        q.className = 'gabarito-ex-q';
+        q.textContent = item.instruction || item.q || '—';
+        card.appendChild(q);
+        var ans = document.createElement('div');
+        ans.className = 'gabarito-ex-ans';
+        ans.textContent = '▸ ' + formatAnswer(item);
+        card.appendChild(ans);
+        if (item.explain) {
+          var ex = document.createElement('div');
+          ex.className = 'gabarito-ex-explain';
+          ex.textContent = item.explain;
+          card.appendChild(ex);
+        }
+        sec.appendChild(card);
+      }
+      gabBody.appendChild(sec);
+    }
+    gabBody.scrollTop = 0;
+  }
+})();
 
 /* Vestiário: abas */
 document.querySelectorAll('#wardrobe-tabs .tab').forEach(tab => {

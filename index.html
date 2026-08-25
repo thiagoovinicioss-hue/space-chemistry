@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#070b1d">
 <title>Space Chemistry: Mission Bonds</title>
 <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
-<link rel="stylesheet" href="style.css?v=20260825c">
+<link rel="stylesheet" href="style.css?v=20260825d">
 </head>
 <body>
 
@@ -28,6 +28,7 @@
       <button class="btn" data-nav="wardrobe"><img class="pix-icon" data-icon="rocket" data-scale="1" alt=""> <span data-i18n="menu.wardrobe">Vestiário</span></button>
       <button class="btn" data-nav="achievements"><img class="pix-icon" data-icon="trophy" data-scale="1" alt=""> <span data-i18n="menu.achievements">Conquistas</span></button>
       <button class="btn" data-nav="bonds"><img class="pix-icon" data-icon="board" data-scale="1" alt=""> <span data-i18n="menu.bonds">Conteúdo de Ligações</span></button>
+      <button class="btn" id="btn-gabarito"><img class="pix-icon" data-icon="check" data-scale="1" alt=""> <span data-i18n="menu.gabarito">Gabarito</span></button>
       <button class="btn" id="btn-sound"><img class="pix-icon" data-icon="soundOn" data-scale="1" alt=""> Som: Ligado</button>
       <button class="btn" id="btn-effects3d"><img class="pix-icon" data-icon="galaxy" data-scale="1" alt=""> Efeitos 3D: Ligado</button>
       <button class="btn" id="btn-fullscreen-menu"><span class="fs-glyph" aria-hidden="true">⛶</span> Tela Cheia</button>
@@ -647,6 +648,29 @@
   </div>
 </section>
 
+<!-- Overlays globais -->
+<div id="gabarito-pw" class="overlay" hidden style="z-index:100">
+  <div class="panel gabarito-pw-panel">
+    <h2 class="panel-title"><img class="pix-icon" data-icon="check" data-scale="2" alt=""> <span data-i18n="gabarito.title">Gabarito</span></h2>
+    <p class="gabarito-pw-desc" data-i18n="gabarito.enter">Digite a senha para acessar o gabarito:</p>
+    <input type="password" id="gabarito-input" class="gabarito-input" placeholder="Senha" autocomplete="off">
+    <p class="gabarito-pw-error" id="gabarito-error" data-i18n="gabarito.wrong" hidden>Senha incorreta!</p>
+    <div class="reward-buttons">
+      <button class="btn btn-primary" id="gabarito-submit" data-i18n="gabarito.confirm">Confirmar</button>
+      <button class="btn" id="gabarito-cancel" data-i18n="gabarito.cancel">Cancelar</button>
+    </div>
+  </div>
+</div>
+<div id="gabarito-screen" class="overlay gabarito-overlay" hidden style="z-index:100">
+  <div class="panel gabarito-panel">
+    <h2 class="panel-title"><img class="pix-icon" data-icon="check" data-scale="2" alt=""> <span data-i18n="gabarito.fullTitle">GABARITO — EXERCÍCIOS</span></h2>
+    <div class="gabarito-body" id="gabarito-body"></div>
+    <div class="reward-buttons">
+      <button class="btn" id="gabarito-close" data-i18n="gabarito.close">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Overlay global: notificação de conquista -->
 <div id="toast" class="toast" hidden aria-live="polite"></div>
 <div id="ach-toast" class="ach-toast" hidden aria-live="assertive">
@@ -664,19 +688,19 @@
 </div>
 
 <script src="assets/vendor/three.min.js"></script>
-<script src="loading_scene.js?v=20260825c"></script>
-<script src="effects3d.js?v=20260825c"></script>
-<script src="boss3d.js?v=20260825c"></script>
-<script src="atom3d.js?v=20260825c"></script>
-<script src="questions.js?v=20260825c"></script>
-<script src="periodic_table.js?v=20260825c"></script>
-<script src="i18n.js?v=20260825c"></script>
-<script src="i18n_content.js?v=20260825c"></script>
-<script src="script.js?v=20260825c"></script>
-<script src="exercises.js?v=20260825c"></script>
-<script src="lewis_builder.js?v=20260825c"></script>
-<script src="structural_builder.js?v=20260825c"></script>
-<script src="classroom.js?v=20260825c"></script>
-<script src="menu_glass.js?v=20260825c"></script>
+<script src="loading_scene.js?v=20260825d"></script>
+<script src="effects3d.js?v=20260825d"></script>
+<script src="boss3d.js?v=20260825d"></script>
+<script src="atom3d.js?v=20260825d"></script>
+<script src="questions.js?v=20260825d"></script>
+<script src="periodic_table.js?v=20260825d"></script>
+<script src="i18n.js?v=20260825d"></script>
+<script src="i18n_content.js?v=20260825d"></script>
+<script src="script.js?v=20260825d"></script>
+<script src="exercises.js?v=20260825d"></script>
+<script src="lewis_builder.js?v=20260825d"></script>
+<script src="structural_builder.js?v=20260825d"></script>
+<script src="classroom.js?v=20260825d"></script>
+<script src="menu_glass.js?v=20260825d"></script>
 </body>
 </html>

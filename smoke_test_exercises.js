@@ -216,9 +216,26 @@ maybeEndLevel();
 const quizFallback = run('Game.phase === "quiz"');
 console.log('fase sem exercicios cai no quiz:', quizFallback);
 
+/* ---------- Gabarito: estrutura e dados ---------- */
+const srcMain = fs.readFileSync(__dirname + '/script.js', 'utf8');
+const srcI18n = fs.readFileSync(__dirname + '/i18n.js', 'utf8');
+const gabaritoHtml = fs.readFileSync(__dirname + '/index.html', 'utf8');
+const gabaritoOk =
+  gabaritoHtml.includes('id="btn-gabarito"') &&
+  gabaritoHtml.includes('id="gabarito-pw"') &&
+  gabaritoHtml.includes('id="gabarito-screen"') &&
+  gabaritoHtml.includes('id="gabarito-input"') &&
+  srcMain.includes("var PW = 'Fidelio'") &&
+  srcMain.includes('buildGabarito') &&
+  srcMain.includes('EXERCISE_LEVELS') &&
+  srcMain.includes("'gabarito-pw', 'gabarito-screen'") &&
+  srcI18n.includes("'menu.gabarito'") &&
+  srcI18n.includes("'gabarito.title'");
+console.log('gabarito (HTML+JS+i18n):', gabaritoOk);
+
 if (!(hasApi && openedChallenge && overlayShown && flagsSet && scoreUI &&
       wrongFeedback && gradedOk && onItem2 && clearedOk && quizFallback &&      transferApi && transferClickOk && transferDragOk && transferGraded &&
-      structureTapOk)) {
+      structureTapOk && gabaritoOk)) {
   console.error('SMOKE_FAIL');
   process.exit(1);
 }
