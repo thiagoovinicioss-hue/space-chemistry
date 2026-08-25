@@ -2476,6 +2476,9 @@ const Game = {
   fade: null,            /* transição de fade {a, target, speed, onDone} */
   classroom: null,       /* cena da sala de aula (volta à Terra) */
   return: null,          /* batalha espacial de volta para a Terra */
+  bossCtx: null,         /* contexto da batalha 3D: 'final' | 'detour' */
+  ballisticDetour: null, /* índice do desvio aguardando emboscada do boss */
+  detourBossIdx: null,   /* desvio da emboscada em andamento/concluída */
   quizStats: { correct: 0, total: 0 },
 
   /* Estado da campanha (uma tentativa) */
@@ -5714,7 +5717,11 @@ function showBallistic() {
   const fireBtn = document.getElementById('ballistic-fire');
   if (fireBtn) {
     fireBtn.hidden = true;
-    fireBtn.textContent = IH ? IH.t('ballistic.fire', 'Iniciar Batalha Final') : 'Iniciar Batalha Final';
+    const detour = Game.ballisticDetour != null;
+    fireBtn.textContent = IH
+      ? IH.t(detour ? 'ballistic.fireDetour' : 'ballistic.fire',
+             detour ? 'Iniciar Batalha!' : 'Iniciar Batalha Final')
+      : (detour ? 'Iniciar Batalha!' : 'Iniciar Batalha Final');
     fireBtn.onclick = ballisticFire;
   }
   buildBallisticSlots();
@@ -5825,6 +5832,13 @@ function ballisticFire() {
   Game.ballistic = null;
   Game.ammo = AMMO_TYPES[sel] || AMMO_TYPES.STD;
   AudioSys.sfx('laser');
+  /* Desvio: a batalha é contra o Boss imediatamente, sem missão de retorno */
+  if (Game.ballisticDetour != null) {
+    const idx = Game.ballisticDetour;
+    Game.ballisticDetour = null;
+    launchDetourBoss(idx);
+    return;
+  }
   startReturn();
 }
 
@@ -7120,12 +7134,16 @@ function damageBoss(dmg) {
 /* ---------- Batalha final em 3D (terceira pessoa) ----------
    A frota limpa entrega o controle para o módulo BossBattle (boss3d.js),
    que roda a fase 'boss' com câmera atrás da nave. Na vitória, o fluxo
-   volta para a fase 2D 'return' e a nave segue até a Terra. */
-function startBossEncounter() {
+   volta para a fase 2D 'return' e a nave segue até a Terra.
+   O mesmo confronto também embosca o jogador ao sair dos planetas
+   secretos (mode 'detour'): sem missão de retorno — a vitória devolve
+   o fluxo normal de conclusão do desvio. */
+function startBossEncounter(mode) {
+  const ctx = mode || 'final';
   const r = Game.return;
   if (window.BossBattle && BossBattle.supported()) {
     const ok = BossBattle.start({
-      ammo: (r && r.ammo) || AMMO_TYPES.STD,
+      ammo: (ctx === 'detour' ? Game.ammo : (r && r.ammo)) || AMMO_TYPES.STD,
       addScore(n) {
         if (!Game.replay) {
           Game.run.score = Math.max(0, Game.run.score + n);
@@ -7135,20 +7153,48 @@ function startBossEncounter() {
       onVictory() { finishBossEncounter(); }
     });
     if (ok) {
+      Game.bossCtx = ctx;
       Game.phase = 'boss';
       const mu = document.getElementById('mobile-ui');
       if (mu) mu.classList.add('boss3d-off');
-      return;
+      return true;
     }
   }
-  /* Sem WebGL: confronto 2D clássico dentro da fase 'return' */
+  /* Sem WebGL: confronto 2D clássico dentro da fase 'return'.
+     No desvio não há reserva 2D — a conclusão segue normal. */
+  if (ctx === 'detour') return false;
   spawnReturnBoss();
+  return false;
+}
+
+/* Dispara a emboscada pós-planeta-secreto; sem WebGL, entrega a
+   recompensa normalmente (o jogo nunca fica preso). */
+function launchDetourBoss(idx) {
+  Game.detourBossIdx = idx;
+  if (!startBossEncounter('detour')) finishDetourBoss();
+}
+
+/* Conclusão da rota após vencer (ou pular, sem WebGL) o boss do desvio:
+   mesma cauda de completeLevel — recompensa do item e mapa galáctico. */
+function finishDetourBoss() {
+  Game.bossCtx = null;
+  Game.phase = null; /* evita reentrada do dispatch da fase 'boss' */
+  const idx = Game.detourBossIdx;
+  Game.detourBossIdx = null;
+  AudioSys.sfx('gate');
+  selectedPlanet = isSideQuest(idx) ? SIDE_QUESTS[idx].next : Math.min(idx + 1, FINAL_INDEX);
+  if (unlockItemWithPopup(LEVEL_REWARDS[idx])) {
+    pendingLevelComplete = true;
+  } else {
+    showScreen('galaxy');
+  }
 }
 
 function finishBossEncounter() {
-  const r = Game.return;
   const mu = document.getElementById('mobile-ui');
   if (mu) mu.classList.remove('boss3d-off');
+  if (Game.bossCtx === 'detour') { finishDetourBoss(); return; }
+  const r = Game.return;
   if (!r) { Game.phase = 'return'; return; }
   r.boss = null;
   Game.phase = 'return';
@@ -8346,6 +8392,9 @@ function exitToMenu() {
   Game.locked = false;
   Game.phase = null;
   Game.travel = null;
+  Game.bossCtx = null;
+  Game.ballisticDetour = null;
+  Game.detourBossIdx = null;
   pauseShown = false;
   if (typeof Effects3D !== 'undefined' && Effects3D.isCinematic()) {
     Effects3D.cancelCinematic();
@@ -8816,6 +8865,17 @@ function completeLevel() {
 
   if (!firstTime) {
     showScreen('galaxy');
+    return;
+  }
+
+  /* EMBOSCADA: ao deixar um planeta secreto recém-conquistado, o
+     Devorador Estelar intercepta a nave. A Máquina Balística abre
+     para carregar o projétil antes do confronto em 3ª pessoa. */
+  if (isSideQuest(idx)) {
+    Game.ballisticDetour = idx;
+    showToast('EMBOSCADA!',
+      'O Devorador Estelar detectou sua nave! Carregue a Máquina Balística.');
+    showBallistic();
     return;
   }
 

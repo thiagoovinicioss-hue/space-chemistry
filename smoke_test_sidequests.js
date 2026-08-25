@@ -98,6 +98,7 @@ const sandbox = {
   Audio: function () { return { play() {}, pause() {}, addEventListener() {} }; },
   addEventListener() {}, requestAnimationFrame() { return 0; },
   cancelAnimationFrame() {},
+  scrollTo() {},
   performance: { now: () => 0 },
   devicePixelRatio: 1,
   visualViewport: null,
@@ -419,8 +420,8 @@ const css = fs.readFileSync(__dirname + '/style.css', 'utf8');
 const src = fs.readFileSync(__dirname + '/script.js', 'utf8');
 check('#route presente no HTML com opções e título',
   html.includes('id="route"') && html.includes('id="route-options"') && html.includes('id="route-title-text"'));
-check('cache bumpado para 20260824e em todos os assets',
-  html.includes('?v=20260824e') && !html.includes('?v=20260824b') && !html.includes('?v=20260823'));
+check('cache bumpado para 20260824f em todos os assets',
+  html.includes('?v=20260824f') && !html.includes('?v=20260824b') && !html.includes('?v=20260823'));
 check('CSS estiliza painel de rota e cartões de planeta opcional',
   css.includes('.route-panel') && css.includes('.route-btn.route-side') && css.includes('.planet-btn.side'));
 check('overlay route é escondido nas trocas de tela (hideOverhaulOverlays)',
@@ -534,6 +535,98 @@ check('simulação: frota limpa → boss surge → cai → Terra liberada',
       if (!r.boss || !r.boss.dead) return false;
       for (var i = 0; i < 160; i++) updateReturn(0.05);   /* colapso ~8s */
       return r.boss === null;
+    })()
+  `));
+
+/* ---------- 9. Emboscada do boss ao sair dos planetas secretos ---------- */
+check('completeLevel de desvio inédito abre a Máquina Balística (emboscada)',
+  run(`
+    (function () {
+      Game.replay = false;
+      Save.data = Save.defaults();
+      Save.save();
+      Game.levelIndex = KINDER_INDEX;
+      Game.run.completed = [false, false, false, false, false, false, false];
+      completeLevel();
+      return Game.phase === 'ballistic' && Game.ballisticDetour === KINDER_INDEX &&
+        document.getElementById('ballistic').hidden === false;
+    })()
+  `));
+check('ballisticFire no desvio inicia a batalha 3D do boss com a munição escolhida',
+  run(`
+    (function () {
+      window.__detourVictory = null;
+      window.__detourAmmo = null;
+      window.__bossActive = false;
+      window.BossBattle = {
+        supported: function () { return true; },
+        start: function (opts) {
+          /* como no módulo real: stop() acontece antes do onVictory */
+          window.__detourVictory = function () {
+            window.__bossActive = false;
+            opts.onVictory();
+          };
+          window.__detourAmmo = opts.ammo;
+          window.__bossActive = true;
+          return true;
+        },
+        isActive: function () { return !!window.__bossActive; },
+        stop: function () { window.__bossActive = false; }
+      };
+      Game.ballistic = { sel: 'NA2S', token: 1 };
+      ballisticFire();
+      return Game.phase === 'boss' && Game.ballisticDetour === null &&
+        Game.detourBossIdx === KINDER_INDEX && Game.bossCtx === 'detour' &&
+        window.__detourAmmo === AMMO_TYPES.NA2S && Game.ammo === AMMO_TYPES.NA2S;
+    })()
+  `));
+check('vitória na emboscada devolve o fluxo normal do desvio (recompensa + galáxia)',
+  run(`
+    (function () {
+      var rewardEl = document.getElementById('reward');
+      window.__detourVictory();
+      var ctxClean = Game.bossCtx === null && Game.phase !== 'boss' &&
+        Game.detourBossIdx === null && !window.__bossActive;
+      return ctxClean && selectedPlanet === SIDE_QUESTS[KINDER_INDEX].next &&
+        ((!rewardEl.hidden && pendingLevelComplete === true) || Game.screen === 'galaxy');
+    })()
+  `));
+check('replay do desvio não repete a emboscada (vai direto para o mapa)',
+  run(`
+    (function () {
+      pendingLevelComplete = false;
+      document.getElementById('reward').hidden = true;
+      document.getElementById('ballistic').hidden = true;
+      Game.levelIndex = KINDER_INDEX;
+      completeLevel();
+      return Game.screen === 'galaxy' && Game.ballisticDetour === null &&
+        Game.phase !== 'ballistic';
+    })()
+  `));
+check('sem WebGL a emboscada é pulada sem travar (conclusão normal)',
+  run(`
+    (function () {
+      window.BossBattle = undefined;
+      Save.data.completed[BUENO_INDEX] = false;
+      Game.run.completed[BUENO_INDEX] = false;
+      Game.levelIndex = BUENO_INDEX;
+      completeLevel();
+      var openedBallistic = Game.ballisticDetour === BUENO_INDEX;
+      Game.ballistic = { sel: 'STD', token: 1 };
+      ballisticFire();
+      return openedBallistic && Game.screen === 'galaxy' &&
+        Game.detourBossIdx === null && selectedPlanet === SIDE_QUESTS[BUENO_INDEX].next;
+    })()
+  `));
+check('exitToMenu limpa o estado da emboscada',
+  run(`
+    (function () {
+      Game.ballisticDetour = KINDER_INDEX;
+      Game.detourBossIdx = KINDER_INDEX;
+      Game.bossCtx = 'detour';
+      exitToMenu();
+      return Game.ballisticDetour === null && Game.detourBossIdx === null &&
+        Game.bossCtx === null;
     })()
   `));
 
