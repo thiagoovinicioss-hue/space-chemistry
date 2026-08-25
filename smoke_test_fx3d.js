@@ -55,6 +55,7 @@ function buildSandbox(extra) {
     visibilityState: 'visible'
   };
   const navigator = { maxTouchPoints: 0 };
+  function FakeImage() { this.src = ''; this.onload = null; }
   const windowStub = new Proxy(Object.assign({
     addEventListener() {}, requestAnimationFrame() { return 0; },
     cancelAnimationFrame() {},
@@ -63,6 +64,8 @@ function buildSandbox(extra) {
     visualViewport: null,
     innerWidth: 800, innerHeight: 600,
     navigator,
+    Image: FakeImage,
+    Audio: function () { return { play() {}, pause() {}, addEventListener() {} }; },
     localStorage: {
       getItem() { return null; }, setItem() {}, removeItem() {}
     }
@@ -73,6 +76,8 @@ function buildSandbox(extra) {
   const sandbox = {
     console, Math, Date, JSON, parseInt, parseFloat, isNaN, isFinite,
     document, navigator, localStorage: windowStub.localStorage,
+    Image: FakeImage,
+    Audio: windowStub.Audio,
     requestAnimationFrame: windowStub.requestAnimationFrame,
     cancelAnimationFrame: windowStub.cancelAnimationFrame,
     performance: windowStub.performance,

@@ -39,8 +39,8 @@ const METALLIC_INDEX = 3;
 const FINAL_INDEX = 4;
 
 /* --- Side quests opcionais (NUNCA bloqueiam a campanha principal) ---
-   KINDER (índice 5): desvio iônico avançado, acessível após o Planeta Inicial.
-   BUENO  (índice 6): desvio covalente avançado, acessível após o Planeta Covalente.
+   KINDER   (índice 5): desvio iônico avançado, acessível após o Planeta Inicial.
+   BUENO    (índice 6): desvio covalente avançado, acessível após o Planeta Covalente.
    Cada desvio devolve o jogador ao próximo planeta PRINCIPAL do fluxo. */
 const KINDER_INDEX = 5;
 const BUENO_INDEX = 6;
@@ -49,7 +49,9 @@ const SIDE_QUESTS = {
   [BUENO_INDEX]: { from: COVALENT_INDEX, next: METALLIC_INDEX }
 };
 
-function isSideQuest(idx) { return idx === KINDER_INDEX || idx === BUENO_INDEX; }
+function isSideQuest(idx) {
+  return idx === KINDER_INDEX || idx === BUENO_INDEX;
+}
 
 /* Um desvio fica disponível quando o planeta principal de origem foi concluído */
 function sideQuestUnlocked(idx) {
@@ -5596,6 +5598,19 @@ function hideMission() {
   pendingMissionItem = null;
 }
 
+/* Partida padrão: destino é sempre o próximo planeta principal. Se existir
+   desvio opcional disponível, ele aparece FISICAMENTE no espaço durante a
+   viagem — nunca como menu (o piloto decide desviar ou seguir reto). */
+function departAfterLevel(idx) {
+  const dests = travelOptionsFor(idx);
+  if (dests.length > 1) {
+    showRouteChoice(dests);
+  } else {
+    Game.routeDest = dests[0];
+    startDeparture();
+  }
+}
+
 /* Botões da missão concluída */
 function missionDone(equip) {
   if (equip && pendingMissionItem) {
@@ -5630,16 +5645,20 @@ function missionDone(equip) {
   Save.save();
   updateHudProgress();
 
-  /* Partida: destino é sempre o próximo planeta principal. Se existir desvio
-     opcional disponível, ele aparece FISICAMENTE no espaço durante a viagem —
-     nunca como menu (o piloto decide desviar ou seguir reto). */
-  const dests = travelOptionsFor(Game.levelIndex);
-  if (dests.length > 1) {
-    showRouteChoice(dests);
-  } else {
-    Game.routeDest = dests[0];
-    startDeparture();
+  /* Rejogar uma fase já zerada não repete a emboscada: parte direto */
+  if (!firstTime) {
+    departAfterLevel(idx);
+    return;
   }
+
+  /* EMBOSCADA PÓS-FASE: ao terminar qualquer planeta pela primeira vez, o
+     Devorador Estelar intercepta a nave. A Máquina Balística abre para
+     carregar o projétil antes do confronto em 3ª pessoa. A viagem (e os
+     desvios secretos físicos) continuam logo após a vitória. */
+  Game.ballisticDetour = idx;
+  showToast('EMBOSCADA!',
+    'O Devorador Estelar detectou sua nave! Carregue a Máquina Balística.');
+  showBallistic();
 }
 
 /* ---------------- Escolha de rota (desvios opcionais) ---------------- */
@@ -7135,14 +7154,17 @@ function damageBoss(dmg) {
    A frota limpa entrega o controle para o módulo BossBattle (boss3d.js),
    que roda a fase 'boss' com câmera atrás da nave. Na vitória, o fluxo
    volta para a fase 2D 'return' e a nave segue até a Terra.
-   O mesmo confronto também embosca o jogador ao sair dos planetas
-   secretos (mode 'detour'): sem missão de retorno — a vitória devolve
-   o fluxo normal de conclusão do desvio. */
+   O mesmo confronto também embosca o jogador (mode 'detour'): ao sair de
+   qualquer planeta recém-conquistado — desvios secretos ou fases principais —
+   sem missão de retorno; a vida do boss escala com a fase concluída. */
 function startBossEncounter(mode) {
   const ctx = mode || 'final';
   const r = Game.return;
   if (window.BossBattle && BossBattle.supported()) {
+    /* Desvios e emboscadas pós-fase escalam a vida do boss pela fase */
+    const hpMax = ctx === 'detour' ? levelBossHp(Game.detourBossIdx) : undefined;
     const ok = BossBattle.start({
+      hpMax: hpMax,
       ammo: (ctx === 'detour' ? Game.ammo : (r && r.ammo)) || AMMO_TYPES.STD,
       addScore(n) {
         if (!Game.replay) {
@@ -7167,22 +7189,39 @@ function startBossEncounter(mode) {
   return false;
 }
 
-/* Dispara a emboscada pós-planeta-secreto; sem WebGL, entrega a
-   recompensa normalmente (o jogo nunca fica preso). */
+const BOSS_HP_FULL = 60;
+
+/* Vida do Devorador Estelar em cada confronto pós-fase (dificuldade
+   progressiva). Desvios secretos e a batalha final usam a vida cheia. */
+function levelBossHp(idx) {
+  if (idx == null || idx < TUTORIAL_INDEX) return BOSS_HP_FULL;
+  if (!isSideQuest(idx)) return Math.min(BOSS_HP_FULL, 24 + idx * 12);
+  return BOSS_HP_FULL;
+}
+
+/* Dispara a emboscada pós-planeta; sem WebGL, entrega a recompensa
+   normalmente (o jogo nunca fica preso). */
 function launchDetourBoss(idx) {
   Game.detourBossIdx = idx;
   if (!startBossEncounter('detour')) finishDetourBoss();
 }
 
-/* Conclusão da rota após vencer (ou pular, sem WebGL) o boss do desvio:
-   mesma cauda de completeLevel — recompensa do item e mapa galáctico. */
+/* Conclusão da rota após vencer (ou pular, sem WebGL) o boss:
+   desvios seguem para o mapa galáctico; fases principais seguem a
+   viagem normal — os desvios secretos físicos permanecem no caminho. */
 function finishDetourBoss() {
   Game.bossCtx = null;
   Game.phase = null; /* evita reentrada do dispatch da fase 'boss' */
   const idx = Game.detourBossIdx;
   Game.detourBossIdx = null;
   AudioSys.sfx('gate');
-  selectedPlanet = isSideQuest(idx) ? SIDE_QUESTS[idx].next : Math.min(idx + 1, FINAL_INDEX);
+  if (!isSideQuest(idx)) {
+    /* Fase principal: item já foi entregue no painel de missão; segue viagem */
+    selectedPlanet = Math.min(idx + 1, FINAL_INDEX);
+    departAfterLevel(idx);
+    return;
+  }
+  selectedPlanet = SIDE_QUESTS[idx].next;
   if (unlockItemWithPopup(LEVEL_REWARDS[idx])) {
     pendingLevelComplete = true;
   } else {

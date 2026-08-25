@@ -420,8 +420,8 @@ const css = fs.readFileSync(__dirname + '/style.css', 'utf8');
 const src = fs.readFileSync(__dirname + '/script.js', 'utf8');
 check('#route presente no HTML com opções e título',
   html.includes('id="route"') && html.includes('id="route-options"') && html.includes('id="route-title-text"'));
-check('cache bumpado para 20260824f em todos os assets',
-  html.includes('?v=20260824f') && !html.includes('?v=20260824b') && !html.includes('?v=20260823'));
+check('cache bumpado para 20260825a em todos os assets',
+  html.includes('?v=20260825a') && !html.includes('?v=20260824f') && !html.includes('?v=20260823'));
 check('CSS estiliza painel de rota e cartões de planeta opcional',
   css.includes('.route-panel') && css.includes('.route-btn.route-side') && css.includes('.planet-btn.side'));
 check('overlay route é escondido nas trocas de tela (hideOverhaulOverlays)',
@@ -627,6 +627,84 @@ check('exitToMenu limpa o estado da emboscada',
       exitToMenu();
       return Game.ballisticDetour === null && Game.detourBossIdx === null &&
         Game.bossCtx === null;
+    })()
+  `));
+
+/* ---------- 10. Emboscada pós-FASE: todo planeta recém-conquistado ---------- */
+check('vida do boss escala com a fase (tutorial leve, desvios com vida cheia)',
+  run(`
+    levelBossHp(0) === 24 && levelBossHp(1) === 36 &&
+    levelBossHp(2) === 48 && levelBossHp(3) === BOSS_HP_FULL &&
+    levelBossHp(KINDER_INDEX) === BOSS_HP_FULL &&
+    levelBossHp(BUENO_INDEX) === BOSS_HP_FULL
+  `));
+check('missionDone de fase PRINCIPAL inédita abre a emboscada balística',
+  run(`
+    (function () {
+      window.BossBattle = undefined;   /* força caminho sem WebGL por ora */
+      Save.data = Save.defaults();
+      Game.replay = false;
+      Game.run.completed = [false, false, false, false, false, false, false];
+      Game.run.score = 0;
+      Game.levelTime = 60;
+      Game.levelIndex = IONIC_INDEX;
+      pendingLevelComplete = false;
+      missionDone(false);
+      var opened = Game.phase === 'ballistic' &&
+        Game.ballisticDetour === IONIC_INDEX &&
+        document.getElementById('ballistic').hidden === false;
+      /* limpa o overlay para os próximos checks */
+      document.getElementById('ballistic').hidden = true;
+      Game.phase = null;
+      return opened;
+    })()
+  `));
+check('vitória do boss numa fase principal segue a VIAGEM normal (desvios físicos preservados)',
+  run(`
+    (function () {
+      window.__bossActive = false;
+      window.__hpMaxSeen = null;
+      window.BossBattle = {
+        supported: function () { return true; },
+        start: function (opts) {
+          window.__hpMaxSeen = opts.hpMax;
+          window.__detourVictory = opts.onVictory;
+          window.__bossActive = true;
+          return true;
+        },
+        isActive: function () { return !!window.__bossActive; },
+        stop: function () { window.__bossActive = false; }
+      };
+      /* retoma a emboscada aberta no check anterior */
+      Game.phase = 'ballistic';
+      Game.ballisticDetour = IONIC_INDEX;
+      Game.detourBossIdx = null;
+      Game.bossCtx = null;
+      Game.level = buildLevel(IONIC_INDEX);
+      Game.screen = 'game';
+      Game.ballistic = { sel: 'STD', token: 1 };
+      ballisticFire();
+      var hpOk = Game.detourBossIdx === IONIC_INDEX && window.__hpMaxSeen === levelBossHp(IONIC_INDEX);
+      if (!hpOk || Game.phase !== 'boss') return false;
+      window.__detourVictory();   /* vence o boss */
+      var followed = Game.bossCtx === null && Game.detourBossIdx === null &&
+        selectedPlanet === Math.min(IONIC_INDEX + 1, FINAL_INDEX) &&
+        (!!Game.departure || !!Game.travel || Game.screen === 'galaxy' ||
+         !!Game.routeChoice);
+      window.__bossActive = false;
+      return followed;
+    })()
+  `));
+check('rejogar fase principal não repete a emboscada (parte direto)',
+  run(`
+    (function () {
+      Save.data.completed[COVALENT_INDEX] = true;
+      Game.run.completed[COVALENT_INDEX] = true;
+      Game.replay = true;
+      Game.levelIndex = COVALENT_INDEX;
+      missionDone(false);
+      return Game.phase !== 'ballistic' && Game.ballisticDetour === null &&
+        (!!Game.departure || !!Game.travel || Game.screen === 'galaxy');
     })()
   `));
 

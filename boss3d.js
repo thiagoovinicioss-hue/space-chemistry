@@ -554,6 +554,9 @@
       buildStation();
 
       var ammo = opts.ammo || { dmg: 1, cd: 0.24, spread: 1, pierce: false, size: 1, color: '#7ff5ff' };
+      /* Vida escalonada: confrontos pós-fase usam hpMax menor (dificuldade
+         progressiva); o confronto final mantém a vida cheia (BOSS_HP_MAX). */
+      var hpMax = Math.max(12, Math.round(opts.hpMax || BOSS_HP_MAX));
       st = {
         t: 0, timeScale: 1, over: false, dying: false, dieT: 0, fadeOut: 0,
         ammo: ammo,
@@ -581,7 +584,7 @@
       st.mag = st.magMax;
       st.bossM = buildBoss();
       st.boss = {
-        hp: BOSS_HP_MAX, dispHp: BOSS_HP_MAX, phase: 1, wob: rand(0, 9),
+        hp: hpMax, dispHp: hpMax, maxHp: hpMax, phase: 1, wob: rand(0, 9),
         atkT: 3.4, fanT: PH[1].fan, homeT: 8, dashT: 6, ringT: 6,
         tele: 0, teleKind: '', hitFlash: 0, dashTo: null
       };
@@ -1055,7 +1058,7 @@
     if (st.dying) { deathMove(dt); return; }
 
     /* transição de fase pela vida restante */
-    var frac = b.hp / BOSS_HP_MAX;
+    var frac = b.hp / b.maxHp;
     var ph = frac > 0.66 ? 1 : (frac > 0.33 ? 2 : 3);
     if (ph !== b.phase) { b.phase = ph; onPhaseChange(ph); }
     var cfg = PH[b.phase];
@@ -1355,9 +1358,9 @@
       g.fillRect(bx, by, bw, bh);
       /* fantasma branco da vida perdida (escorrega até a vida atual) */
       g.fillStyle = 'rgba(255,255,255,0.35)';
-      g.fillRect(bx, by, bw * clamp(b.dispHp / BOSS_HP_MAX, 0, 1), bh);
+      g.fillRect(bx, by, bw * clamp(b.dispHp / b.maxHp, 0, 1), bh);
       g.fillStyle = phColor;
-      g.fillRect(bx, by, bw * clamp(b.hp / BOSS_HP_MAX, 0, 1), bh);
+      g.fillRect(bx, by, bw * clamp(b.hp / b.maxHp, 0, 1), bh);
       g.strokeStyle = 'rgba(255,255,255,0.3)';
       g.lineWidth = 1;
       g.strokeRect(bx, by, bw, bh);

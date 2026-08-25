@@ -54,6 +54,7 @@ const document = {
   visibilityState: 'visible'
 };
 const navigator = { maxTouchPoints: 0 };
+function FakeImage() { this.src = ''; this.onload = null; }
 const windowStub = new Proxy({
   addEventListener() {}, requestAnimationFrame() { return 0; },
   cancelAnimationFrame() {},
@@ -62,6 +63,8 @@ const windowStub = new Proxy({
   visualViewport: null,
   innerWidth: 800, innerHeight: 600,
   navigator,
+  Image: FakeImage,
+  Audio: function () { return { play() {}, pause() {}, addEventListener() {} }; },
   localStorage: {
     getItem() { return null; }, setItem() {}, removeItem() {}
   }
@@ -73,6 +76,8 @@ const windowStub = new Proxy({
 const sandbox = {
   console, Math, Date, JSON, parseInt, parseFloat, isNaN, isFinite,
   document, navigator, localStorage: windowStub.localStorage,
+  Image: FakeImage,
+  Audio: windowStub.Audio,
   requestAnimationFrame: windowStub.requestAnimationFrame,
   cancelAnimationFrame: windowStub.cancelAnimationFrame,
   performance: windowStub.performance,
@@ -120,7 +125,7 @@ run(`
 const explosionFx = run('Game.return.rings.length >= 2 && Game.return.shake >= 9 && Game.return.flash >= 0.5');
 const debrisParticles = run('Game.particles.length > 10');
 
-run('Game.return.shots = [{ x: 400, y: 180, vx: 380, vy: 0, t: 0 }];');
+run('Game.return.shots = [{ x: 400, y: 180, vx: 380, vy: 0, t: 0, color: "#ff5d6c" }];');
 run('Game.return.enemyShots = [{ x: 300, y: 200, vx: -120, vy: 30, t: 0, homing: 1.6 }];');
 run('Game.return.flash = 0.4;');
 run('Game.return.rings = [{ x: 320, y: 180, color: "#ff9df2", r: 6, vr: 150, life: 0.5, maxLife: 0.5, width: 3 }];');

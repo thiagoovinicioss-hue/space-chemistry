@@ -53,6 +53,12 @@ Mecânicas de ensino embutidas na jogabilidade:
 - **10 conquistas** com recompensas cosméticas.
 - **Vestiário** para personalizar capacete, traje, nave e rastro (só visual,
   nunca dá vantagem).
+- **Emboscada do Devorador Estelar**: ao concluir qualquer planeta pela
+  primeira vez, a Máquina Balística abre para carregar um projétil químico e
+  a batalha final acontece em **3ª pessoa (3D)** — a vida do boss escala com
+  a fase concluída. Rejogar uma fase não repete a emboscada.
+- **2 desvios opcionais secretos** (Kinder e Bueno) que aparecem
+  fisicamente no espaço durante a viagem, cada um com recompensa exclusiva.
 - **Salvamento automático** no navegador (localStorage).
 - **Áudio 100% sintetizado** em tempo real com a Web Audio API (música,
   efeitos e voz de "composto montado").

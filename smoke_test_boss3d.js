@@ -72,7 +72,10 @@ check('reação ao impacto: flash, faíscas e tremor',
   srcBoss.includes('b.hitFlash = 0.12') && srcBoss.includes('burst3D(atPos') &&
   srcBoss.includes('st.shake = Math.max(st.shake, 0.35)'));
 check('barra de vida do boss com marcas de fase e fantasma de dano',
-  srcBoss.includes('bw * clamp(b.hp / BOSS_HP_MAX') && srcBoss.includes('bw * 0.333'));
+  srcBoss.includes('bw * clamp(b.hp / b.maxHp') && srcBoss.includes('bw * 0.333'));
+check('vida do boss configurável por confronto (opts.hpMax, emboscadas escalonadas)',
+  srcBoss.includes('opts.hpMax') && srcBoss.includes('maxHp: hpMax') &&
+  srcBoss.includes('Math.max(12'));
 check('falas curtas de humor químico nos momentos certos (i18n)',
   srcBoss.includes("T('boss.qIntro'") && srcBoss.includes("T('boss.qP2'") &&
   srcBoss.includes("T('boss.qP3'") && srcBoss.includes("T('boss.qLow'") &&
@@ -305,12 +308,12 @@ check('#fx3d-boss existe dentro do canvas-wrap acima do canvas 2D',
   html.includes('<div id="fx3d-boss" class="fx3d" aria-hidden="true"></div>') &&
   html.indexOf('id="fx3d-game"') < html.indexOf('id="fx3d-boss"'));
 check('boss3d.js carregado depois do effects3d.js (THREE disponível)',
-  html.indexOf('effects3d.js?v=20260824f') > -1 &&
-  html.indexOf('effects3d.js?v=20260824f') < html.indexOf('boss3d.js?v=20260824f') &&
-  html.indexOf('boss3d.js?v=20260824f') < html.indexOf('atom3d.js?v=20260824f'));
-check('cache bumpado para 20260824f (15 assets)',
-  (html.match(/\?v=20260824f/g) || []).length === 15 &&
-  !html.includes('?v=20260824c'));
+  html.indexOf('effects3d.js?v=20260825a') > -1 &&
+  html.indexOf('effects3d.js?v=20260825a') < html.indexOf('boss3d.js?v=20260825a') &&
+  html.indexOf('boss3d.js?v=20260825a') < html.indexOf('atom3d.js?v=20260825a'));
+check('cache bumpado para 20260825a (15 assets)',
+  (html.match(/\?v=20260825a/g) || []).length === 15 &&
+  !html.includes('?v=20260824f'));
 check('classe .mobile-ui.boss3d-off esconde os botões antigos na batalha 3D',
   css.includes('.mobile-ui.boss3d-off') && css.includes('.mobile-ui.boss3d-off { display: none !important; }'));
 
