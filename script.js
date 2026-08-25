@@ -430,6 +430,7 @@ const AudioSys = {
       case 'warning': this.tone({ freq: 320, slideTo: 170, type: 'square', dur: 0.35, vol: 0.16 }); this.tone({ freq: 320, slideTo: 170, type: 'square', dur: 0.35, vol: 0.16, delay: 0.45 }); break;
       case 'chalk': this.noise({ dur: 0.4, vol: 0.12 }); break;
       case 'cheer': [523, 659, 784, 1047, 1319].forEach((f, i) => this.tone({ freq: f, type: 'triangle', dur: 0.35, vol: 0.22, delay: i * 0.12 })); break;
+      case 'buyLife':     [523, 659, 784, 1047, 1319].forEach((f, i) => this.tone({ freq: f, type: 'sine', dur: 0.25, vol: 0.2, delay: i * 0.08 })); break;
     }
   },
 
@@ -2368,6 +2369,7 @@ const Save = {
       completed: [false, false, false, false, false, false, false],
       exerciseBest: [0, 0, 0, 0, 0, 0, 0],
       bestScore: 0,
+      coins: 0,
       unlocks: ['h_classic', 's_classic', 'ship_default', 't_none'],
       equipped: { helmet: 'h_classic', suit: 's_classic', ship: 'ship_default', trail: 't_none' },
       achievements: [],
@@ -2398,6 +2400,7 @@ const Save = {
         if (!this.data.compounds || typeof this.data.compounds !== 'object') {
           this.data.compounds = {};
         }
+        if (typeof this.data.coins !== 'number') this.data.coins = 0;
         return;
       }
     } catch (e) { /* armazenamento indisponível */ }
@@ -2423,6 +2426,18 @@ const Save = {
     this.save();
   }
 };
+function getCoins() { return Save.data ? Save.data.coins || 0 : 0; }
+function earnCoins(n) {
+  if (!Save.data || !n) return;
+  Save.data.coins = Math.max(0, (Save.data.coins || 0) + n);
+  Save.save();
+}
+function spendCoins(n) {
+  if (!Save.data || !n || Save.data.coins < n) return false;
+  Save.data.coins -= n;
+  Save.save();
+  return true;
+}
 
 /* ---------------- Máquina Balística: registro de compostos ---------------- */
 /* A química dos compostos é real (RECIPES); a conversão em projéteis de
@@ -7209,6 +7224,8 @@ function finishDetourBoss() {
   Game.phase = null; /* evita reentrada do dispatch da fase 'boss' */
   const idx = Game.detourBossIdx;
   Game.detourBossIdx = null;
+  earnCoins(500);
+  spawnFloater(VIEW_W / 2, 30, '+500 MOEDAS');
   AudioSys.sfx('gate');
   selectedPlanet = isSideQuest(idx) ? SIDE_QUESTS[idx].next : Math.min(idx + 1, FINAL_INDEX);
   if (unlockItemWithPopup(LEVEL_REWARDS[idx])) {
@@ -7372,6 +7389,7 @@ function killReturnBoss() {
   r.flash = 0.8;
   r.flashColor = '#ffd166';
   if (!Game.replay) Game.run.score += 500;
+  earnCoins(500);
   updateHudScore();
   spawnFloater(bo.x, bo.y - bo.r - 20, 'DEVORADOR ESTELAR DERROTADO! (+500)');
 }
@@ -8985,7 +9003,6 @@ function gameOver() {
   AudioSys.sfx('error');
   Game.locked = true;
   Game.player.deadT = 1;
-  /* Interrompe exercícios e questionário se estiverem abertos */
   document.getElementById('exercise').hidden = true;
   document.getElementById('quiz').hidden = true;
   if (typeof Exercise !== 'undefined' && Exercise.session) {
@@ -8998,8 +9015,17 @@ function gameOver() {
   }
   document.getElementById('defeat-stats').textContent =
     'Pontuação: ' + Game.run.score + ' · Tempo: ' + fmtTime(Game.levelTime);
-  document.querySelector('.defeat-text').textContent = 'Suas ' + getMaxLives() + ' vidas acabaram.';
+  document.querySelector('.defeat-text').textContent = 'MISSÃO FALHOU';
   document.getElementById('defeat').hidden = false;
+  /* Atualiza botão de vida extra */
+  const btnBuy = document.getElementById('btn-defeat-buylife');
+  if (btnBuy) {
+    const coins = getCoins();
+    btnBuy.disabled = coins < 250;
+    btnBuy.textContent = coins >= 250
+      ? '❤ Comprar Vida Extra — 250 Moedas (' + coins + ' disponível)'
+      : '❤ Comprar Vida Extra — 250 Moedas (sem moedas)';
+  }
 }
 
 /* --- Pausa --- */
@@ -9011,7 +9037,7 @@ function togglePause() {
   if (document.getElementById('victory').hidden === false) return;
   if (document.getElementById('defeat').hidden === false) return;
   if (document.getElementById('reward').hidden === false) return;
-  if (Game.phase === 'departure' || Game.phase === 'travel' || Game.phase === 'arrival' || Game.phase === 'return' || Game.phase === 'ballistic' || Game.phase === 'boss') return;
+  if (Game.phase === 'departure' || Game.phase === 'travel' || Game.phase === 'arrival' || Game.phase === 'return' || Game.phase === 'ballistic') return;
 
   pauseShown = !pauseShown;
   if (window.Effects3D && Effects3D.setPaused) Effects3D.setPaused(pauseShown);
@@ -9021,6 +9047,63 @@ function togglePause() {
       'Pontuação: <strong>' + Game.run.score + '</strong><br>' +
       'Tempo da fase: <strong>' + fmtTime(Game.levelTime) + '</strong><br>' +
       'Vidas: <strong>' + Game.run.lives + '</strong>';
+  }
+}
+/* Boss battle music: intense procedural track */
+let bossMusicTimer = null;
+let bossMusicStep = 0;
+let bossMusicNext = 0;
+
+function startBossMusic() {
+  if (!AudioSys.ctx || !AudioSys.musicOn) return;
+  stopBossMusic();
+  if (AudioSys.musicTimer) { clearInterval(AudioSys.musicTimer); AudioSys.musicTimer = null; }
+  AudioSys.musicGain.gain.value = 0.15;
+  bossMusicStep = 0;
+  bossMusicNext = AudioSys.ctx.currentTime + 0.1;
+  bossMusicTimer = setInterval(scheduleBossMusic, 50);
+}
+
+function stopBossMusic() {
+  if (bossMusicTimer) { clearInterval(bossMusicTimer); bossMusicTimer = null; }
+  if (AudioSys.ctx && AudioSys.musicGain && AudioSys.musicOn) {
+    AudioSys.musicGain.gain.value = 0.5;
+  }
+  if (AudioSys.musicOn && !AudioSys.musicTimer) AudioSys.startMusic();
+}
+
+function scheduleBossMusic() {
+  if (!AudioSys.ctx) return;
+  const BPM = 170;
+  const spb = 60 / BPM;
+  const ctx = AudioSys.ctx;
+  const gain = AudioSys.musicGain;
+  while (bossMusicNext < ctx.currentTime + 0.15) {
+    const beat = bossMusicStep % 8;
+    const bar = Math.floor(bossMusicStep / 8) % 4;
+    const t = bossMusicNext - ctx.currentTime;
+    const bassLine = [55, 55, 58, 50][bar];
+    const chords = [[48,51,55],[48,51,55],[50,53,57],[43,47,50]];
+    const chord = chords[bar];
+    if (beat === 0 || beat === 4) {
+      AudioSys.tone({ freq: midi(bassLine), type: 'sawtooth', dur: spb * 0.9, vol: 0.08, delay: t, dest: gain });
+    }
+    if (beat % 2 === 0) {
+      chord.forEach(function(n) {
+        AudioSys.tone({ freq: midi(n), type: 'square', dur: spb * 0.7, vol: 0.025, delay: t, dest: gain });
+      });
+    }
+    if (beat === 1 || beat === 5) {
+      AudioSys.tone({ freq: midi(60 + bar * 2), type: 'triangle', dur: spb * 0.3, vol: 0.035, delay: t, dest: gain });
+    }
+    if (beat % 2 === 1) {
+      AudioSys.tone({ freq: 80 + Math.random() * 30, type: 'square', dur: 0.04, vol: 0.06, delay: t, dest: gain });
+    }
+    if (beat === 3 || beat === 7) {
+      AudioSys.tone({ freq: midi(72 + bar), type: 'sawtooth', dur: spb * 0.15, vol: 0.03, delay: t + spb * 0.05, dest: gain });
+    }
+    bossMusicStep++;
+    bossMusicNext += spb / 2;
   }
 }
 /* Pausa é permitida mesmo durante exercícios/questionário — o overlay
@@ -9759,6 +9842,25 @@ document.getElementById('btn-defeat-retry').addEventListener('click', () => {
   document.getElementById('defeat').hidden = true;
   Game.run.lives = getMaxLives();
   startLevel(Game.levelIndex);
+});
+document.getElementById('btn-defeat-buylife').addEventListener('click', () => {
+  if (spendCoins(250)) {
+    document.getElementById('defeat').hidden = true;
+    Game.run.lives = 1;
+    Game.locked = false;
+    Game.player.deadT = 0;
+    Game.player.invuln = 2.5;
+    AudioSys.sfx('correct');
+    spawnFloater(VIEW_W / 2, VIEW_H / 2, 'VIDA EXTRA COMPRA!');
+    if (typeof Exercise !== 'undefined' && Exercise.session) {
+      Exercise.session = null;
+      Exercise.idx = 0;
+    }
+    if (typeof Quiz !== 'undefined' && Quiz.pool) {
+      Quiz.pool = [];
+      Quiz.idx = 0;
+    }
+  }
 });
 document.getElementById('btn-defeat-menu').addEventListener('click', () => {
   document.getElementById('defeat').hidden = true;

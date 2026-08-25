@@ -54,9 +54,9 @@ check('leque de projéteis respeita o spread do composto (ex.: CaF₂)',
 check('munição finita por composto; STD infinita nunca trava a campanha',
   srcBoss.includes("ammo.kind === 'std' ? Infinity : Math.max(24, Math.round(120 / ammo.dmg))") &&
   srcBoss.includes('switchToStd()'));
-check('boss tem modelo próprio com boca devoradora, núcleo e espinhos',
-  srcBoss.includes('buildBoss(') && srcBoss.includes('TorusGeometry(2.3') &&
-  srcBoss.includes('ConeGeometry(0.85, 3'));
+check('boss tem modelo próprio com fuselagem, asas, canhões e núcleo',
+  srcBoss.includes('buildBoss(') && srcBoss.includes('TorusGeometry(2.8') &&
+  srcBoss.includes('OctahedronGeometry'));
 check('boss nunca fica parado: senoides + investidas por fase',
   srcBoss.includes('Math.sin(b.wob * cfg.wx) * cfg.ax') && srcBoss.includes('dashTo'));
 check('3 fases progressivas (66% / 33% da vida)',
@@ -218,8 +218,8 @@ function freshSandbox(extra) {
   check('joystick antigo ignorado na batalha 3D',
     srcScript.includes("if (Game.phase === 'boss') return;") &&
     srcScript.includes("if (!Joy.active || Game.phase === 'boss') return;"));
-  check('pausa bloqueada durante a fase boss',
-    srcScript.includes("|| Game.phase === 'ballistic' || Game.phase === 'boss') return;"));
+  check('pausa permitida durante a fase boss (botão no HUD 3D)',
+    srcBoss.includes('togglePause') && srcBoss.includes('pauseBtn'));
   check('exitToMenu encerra a batalha e limpa classe boss3d-off',
     srcScript.includes('BossBattle.isActive()) BossBattle.stop();') &&
     srcScript.includes("muBoss.classList.remove('boss3d-off');"));
@@ -291,15 +291,22 @@ function freshSandbox(extra) {
       `);
       return run('window.__v1 === 0 && window.__v2 === 500');
     })());
-  check('togglePause não abre o menu durante a batalha 3D',
+  check('togglePause funciona durante a batalha 3D (pausa permitida)',
     (() => {
       run(`
         Game.phase = 'boss';
+        Game.screen = 'game';
+        document.getElementById('pause').hidden = true;
+        document.getElementById('intro-card').hidden = true;
+        document.getElementById('victory').hidden = true;
+        document.getElementById('defeat').hidden = true;
+        document.getElementById('reward').hidden = true;
+        Game.feedback = null;
         togglePause();
-        window.__pauseHidden = document.getElementById('pause').hidden;
+        window.__pauseShown = !document.getElementById('pause').hidden;
         Game.phase = 'return';
       `);
-      return run('window.__pauseHidden === true');
+      return run('window.__pauseShown === true');
     })());
 }
 
@@ -308,11 +315,11 @@ check('#fx3d-boss existe dentro do canvas-wrap acima do canvas 2D',
   html.includes('<div id="fx3d-boss" class="fx3d" aria-hidden="true"></div>') &&
   html.indexOf('id="fx3d-game"') < html.indexOf('id="fx3d-boss"'));
 check('boss3d.js carregado depois do effects3d.js (THREE disponível)',
-  html.indexOf('effects3d.js?v=20260825d') > -1 &&
-  html.indexOf('effects3d.js?v=20260825d') < html.indexOf('boss3d.js?v=20260825d') &&
-  html.indexOf('boss3d.js?v=20260825d') < html.indexOf('atom3d.js?v=20260825d'));
-check('cache bumpado para 20260825d (15 assets)',
-  (html.match(/\?v=20260825d/g) || []).length === 15 &&
+  html.indexOf('effects3d.js?v=20260825e') > -1 &&
+  html.indexOf('effects3d.js?v=20260825e') < html.indexOf('boss3d.js?v=20260825e') &&
+  html.indexOf('boss3d.js?v=20260825e') < html.indexOf('atom3d.js?v=20260825e'));
+check('cache bumpado para 20260825e (15 assets)',
+  (html.match(/\?v=20260825e/g) || []).length === 15 &&
   !html.includes('?v=20260824f'));
 check('classe .mobile-ui.boss3d-off esconde os botões antigos na batalha 3D',
   css.includes('.mobile-ui.boss3d-off') && css.includes('.mobile-ui.boss3d-off { display: none !important; }'));

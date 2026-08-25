@@ -98,14 +98,19 @@
      CENA: luzes, estrelas, poeira, asteroides, Terra e destroços
   ====================================================================== */
   function buildLights() {
-    scene.add(new THREE.HemisphereLight(0x8fb8ff, 0x140a26, 0.85));
-    var d = new THREE.DirectionalLight(0xffffff, 1.15);
-    d.position.set(6, 9, 8);
-    scene.add(d);
-    /* luz de recorte vinda do boss: clima de ameaça */
-    var r = new THREE.DirectionalLight(0xff4d6d, 0.42);
-    r.position.set(-4, -3, -8);
-    scene.add(r);
+    scene.add(new THREE.AmbientLight(0x334466, 0.6));
+    var key = new THREE.DirectionalLight(0xaabbdd, 0.9);
+    key.position.set(5, 10, 8);
+    scene.add(key);
+    var fill = new THREE.DirectionalLight(0x665588, 0.4);
+    fill.position.set(-8, -4, 6);
+    scene.add(fill);
+    var rim = new THREE.DirectionalLight(0xff8855, 0.35);
+    rim.position.set(0, 0, -15);
+    scene.add(rim);
+    var topLight = new THREE.PointLight(0x5577aa, 0.5, 100);
+    topLight.position.set(0, 30, -20);
+    scene.add(topLight);
   }
 
   function makeStarPoints(n, sx, sy, sz, size, op) {
@@ -124,20 +129,66 @@
   }
 
   function buildStars() {
-    var far = makeStarPoints(650, 260, 150, 200, 1.6, 0.85);
-    far.position.z = -80;
+    var far = makeStarPoints(900, 300, 200, 260, 1.4, 0.9);
+    far.position.z = -100;
     scene.add(far);
-    var near = makeStarPoints(180, 90, 60, 70, 2.4, 0.95);
-    near.position.z = -30;
+    var mid = makeStarPoints(400, 160, 100, 140, 1.8, 0.85);
+    mid.position.z = -55;
+    scene.add(mid);
+    var near = makeStarPoints(200, 100, 70, 80, 2.6, 0.95);
+    near.position.z = -25;
     scene.add(near);
-    /* nebulosa distante */
-    var neb = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: TEX.glow, color: 0x3a2a7a, transparent: true,
-      opacity: 0.34, depthWrite: false
+    var neb1 = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.glow, color: 0x2a1a6a, transparent: true,
+      opacity: 0.28, depthWrite: false
     }));
-    neb.scale.set(240, 150, 1);
-    neb.position.set(30, 20, -190);
-    scene.add(neb);
+    neb1.scale.set(280, 180, 1);
+    neb1.position.set(-40, 25, -220);
+    scene.add(neb1);
+    var neb2 = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.glow, color: 0x1a3a5a, transparent: true,
+      opacity: 0.22, depthWrite: false
+    }));
+    neb2.scale.set(200, 140, 1);
+    neb2.position.set(60, -15, -180);
+    scene.add(neb2);
+    var neb3 = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.glow, color: 0x4a2040, transparent: true,
+      opacity: 0.18, depthWrite: false
+    }));
+    neb3.scale.set(160, 120, 1);
+    neb3.position.set(80, 30, -160);
+    scene.add(neb3);
+    buildPlanets();
+  }
+
+  function buildPlanets() {
+    var planetData = [
+      { x: -70, y: 30, z: -130, r: 12, color: 0x3a6688, ringColor: 0x558899, hasRing: true },
+      { x: 90, y: -20, z: -160, r: 8, color: 0x884433, ringColor: 0, hasRing: false },
+      { x: 50, y: 40, z: -145, r: 5, color: 0x335588, ringColor: 0, hasRing: false },
+      { x: -55, y: -35, z: -170, r: 15, color: 0x445566, ringColor: 0x667788, hasRing: true }
+    ];
+    for (var i = 0; i < planetData.length; i++) {
+      var pd = planetData[i];
+      var planetMat = new THREE.MeshPhongMaterial({ color: pd.color, shininess: 15 });
+      var planet = new THREE.Mesh(new THREE.SphereGeometry(pd.r, 16, 12), planetMat);
+      planet.position.set(pd.x, pd.y, pd.z);
+      scene.add(planet);
+      if (pd.hasRing) {
+        var ringMat = new THREE.MeshBasicMaterial({ color: pd.ringColor, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+        var ringMesh = new THREE.Mesh(new THREE.TorusGeometry(pd.r * 1.6, pd.r * 0.08, 6, 24), ringMat);
+        ringMesh.rotation.x = Math.PI / 2.2;
+        ringMesh.position.set(pd.x, pd.y, pd.z);
+        scene.add(ringMesh);
+      }
+      var glowSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: TEX.glow, color: pd.color, transparent: true, opacity: 0.12, depthWrite: false
+      }));
+      glowSprite.scale.set(pd.r * 3.5, pd.r * 3.5, 1);
+      glowSprite.position.set(pd.x, pd.y, pd.z - 1);
+      scene.add(glowSprite);
+    }
   }
 
   /* Poeira espacial: dá sensação de velocidade mesmo parado */
@@ -263,102 +314,198 @@
     vr = vr || {};
     var col = function (v, d) { return v == null ? d : v; };
     var grp = new THREE.Group();
-    var hullMat = new THREE.MeshLambertMaterial({ color: col(vr.hull, 0x2a1740) });
-    var trimMat = new THREE.MeshLambertMaterial({ color: col(vr.trim, 0x45246b) });
-
-    /* casco principal (formato achatado e largo) */
-    var hull = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), hullMat);
-    hull.scale.set(9, 3.2, 5.6);
-    grp.add(hull);
-
-    /* carapaça superior (placas de armadura) */
-    var armorMat = new THREE.MeshLambertMaterial({ color: col(vr.trim, 0x52327a) });
-    var armor = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), armorMat);
-    armor.scale.set(7.5, 1.4, 4.2);
-    armor.position.y = 1.6;
-    grp.add(armor);
-
-    var belly = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), trimMat);
-    belly.scale.set(6.4, 1.6, 3.4);
-    belly.position.y = -2.2;
-    grp.add(belly);
-
-    /* "Boca" devoradora na frente (+Z aponta para o jogador) */
-    var mawMat = new THREE.MeshBasicMaterial({ color: col(vr.maw, 0x39ff6a) });
-    var maw = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.65, 10, 22), mawMat);
-    maw.position.set(0, 0, 4.6);
-    grp.add(maw);
-
-    /* anel interno da boca (energia) */
-    var innerRingMat = new THREE.MeshBasicMaterial({ color: col(vr.core, 0xaaffc4), transparent: true, opacity: 0.5 });
-    var innerRing = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.2, 8, 16), innerRingMat);
-    innerRing.position.set(0, 0, 4.2);
-    grp.add(innerRing);
-
-    var coreMat = new THREE.MeshBasicMaterial({ color: col(vr.core, 0xaaffc4) });
-    var core = new THREE.Mesh(new THREE.SphereGeometry(1.35, 12, 10), coreMat);
-    core.position.set(0, 0, 3.6);
-    grp.add(core);
-
-    /* mandíbulas laterais (6 presas) */
-    var mandibleMat = new THREE.MeshLambertMaterial({ color: col(vr.trim, 0x45246b) });
-    for (var s = 0; s < 2; s++) {
-      for (var t = 0; t < 3; t++) {
-        var fang = new THREE.Mesh(new THREE.ConeGeometry(0.35, 2.2, 5), mandibleMat);
-        var fx = (s ? 1 : -1) * (2.0 + t * 0.7);
-        var fy = (t - 1) * 1.1;
-        fang.position.set(fx, fy, 5.2 + t * 0.3);
-        fang.rotation.x = -0.35;
-        fang.rotation.z = (s ? -1 : 1) * (0.2 + t * 0.12);
-        grp.add(fang);
-      }
-    }
-
-    /* Espinhos ao redor da carapaça */
-    var spikeGeo = new THREE.ConeGeometry(0.85, 3.2, 5);
-    for (var i = 0; i < 8; i++) {
-      var a = i / 8 * Math.PI * 2;
-      var sp = new THREE.Mesh(spikeGeo, trimMat);
-      sp.position.set(Math.cos(a) * 7.4, Math.sin(a) * 2.6, rand(-1.5, 1.5));
-      sp.rotation.z = a - Math.PI / 2;
-      sp.rotation.x = Math.sin(a) * 0.5;
-      grp.add(sp);
-    }
-
-    /* Células laterais + motores brilhantes */
-    var podGeo = new THREE.CylinderGeometry(1.1, 1.4, 4.6, 8);
+    var hullMat = new THREE.MeshPhongMaterial({ color: col(vr.hull, 0x2a1740), shininess: 30, specular: 0x222244 });
+    var trimMat = new THREE.MeshPhongMaterial({ color: col(vr.trim, 0x45246b), shininess: 40, specular: 0x333355 });
+    var darkMat = new THREE.MeshPhongMaterial({ color: 0x111122, shininess: 10 });
     var engines = [];
+
+    /* ── Corpo central: fuselagem angular alongada ── */
+    var body = new THREE.Mesh(new THREE.BoxGeometry(5, 2.8, 14), hullMat);
+    body.position.set(0, 0, 0);
+    grp.add(body);
+    var bodyTop = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.2, 10), trimMat);
+    bodyTop.position.set(0, 1.8, -1);
+    grp.add(bodyTop);
+    var bodyBot = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1, 12), darkMat);
+    bodyBot.position.set(0, -1.8, 0);
+    grp.add(bodyBot);
+
+    /* ── Proa (frente): cunha afiada ── */
+    var prow = new THREE.Mesh(new THREE.ConeGeometry(1.6, 6, 4), hullMat);
+    prow.rotation.x = -Math.PI / 2;
+    prow.position.set(0, 0, -9.5);
+    grp.add(prow);
+
+    /* ── Cabine / Núcleo de Comando ── */
+    var cabMat = new THREE.MeshPhongMaterial({ color: 0x1a1a3a, shininess: 60, specular: 0x444466 });
+    var cabin = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.8, 3.2), cabMat);
+    cabin.position.set(0, 2.4, -2);
+    grp.add(cabin);
+    var windowMat = new THREE.MeshBasicMaterial({ color: col(vr.core, 0xaaffc4), transparent: true, opacity: 0.75 });
+    var cockpitGlass = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 6), windowMat);
+    cockpitGlass.scale.set(1.2, 0.7, 1.4);
+    cockpitGlass.position.set(0, 3.2, -2.5);
+    grp.add(cockpitGlass);
+    var cockpitGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.glow, color: col(vr.core, 0xaaffc4), transparent: true, opacity: 0.6, depthWrite: false
+    }));
+    cockpitGlow.scale.set(3.5, 3.5, 1);
+    cockpitGlow.position.set(0, 3.2, -2.5);
+    grp.add(cockpitGlow);
+
+    /* ── Asas laterais inclinadas ── */
+    var wingMat = new THREE.MeshPhongMaterial({ color: col(vr.trim, 0x45246b), shininess: 25 });
+    for (var s = 0; s < 2; s++) {
+      var sx = s ? 1 : -1;
+      var wing = new THREE.Mesh(new THREE.BoxGeometry(10, 0.5, 6), wingMat);
+      wing.position.set(sx * 7, -0.4, 0.5);
+      wing.rotation.z = sx * -0.12;
+      grp.add(wing);
+      var wingTip = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.8, 2.4), hullMat);
+      wingTip.position.set(sx * 11.5, 0.2, 1.2);
+      grp.add(wingTip);
+      var wingSpike = new THREE.Mesh(new THREE.ConeGeometry(0.4, 3.5, 5), trimMat);
+      wingSpike.position.set(sx * 12.8, 0, 2.5);
+      wingSpike.rotation.z = sx * -0.5;
+      wingSpike.rotation.x = 0.3;
+      grp.add(wingSpike);
+    }
+
+    /* ── Módulos dorsais/ventrais ── */
+    for (var d = 0; d < 2; d++) {
+      var dy = d ? -2.2 : 2.2;
+      var mod = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.2, 5), darkMat);
+      mod.position.set(0, dy, 2);
+      grp.add(mod);
+    }
+
+    /* ── Torre dorsal (comando elevado) ── */
+    var tower = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 2.4), trimMat);
+    tower.position.set(0, 3.6, 0);
+    grp.add(tower);
+    var antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.2, 6), trimMat);
+    antenna.position.set(0, 5.0, 0);
+    grp.add(antenna);
+    var antTip = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.glow, color: 0xff4444, transparent: true, opacity: 0.8, depthWrite: false
+    }));
+    antTip.scale.set(0.8, 0.8, 1);
+    antTip.position.set(0, 6.0, 0);
+    grp.add(antTip);
+
+    /* ── Canhões laterais (armamentos) ── */
+    var gunMat = new THREE.MeshPhongMaterial({ color: 0x2a2a44, shininess: 50, specular: 0x555577 });
+    var emMat = new THREE.MeshBasicMaterial({ color: col(vr.maw, 0x39ff6a) });
+    for (var g = 0; g < 2; g++) {
+      var gx = g ? 1 : -1;
+      var gunBase = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.7, 3, 8), gunMat);
+      gunBase.rotation.x = Math.PI / 2;
+      gunBase.position.set(gx * 4.2, -0.8, -3.5);
+      grp.add(gunBase);
+      var muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 6), emMat);
+      muzzle.position.set(gx * 4.2, -0.8, -5.2);
+      grp.add(muzzle);
+    }
+
+    /* ── Braços de armamento inferiores ── */
+    for (var b = 0; b < 2; b++) {
+      var bx = b ? 1 : -1;
+      var arm = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 5), gunMat);
+      arm.position.set(bx * 5.5, -2.4, -1);
+      arm.rotation.z = bx * 0.2;
+      grp.add(arm);
+      var muz2 = new THREE.Mesh(new THREE.SphereGeometry(0.35, 6, 5), emMat);
+      muz2.position.set(bx * 6.3, -3.0, -3.5);
+      grp.add(muz2);
+    }
+
+    /* ── Carcaça traseira e motores ── */
+    var rearPlate = new THREE.Mesh(new THREE.BoxGeometry(6, 3.4, 2.5), darkMat);
+    rearPlate.position.set(0, 0, 7.5);
+    grp.add(rearPlate);
+    var podGeo = new THREE.CylinderGeometry(1.3, 1.6, 5.5, 8);
     for (var p = 0; p < 2; p++) {
+      var px = p ? 1 : -1;
       var pod = new THREE.Mesh(podGeo, hullMat);
       pod.rotation.z = Math.PI / 2;
-      pod.position.set((p ? 6.6 : -6.6), -0.4, 0.6);
+      pod.position.set(px * 5.8, -0.3, 6.5);
       grp.add(pod);
+      var ring = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.22, 8, 12), trimMat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(px * 5.8, -0.3, 8.5);
+      grp.add(ring);
       var eng = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: TEX.glow, color: col(vr.engine, 0xff5548), transparent: true,
-        opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending
+        map: TEX.glow, color: col(vr.engine, 0xff5548), transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending
       }));
-      eng.scale.set(3.4, 3.4, 1);
-      eng.position.set((p ? 8.6 : -8.6), -0.4, 3.2);
+      eng.scale.set(4, 4, 1);
+      eng.position.set(px * 5.8, -0.3, 10);
       grp.add(eng);
       engines.push(eng);
     }
+    /* Motor central menor */
+    var midEng = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.0, 3.5, 8), gunMat);
+    midEng.rotation.z = Math.PI / 2;
+    midEng.position.set(0, 0, 8);
+    grp.add(midEng);
+    var midGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.glow, color: col(vr.engine, 0xff5548), transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending
+    }));
+    midGlow.scale.set(2.5, 2.5, 1);
+    midGlow.position.set(0, 0, 10);
+    grp.add(midGlow);
+    engines.push(midGlow);
 
-    /* Barbatanas dorsal/ventral */
-    var finGeo = new THREE.BoxGeometry(0.35, 3.4, 3.6);
-    var finT = new THREE.Mesh(finGeo, trimMat);
-    finT.position.set(0, 3.4, -1.4);
-    grp.add(finT);
-    var finB = new THREE.Mesh(finGeo, trimMat);
-    finB.position.set(0, -3.6, -1.4);
-    grp.add(finB);
-
-    /* escudo de energia pulsante (anel ao redor do casco) */
+    /* ── Escudo energético envolvente ── */
     var shieldMat = new THREE.MeshBasicMaterial({
-      color: col(vr.maw, 0x39ff6a), transparent: true, opacity: 0.08,
+      color: col(vr.maw, 0x39ff6a), transparent: true, opacity: 0.06,
       side: THREE.DoubleSide, depthWrite: false
     });
-    var shield = new THREE.Mesh(new THREE.SphereGeometry(11.5, 18, 12), shieldMat);
+    var shield = new THREE.Mesh(new THREE.SphereGeometry(14, 20, 14), shieldMat);
     grp.add(shield);
+
+    /* ── Núcleo energético (face frontal) ── */
+    var coreMat = new THREE.MeshBasicMaterial({ color: col(vr.core, 0xaaffc4) });
+    var core = new THREE.Mesh(new THREE.OctahedronGeometry(1.8, 1), coreMat);
+    core.position.set(0, 0, -5.5);
+    grp.add(core);
+    var coreGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.glow, color: col(vr.core, 0xaaffc4), transparent: true, opacity: 0.5, depthWrite: false
+    }));
+    coreGlow.scale.set(5, 5, 1);
+    coreGlow.position.set(0, 0, -5.5);
+    grp.add(coreGlow);
+
+    /* ── Anel energético giratório ── */
+    var innerRingMat = new THREE.MeshBasicMaterial({ color: col(vr.core, 0xaaffc4), transparent: true, opacity: 0.35 });
+    var innerRing = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.18, 8, 20), innerRingMat);
+    innerRing.rotation.x = Math.PI / 2.5;
+    innerRing.position.set(0, 0, -5.5);
+    grp.add(innerRing);
+
+    /* ── Mordida / anel frontal (boca da nave) ── */
+    var mawMat = new THREE.MeshBasicMaterial({ color: col(vr.maw, 0x39ff6a) });
+    var maw = new THREE.Mesh(new THREE.TorusGeometry(2.8, 0.5, 10, 22), mawMat);
+    maw.rotation.x = Math.PI / 2;
+    maw.position.set(0, 0, -6.5);
+    grp.add(maw);
+
+    /* ── Placas de blindagem laterais ── */
+    for (var pl = 0; pl < 2; pl++) {
+      var plx = pl ? 1 : -1;
+      var plate = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3.5, 4), trimMat);
+      plate.position.set(plx * 2.8, 0, -1);
+      plate.rotation.z = plx * 0.1;
+      grp.add(plate);
+    }
+
+    /* ── Detalhes: painéis laterais, conduítes ── */
+    for (var dv = 0; dv < 4; dv++) {
+      var dx = dv < 2 ? 1 : -1;
+      var dz = dv % 2 === 0 ? -3 : 3;
+      var detail = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 1.8), darkMat);
+      detail.position.set(dx * 1.8, 1.2, dz);
+      grp.add(detail);
+    }
 
     grp.position.set(0, 4, BOSS_Z);
     scene.add(grp);
@@ -639,6 +786,7 @@
       onResize();
 
       active = true;
+      try { if (typeof startBossMusic === 'function') startBossMusic(); } catch(e) {}
       sayQuote(st.vr
         ? T(st.vr.introKey, st.vr.defIntro)
         : T('boss.qIntro', 'Ligações químicas? Eu DEVORO moléculas no café da manhã!'));
@@ -674,6 +822,7 @@
     dust = null; stationGrp = null; rocks = [];
     TEX.glow = TEX.ring = TEX.dot = null;
     st = null;
+    try { if (typeof stopBossMusic === 'function') stopBossMusic(); } catch(e) {}
   }
 
   function isActive() { return active; }
@@ -1160,6 +1309,11 @@
       eng.scale.setScalar(3 + Math.sin(st.t * 7 + ix) * 0.5 + b.phase * 0.5);
     });
 
+    if (frac < 0.4 && Math.random() < dtRaw * 2.5) {
+      var smokePos = bm.grp.position.clone().add(new THREE.Vector3(rand(-6, 6), rand(-2, 2), rand(-3, 3)));
+      spawnPart(smokePos, new THREE.Vector3(rand(-2, 2), rand(1, 4), rand(-1, 1)), '#5b6478', rand(0.6, 1.4), rand(0.4, 0.8));
+    }
+
     if (st.dying) { deathMove(dt); return; }
 
     /* transição de fase pela vida restante */
@@ -1242,6 +1396,8 @@
     sayQuote(T('boss.qDie', 'Nããão... derrotado... por entalpia...'), 3.8);
     AudioSys_sfx('bigBoom');
     if (st.opts.addScore) st.opts.addScore(500);
+    try { earnCoins(500); } catch(e) {}
+    st.coinFloater = { txt: '+500 MOEDAS', t: 0 };
   }
 
   function deathMove(dt) {
@@ -1634,6 +1790,36 @@
       drawBtn(g, st.btnFire, '#ff5d6c', T('boss.fire', 'ATIRAR'), st.fireId !== null);
       drawBtn(g, st.btnTurbo, '#59d3ff', T('boss.turbo', 'TURBO'), st.turboHold);
     }
+      if (!st.touchMode) {
+        var pauseBtn = { x: cssW - 28 * u, y: 18 * u, r: 16 * u };
+        g.beginPath();
+        g.arc(pauseBtn.x, pauseBtn.y, pauseBtn.r, 0, Math.PI * 2);
+        g.fillStyle = 'rgba(10,16,34,0.55)';
+        g.fill();
+        g.lineWidth = 2;
+        g.strokeStyle = 'rgba(200,220,255,0.6)';
+        g.stroke();
+        g.fillStyle = 'rgba(200,220,255,0.8)';
+        g.font = Math.round(pauseBtn.r * 0.55) + 'px monospace';
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText('⏸', pauseBtn.x, pauseBtn.y);
+        g.textBaseline = 'alphabetic';
+        st.pauseBtn = pauseBtn;
+      }
+
+    if (st.coinFloater) {
+      st.coinFloater.t += 0.016;
+      var cfa = Math.max(0, 1 - st.coinFloater.t / 2.5);
+      var cfy = 80 * u - st.coinFloater.t * 20 * u;
+      g.globalAlpha = cfa;
+      g.textAlign = 'center';
+      g.font = 'bold ' + (12 * u) + 'px "Press Start 2P", monospace';
+      g.fillStyle = '#ffd166';
+      g.fillText(st.coinFloater.txt, cssW / 2, cfy);
+      g.globalAlpha = 1;
+      if (cfa <= 0) st.coinFloater = null;
+    }
 
     /* ---- vinheta de dano ---- */
     var vig = st.vignette;
@@ -1681,6 +1867,13 @@
 
   function pointerDown(e, rect) {
     if (!active || !st || st.over) return;
+    if (st.pauseBtn && !st.touchMode) {
+      var dpx = e.clientX - rect.left, dpy = e.clientY - rect.top;
+      if (Math.hypot(dpx - st.pauseBtn.x, dpy - st.pauseBtn.y) <= st.pauseBtn.r * 1.4) {
+        try { if (typeof togglePause === 'function') togglePause(); } catch(ex) {}
+        return;
+      }
+    }
     var px = e.clientX - rect.left, py = e.clientY - rect.top;
     if (st.touchMode && e.pointerType === 'touch') {
       var df = Math.hypot(px - st.btnFire.x, py - st.btnFire.y);

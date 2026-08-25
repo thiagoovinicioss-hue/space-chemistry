@@ -1876,8 +1876,33 @@ h3 .pix-icon { margin-right: 4px; }
 
 .defeat-panel { max-width: 440px; text-align: center; }
 .defeat-title { color: var(--bad); }
-.defeat-text { color: var(--text-dim); margin: 6px 0; }
-.defeat-stats { color: var(--text-dim); font-size: 14px; line-height: 1.8; margin: 12px 0 16px; }
+.defeat-text { color: var(--bad); margin: 6px 0; font-size: 18px; font-weight: bold; letter-spacing: 2px; }
+.defeat-stats { color: var(--text-dim); font-size: 14px; line-height: 1.8; margin: 12px 0 8px; }
+.defeat-coins { color: #ffd166; font-size: 13px; margin-bottom: 8px; }
+.defeat-buttons { flex-direction: column; gap: 10px; }
+.btn-buy-life {
+  background: linear-gradient(135deg, #2a1040, #3a1560);
+  color: #ff6688;
+  border: 2px solid #ff6688;
+  padding: 12px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 8px;
+  width: 100%;
+}
+.btn-buy-life:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3a1560, #4a2080);
+  border-color: #ff8899;
+  color: #ff8899;
+  box-shadow: 0 0 12px rgba(255,102,136,0.3);
+}
+.btn-buy-life:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: #555;
+  color: #777;
+}
 
 .ending-panel { max-width: 560px; text-align: center; }
 .ending-title { color: var(--accent-3); text-shadow: 0 0 16px rgba(255,209,102,0.8); }
