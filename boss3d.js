@@ -257,11 +257,14 @@
 
   /* =====================================================================
      MODELO DO BOSS — Devorador Estelar (~20 malhas leves)
+     Cada desvio encara uma VARIAÇÃO com paleta própria (VARIANTS).
   ====================================================================== */
-  function buildBoss() {
+  function buildBoss(vr) {
+    vr = vr || {};
+    var col = function (v, d) { return v == null ? d : v; };
     var grp = new THREE.Group();
-    var hullMat = new THREE.MeshLambertMaterial({ color: 0x2a1740 });
-    var trimMat = new THREE.MeshLambertMaterial({ color: 0x45246b });
+    var hullMat = new THREE.MeshLambertMaterial({ color: col(vr.hull, 0x2a1740) });
+    var trimMat = new THREE.MeshLambertMaterial({ color: col(vr.trim, 0x45246b) });
 
     var hull = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), hullMat);
     hull.scale.set(9, 3.4, 5.6);
@@ -273,12 +276,12 @@
     grp.add(belly);
 
     /* "Boca" devoradora na frente (+Z aponta para o jogador) */
-    var mawMat = new THREE.MeshBasicMaterial({ color: 0x39ff6a });
+    var mawMat = new THREE.MeshBasicMaterial({ color: col(vr.maw, 0x39ff6a) });
     var maw = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.6, 8, 18), mawMat);
     maw.position.set(0, 0, 4.6);
     grp.add(maw);
 
-    var coreMat = new THREE.MeshBasicMaterial({ color: 0xaaffc4 });
+    var coreMat = new THREE.MeshBasicMaterial({ color: col(vr.core, 0xaaffc4) });
     var core = new THREE.Mesh(new THREE.SphereGeometry(1.35, 10, 8), coreMat);
     core.position.set(0, 0, 3.6);
     grp.add(core);
@@ -303,7 +306,7 @@
       pod.position.set((p ? 6.6 : -6.6), -0.4, 0.6);
       grp.add(pod);
       var eng = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: TEX.glow, color: 0xff5548, transparent: true,
+        map: TEX.glow, color: col(vr.engine, 0xff5548), transparent: true,
         opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending
       }));
       eng.scale.set(3.4, 3.4, 1);
@@ -326,7 +329,7 @@
     return {
       grp: grp, mawMat: mawMat, maw: maw, coreMat: coreMat, core: core,
       engines: engines, hullMats: [hullMat, trimMat],
-      baseColors: [new THREE.Color(0x2a1740), new THREE.Color(0x45246b)]
+      baseColors: [new THREE.Color(col(vr.hull, 0x2a1740)), new THREE.Color(col(vr.trim, 0x45246b))]
     };
   }
   /* =====================================================================
@@ -557,6 +560,8 @@
       /* Vida escalonada: confrontos pós-fase usam hpMax menor (dificuldade
          progressiva); o confronto final mantém a vida cheia (BOSS_HP_MAX). */
       var hpMax = Math.max(12, Math.round(opts.hpMax || BOSS_HP_MAX));
+      /* Variação do Devorador (desvio iônico/covalente ou clássico final) */
+      var vr = VARIANTS[opts.variant] || null;
       st = {
         t: 0, timeScale: 1, over: false, dying: false, dieT: 0, fadeOut: 0,
         ammo: ammo,
@@ -579,13 +584,13 @@
         joy: { id: null, bx: 0, by: 0, x: 0, y: 0 },
         fireId: null, turboId: null, turboHold: false,
         btnFire: { x: 0, y: 0, r: 36 }, btnTurbo: { x: 0, y: 0, r: 26 },
-        opts: opts
+        opts: opts, vr: vr, phases: buildPhases(vr)
       };
       st.mag = st.magMax;
-      st.bossM = buildBoss();
+      st.bossM = buildBoss(vr);
       st.boss = {
         hp: hpMax, dispHp: hpMax, maxHp: hpMax, phase: 1, wob: rand(0, 9),
-        atkT: 3.4, fanT: PH[1].fan, homeT: 8, dashT: 6, ringT: 6,
+        atkT: 3.4, fanT: st.phases[1].fan, homeT: 8, dashT: 6, ringT: 6,
         tele: 0, teleKind: '', hitFlash: 0, dashTo: null
       };
       initPools();
@@ -597,7 +602,9 @@
       onResize();
 
       active = true;
-      sayQuote(T('boss.qIntro', 'Ligações químicas? Eu DEVORO moléculas no café da manhã!'));
+      sayQuote(st.vr
+        ? T(st.vr.introKey, st.vr.defIntro)
+        : T('boss.qIntro', 'Ligações químicas? Eu DEVORO moléculas no café da manhã!'));
       return true;
     } catch (err) {
       try { stop(); } catch (e2) {}
@@ -929,7 +936,55 @@
 
   /* =====================================================================
      BOSS — Devorador Estelar: fases, ataques, falas e morte
+     VARIANTS: cada desvio encara uma variação própria do Devorador,
+     com paleta, ataques e falas diferentes do confronto final.
+       · kinder → DEVORADOR IÔNICO (roxo/magenta): barragens de cristais
+         em leque + anel contínuo; nunca dispara mísseis perseguidoras.
+       · bueno  → DEVORADOR COVALENTE (verde-esmeralda): ágil, investidas
+         frequentes e mísseis perseguidoras desde a 1ª fase.
   ====================================================================== */
+  var VARIANTS = {
+    kinder: {
+      hull: 0x241a4d, trim: 0x4b2f8f, maw: 0xff9df2, core: 0xffe1ff,
+      engine: 0xc26bff, rageA: 0x5a1030, rageB: 0x7a1850,
+      objKey: 'boss.objective.kinder', defObj: 'Destrua o Devorador Iônico',
+      introKey: 'boss.qIntroKinder',
+      defIntro: 'Íons? Eu DISSOLVO redes cristalinas no café da manhã!',
+      tweak: function (p) {
+        p.fanN += 2;                                  /* leques maiores */
+        p.fan = Math.max(2.6, p.fan - 1.1);           /* e mais frequentes */
+        if (p.ring) { p.ring *= 0.72; } else { p.ring = 8.5; } /* anel cedo */
+        p.homing = 0;                                 /* sem perseguidoras */
+      }
+    },
+    bueno: {
+      hull: 0x07271e, trim: 0x11573f, maw: 0x2ee89a, core: 0xc9ffe6,
+      engine: 0x35ffc0, rageA: 0x0d4030, rageB: 0x17754e,
+      objKey: 'boss.objective.bueno', defObj: 'Destrua o Devorador Covalente',
+      introKey: 'boss.qIntroBueno',
+      defIntro: 'Ligações covalentes? Eu ARRONCO os elétrons compartilhados!',
+      tweak: function (p) {
+        p.ax *= 1.18; p.ay *= 1.18;                   /* movimento acelerado */
+        p.wx *= 1.15; p.wy *= 1.15;
+        p.dash = p.dash ? p.dash * 0.68 : 4.6;        /* investidas cedo */
+        p.homing = p.homing ? p.homing * 0.62 : 7.8;  /* mísseis sempre */
+        p.boltSpd += 3;
+      }
+    }
+  };
+
+  /* Cópia profunda das fases base com os ajustes da variação aplicados */
+  function buildPhases(vr) {
+    var out = {};
+    for (var k in PH) {
+      var p = {};
+      for (var kk in PH[k]) p[kk] = PH[k][kk];
+      if (vr && vr.tweak) vr.tweak(p);
+      out[k] = p;
+    }
+    return out;
+  }
+
   var PH = {
     1: { ax: 15, ay: 8, wx: 0.40, wy: 0.62, zr: 4, ease: 2.2,
          aimed: 2.0, aimedN: 1, boltSpd: 26, fan: 6.6, fanN: 3, fanSpd: 22,
@@ -969,11 +1024,13 @@
     } else if (ph === 3) {
       sayQuote(T('boss.qP3', 'Impossível! Minha eletronegatividade está no MÁXIMO!'));
     }
-    /* tinta a carapaça para um tom mais agressivo */
+    /* tinta a carapaça para um tom mais agressivo (da própria variação) */
     var bm = st.bossM;
     var mix = ph === 2 ? 0.45 : 1;
-    bm.hullMats[0].color.copy(bm.baseColors[0]).lerp(new THREE.Color(0x5a1020), mix);
-    bm.hullMats[1].color.copy(bm.baseColors[1]).lerp(new THREE.Color(0x7a1830), mix);
+    bm.hullMats[0].color.copy(bm.baseColors[0])
+      .lerp(new THREE.Color(st.vr ? st.vr.rageA : 0x5a1020), mix);
+    bm.hullMats[1].color.copy(bm.baseColors[1])
+      .lerp(new THREE.Color(st.vr ? st.vr.rageB : 0x7a1830), mix);
   }
 
   function bossTelegraph(kind) {
@@ -1005,7 +1062,7 @@
     for (var i = 0; i < n; i++) {
       var off = new THREE.Vector3((i - (n - 1) / 2) * 2.2, 0, 0);
       var dir = new THREE.Vector3().subVectors(target.clone().add(off), from).normalize();
-      enemyFire(from, dir, PH[st.boss.phase].boltSpd, false);
+      enemyFire(from, dir, st.phases[st.boss.phase].boltSpd, false);
     }
     AudioSys_sfx('enemyShot');
   }
@@ -1061,7 +1118,7 @@
     var frac = b.hp / b.maxHp;
     var ph = frac > 0.66 ? 1 : (frac > 0.33 ? 2 : 3);
     if (ph !== b.phase) { b.phase = ph; onPhaseChange(ph); }
-    var cfg = PH[b.phase];
+    var cfg = st.phases[b.phase];
     b.wob += dt;
 
     /* movimento: senoide ampla + investidas periódicas (nunca parado) */
@@ -1393,11 +1450,13 @@
       }
     }
 
-    /* ---- objetivo ---- */
+    /* ---- objetivo (nome muda conforme a variação do Devorador) ---- */
     g.font = (7 * u) + 'px "Press Start 2P", monospace';
     g.textAlign = 'left';
     g.fillStyle = 'rgba(160,200,255,0.75)';
-    g.fillText('▸ ' + T('boss.objective', 'Destrua o Devorador Estelar'), 12 * u, 18 * u);
+    g.fillText('▸ ' + (st.vr
+      ? T(st.vr.objKey, st.vr.defObj)
+      : T('boss.objective', 'Destrua o Devorador Estelar')), 12 * u, 18 * u);
 
     /* ---- blindagem + energia ---- */
     var hy = cssH - 40 * u;

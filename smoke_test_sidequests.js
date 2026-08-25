@@ -420,8 +420,8 @@ const css = fs.readFileSync(__dirname + '/style.css', 'utf8');
 const src = fs.readFileSync(__dirname + '/script.js', 'utf8');
 check('#route presente no HTML com opções e título',
   html.includes('id="route"') && html.includes('id="route-options"') && html.includes('id="route-title-text"'));
-check('cache bumpado para 20260825a em todos os assets',
-  html.includes('?v=20260825a') && !html.includes('?v=20260824f') && !html.includes('?v=20260823'));
+check('cache bumpado para 20260825b em todos os assets',
+  html.includes('?v=20260825b') && !html.includes('?v=20260824f') && !html.includes('?v=20260823'));
 check('CSS estiliza painel de rota e cartões de planeta opcional',
   css.includes('.route-panel') && css.includes('.route-btn.route-side') && css.includes('.planet-btn.side'));
 check('overlay route é escondido nas trocas de tela (hideOverhaulOverlays)',
@@ -539,15 +539,17 @@ check('simulação: frota limpa → boss surge → cai → Terra liberada',
   `));
 
 /* ---------- 9. Emboscada do boss ao sair dos planetas secretos ---------- */
-check('completeLevel de desvio inédito abre a Máquina Balística (emboscada)',
+check('missionDone de desvio inédito abre a Máquina Balística (emboscada)',
   run(`
     (function () {
       Game.replay = false;
       Save.data = Save.defaults();
       Save.save();
+      Game.run.score = 0;
+      Game.levelTime = 60;
       Game.levelIndex = KINDER_INDEX;
       Game.run.completed = [false, false, false, false, false, false, false];
-      completeLevel();
+      missionDone(false);
       return Game.phase === 'ballistic' && Game.ballisticDetour === KINDER_INDEX &&
         document.getElementById('ballistic').hidden === false;
     })()
@@ -567,6 +569,7 @@ check('ballisticFire no desvio inicia a batalha 3D do boss com a munição escol
             opts.onVictory();
           };
           window.__detourAmmo = opts.ammo;
+          window.__bossVariant = opts.variant;
           window.__bossActive = true;
           return true;
         },
@@ -577,7 +580,8 @@ check('ballisticFire no desvio inicia a batalha 3D do boss com a munição escol
       ballisticFire();
       return Game.phase === 'boss' && Game.ballisticDetour === null &&
         Game.detourBossIdx === KINDER_INDEX && Game.bossCtx === 'detour' &&
-        window.__detourAmmo === AMMO_TYPES.NA2S && Game.ammo === AMMO_TYPES.NA2S;
+        window.__detourAmmo === AMMO_TYPES.NA2S && Game.ammo === AMMO_TYPES.NA2S &&
+        window.__bossVariant === 'kinder';
     })()
   `));
 check('vitória na emboscada devolve o fluxo normal do desvio (recompensa + galáxia)',
@@ -591,26 +595,39 @@ check('vitória na emboscada devolve o fluxo normal do desvio (recompensa + gal�
         ((!rewardEl.hidden && pendingLevelComplete === true) || Game.screen === 'galaxy');
     })()
   `));
-check('replay do desvio não repete a emboscada (vai direto para o mapa)',
+check('REJOGO do desvio TAMBÉM embosca (todo passe pelo planeta tem boss)',
   run(`
     (function () {
       pendingLevelComplete = false;
       document.getElementById('reward').hidden = true;
       document.getElementById('ballistic').hidden = true;
+      Game.replay = true;
+      Save.data.completed[KINDER_INDEX] = true;
+      Game.run.completed[KINDER_INDEX] = true;
       Game.levelIndex = KINDER_INDEX;
-      completeLevel();
-      return Game.screen === 'galaxy' && Game.ballisticDetour === null &&
-        Game.phase !== 'ballistic';
+      missionDone(false);
+      var ambushedAgain = Game.phase === 'ballistic' &&
+        Game.ballisticDetour === KINDER_INDEX &&
+        document.getElementById('ballistic').hidden === false;
+      /* dispara e vence o boss do rejogo para limpar o estado */
+      window.__bossVariant = null;
+      Game.level = buildLevel(KINDER_INDEX);
+      Game.screen = 'game';
+      Game.ballistic = { sel: 'STD', token: 1 };
+      ballisticFire();
+      var variantOk = window.__bossVariant === 'kinder';
+      window.__detourVictory();
+      return ambushedAgain && variantOk &&
+        Game.screen === 'galaxy' && Game.detourBossIdx === null;
     })()
   `));
 check('sem WebGL a emboscada é pulada sem travar (conclusão normal)',
   run(`
     (function () {
       window.BossBattle = undefined;
-      Save.data.completed[BUENO_INDEX] = false;
-      Game.run.completed[BUENO_INDEX] = false;
+      Game.replay = true;
       Game.levelIndex = BUENO_INDEX;
-      completeLevel();
+      missionDone(false);
       var openedBallistic = Game.ballisticDetour === BUENO_INDEX;
       Game.ballistic = { sel: 'STD', token: 1 };
       ballisticFire();
@@ -630,44 +647,34 @@ check('exitToMenu limpa o estado da emboscada',
     })()
   `));
 
-/* ---------- 10. Emboscada pós-FASE: todo planeta recém-conquistado ---------- */
-check('vida do boss escala com a fase (tutorial leve, desvios com vida cheia)',
-  run(`
-    levelBossHp(0) === 24 && levelBossHp(1) === 36 &&
-    levelBossHp(2) === 48 && levelBossHp(3) === BOSS_HP_FULL &&
-    levelBossHp(KINDER_INDEX) === BOSS_HP_FULL &&
-    levelBossHp(BUENO_INDEX) === BOSS_HP_FULL
-  `));
-check('missionDone de fase PRINCIPAL inédita abre a emboscada balística',
+/* ---------- 10. Fases principais NÃO têm boss + bosses diferentes ---------- */
+check('missionDone de fase PRINCIPAL parte direto, SEM emboscada',
   run(`
     (function () {
-      window.BossBattle = undefined;   /* força caminho sem WebGL por ora */
+      window.BossBattle = undefined;
       Save.data = Save.defaults();
       Game.replay = false;
       Game.run.completed = [false, false, false, false, false, false, false];
       Game.run.score = 0;
       Game.levelTime = 60;
       Game.levelIndex = IONIC_INDEX;
+      Game.level = buildLevel(IONIC_INDEX);
+      Game.screen = 'game';
       pendingLevelComplete = false;
       missionDone(false);
-      var opened = Game.phase === 'ballistic' &&
-        Game.ballisticDetour === IONIC_INDEX &&
-        document.getElementById('ballistic').hidden === false;
-      /* limpa o overlay para os próximos checks */
-      document.getElementById('ballistic').hidden = true;
-      Game.phase = null;
-      return opened;
+      return Game.phase !== 'ballistic' && Game.ballisticDetour === null &&
+        (!!Game.departure || !!Game.travel || Game.screen === 'galaxy');
     })()
   `));
-check('vitória do boss numa fase principal segue a VIAGEM normal (desvios físicos preservados)',
+check('cada desvio enfrenta uma variação DIFERENTE do Devorador (iônica × covalente)',
   run(`
     (function () {
+      window.__seenVariants = [];
       window.__bossActive = false;
-      window.__hpMaxSeen = null;
       window.BossBattle = {
         supported: function () { return true; },
         start: function (opts) {
-          window.__hpMaxSeen = opts.hpMax;
+          window.__seenVariants.push(opts.variant);
           window.__detourVictory = opts.onVictory;
           window.__bossActive = true;
           return true;
@@ -675,38 +682,56 @@ check('vitória do boss numa fase principal segue a VIAGEM normal (desvios físi
         isActive: function () { return !!window.__bossActive; },
         stop: function () { window.__bossActive = false; }
       };
-      /* retoma a emboscada aberta no check anterior */
-      Game.phase = 'ballistic';
-      Game.ballisticDetour = IONIC_INDEX;
-      Game.detourBossIdx = null;
-      Game.bossCtx = null;
-      Game.level = buildLevel(IONIC_INDEX);
+      /* pré-desbloqueia itens de recompensa para evitar popup */
+      Save.data = Save.defaults();
+      if (!Save.hasItem('h_esmeralda')) Save.unlockItem('h_esmeralda');
+      if (!Save.hasItem('s_prisma'))    Save.unlockItem('s_prisma');
+      /* Bueno */
+      Game.replay = true;
+      Save.data.completed[BUENO_INDEX] = true;
+      Game.run.completed[BUENO_INDEX] = true;
+      Game.levelIndex = BUENO_INDEX;
+      Game.level = buildLevel(BUENO_INDEX);
       Game.screen = 'game';
+      missionDone(false);
       Game.ballistic = { sel: 'STD', token: 1 };
       ballisticFire();
-      var hpOk = Game.detourBossIdx === IONIC_INDEX && window.__hpMaxSeen === levelBossHp(IONIC_INDEX);
-      if (!hpOk || Game.phase !== 'boss') return false;
-      window.__detourVictory();   /* vence o boss */
-      var followed = Game.bossCtx === null && Game.detourBossIdx === null &&
-        selectedPlanet === Math.min(IONIC_INDEX + 1, FINAL_INDEX) &&
-        (!!Game.departure || !!Game.travel || Game.screen === 'galaxy' ||
-         !!Game.routeChoice);
-      window.__bossActive = false;
-      return followed;
-    })()
-  `));
-check('rejogar fase principal não repete a emboscada (parte direto)',
-  run(`
-    (function () {
-      Save.data.completed[COVALENT_INDEX] = true;
-      Game.run.completed[COVALENT_INDEX] = true;
-      Game.replay = true;
-      Game.levelIndex = COVALENT_INDEX;
+      if (Game.phase !== 'boss') return false;
+      window.__detourVictory();
+      /* Kinder */
+      Game.levelIndex = KINDER_INDEX;
+      Game.level = buildLevel(KINDER_INDEX);
       missionDone(false);
-      return Game.phase !== 'ballistic' && Game.ballisticDetour === null &&
-        (!!Game.departure || !!Game.travel || Game.screen === 'galaxy');
+      Game.ballistic = { sel: 'STD', token: 1 };
+      ballisticFire();
+      if (Game.phase !== 'boss') return false;
+      window.__detourVictory();
+      window.__bossActive = false;
+      var v = window.__seenVariants;
+      return v.length === 2 && v[0] === 'bueno' && v[1] === 'kinder' &&
+        v[0] !== v[1] && Game.screen === 'galaxy';
     })()
   `));
+check('batalha FINAL não recebe variação (Devorador Estelar clássico)',
+  (() => {
+    const srcMain = fs.readFileSync(__dirname + '/script.js', 'utf8');
+    return srcMain.includes("variant:") && srcMain.includes("ctx === 'detour'") &&
+      srcMain.includes("KINDER_INDEX ? 'kinder'") &&
+      srcMain.includes("BUENO_INDEX ? 'bueno'") &&
+      srcMain.includes(": undefined");
+  })());
+check('boss3d define variações com paletas, falas e ajustes de ataque próprios',
+  (() => {
+    const src = fs.readFileSync(__dirname + '/boss3d.js', 'utf8');
+    return src.includes('var VARIANTS =') &&
+      src.includes("objKey: 'boss.objective.kinder'") &&
+      src.includes("objKey: 'boss.objective.bueno'") &&
+      src.includes('introKey:') && src.includes('tweak:') &&
+      src.includes('buildPhases(vr)') &&
+      src.includes('st.phases[b.phase]') &&
+      src.includes('buildBoss(vr)') &&
+      src.includes('st.vr ? st.vr.rageA : 0x5a1020');
+  })());
 
 /* ---------- resultado ---------- */
 if (failures) {

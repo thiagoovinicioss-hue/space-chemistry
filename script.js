@@ -5645,20 +5645,22 @@ function missionDone(equip) {
   Save.save();
   updateHudProgress();
 
-  /* Rejogar uma fase já zerada não repete a emboscada: parte direto */
-  if (!firstTime) {
-    departAfterLevel(idx);
+  /* EMBOSCADA DOS DESVIOS: TODA conclusão de um planeta opcional (Kinder/
+     Bueno) termina com o Devorador Estelar — inclusive em rejogos. Cada
+     desvio enfrenta uma VARIAÇÃO própria do boss (iônica/covalente). */
+  if (isSideQuest(idx)) {
+    Game.ballisticDetour = idx;
+    showToast('EMBOSCADA!',
+      'O Devorador Estelar detectou sua nave! Carregue a Máquina Balística.');
+    showBallistic();
     return;
   }
 
-  /* EMBOSCADA PÓS-FASE: ao terminar qualquer planeta pela primeira vez, o
-     Devorador Estelar intercepta a nave. A Máquina Balística abre para
-     carregar o projétil antes do confronto em 3ª pessoa. A viagem (e os
-     desvios secretos físicos) continuam logo após a vitória. */
-  Game.ballisticDetour = idx;
-  showToast('EMBOSCADA!',
-    'O Devorador Estelar detectou sua nave! Carregue a Máquina Balística.');
-  showBallistic();
+  /* Fases principais não têm boss: partem direto. O destino é sempre o
+     próximo planeta principal. Se existir desvio opcional disponível, ele
+     aparece FISICAMENTE no espaço durante a viagem — nunca como menu (o
+     piloto decide desviar ou seguir reto). */
+  departAfterLevel(idx);
 }
 
 /* ---------------- Escolha de rota (desvios opcionais) ---------------- */
@@ -7154,17 +7156,21 @@ function damageBoss(dmg) {
    A frota limpa entrega o controle para o módulo BossBattle (boss3d.js),
    que roda a fase 'boss' com câmera atrás da nave. Na vitória, o fluxo
    volta para a fase 2D 'return' e a nave segue até a Terra.
-   O mesmo confronto também embosca o jogador (mode 'detour'): ao sair de
-   qualquer planeta recém-conquistado — desvios secretos ou fases principais —
-   sem missão de retorno; a vida do boss escala com a fase concluída. */
+   O mesmo confronto também embosca o jogador ao sair dos planetas
+   secretos (mode 'detour') — TODA vez, mesmo em rejogos. Cada desvio
+   encara uma variação própria do boss (iônica no Kinder, covalente no
+   Bueno), diferente da versão final. */
 function startBossEncounter(mode) {
   const ctx = mode || 'final';
   const r = Game.return;
   if (window.BossBattle && BossBattle.supported()) {
-    /* Desvios e emboscadas pós-fase escalam a vida do boss pela fase */
-    const hpMax = ctx === 'detour' ? levelBossHp(Game.detourBossIdx) : undefined;
+    /* Cada desvio tem um Devorador com aparência e ataques próprios */
+    const variant = ctx === 'detour'
+      ? (Game.detourBossIdx === KINDER_INDEX ? 'kinder' :
+         Game.detourBossIdx === BUENO_INDEX ? 'bueno' : undefined)
+      : undefined;
     const ok = BossBattle.start({
-      hpMax: hpMax,
+      variant: variant,
       ammo: (ctx === 'detour' ? Game.ammo : (r && r.ammo)) || AMMO_TYPES.STD,
       addScore(n) {
         if (!Game.replay) {
@@ -7189,39 +7195,22 @@ function startBossEncounter(mode) {
   return false;
 }
 
-const BOSS_HP_FULL = 60;
-
-/* Vida do Devorador Estelar em cada confronto pós-fase (dificuldade
-   progressiva). Desvios secretos e a batalha final usam a vida cheia. */
-function levelBossHp(idx) {
-  if (idx == null || idx < TUTORIAL_INDEX) return BOSS_HP_FULL;
-  if (!isSideQuest(idx)) return Math.min(BOSS_HP_FULL, 24 + idx * 12);
-  return BOSS_HP_FULL;
-}
-
-/* Dispara a emboscada pós-planeta; sem WebGL, entrega a recompensa
-   normalmente (o jogo nunca fica preso). */
+/* Dispara a emboscada do desvio; sem WebGL, a conclusão segue normal
+   (o jogo nunca fica preso). */
 function launchDetourBoss(idx) {
   Game.detourBossIdx = idx;
   if (!startBossEncounter('detour')) finishDetourBoss();
 }
 
-/* Conclusão da rota após vencer (ou pular, sem WebGL) o boss:
-   desvios seguem para o mapa galáctico; fases principais seguem a
-   viagem normal — os desvios secretos físicos permanecem no caminho. */
+/* Conclusão da rota após vencer (ou pular, sem WebGL) o boss do desvio:
+   mesma cauda de completeLevel — recompensa do item e mapa galáctico. */
 function finishDetourBoss() {
   Game.bossCtx = null;
   Game.phase = null; /* evita reentrada do dispatch da fase 'boss' */
   const idx = Game.detourBossIdx;
   Game.detourBossIdx = null;
   AudioSys.sfx('gate');
-  if (!isSideQuest(idx)) {
-    /* Fase principal: item já foi entregue no painel de missão; segue viagem */
-    selectedPlanet = Math.min(idx + 1, FINAL_INDEX);
-    departAfterLevel(idx);
-    return;
-  }
-  selectedPlanet = SIDE_QUESTS[idx].next;
+  selectedPlanet = isSideQuest(idx) ? SIDE_QUESTS[idx].next : Math.min(idx + 1, FINAL_INDEX);
   if (unlockItemWithPopup(LEVEL_REWARDS[idx])) {
     pendingLevelComplete = true;
   } else {
