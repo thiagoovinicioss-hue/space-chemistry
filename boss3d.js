@@ -31,8 +31,8 @@
   var MAX_DPR = 1.75;
 
   /* Dimensões da arena (unidades Three.js). A nave olha para -Z. */
-  var BOUND_X = 34, BOUND_Y = 20, SHIP_Z_MIN = -30, SHIP_Z_MAX = 52;
-  var BOSS_Z = -88, BOSS_R = 7.6, BOSS_HP_MAX = 60;
+  var BOUND_X = 34, BOUND_Y = 20, SHIP_Z_MIN = -18, SHIP_Z_MAX = 52;
+  var BOSS_Z = -48, BOSS_R = 10, BOSS_HP_MAX = 60;
   var SHOT_RANGE = 175;
 
   var moduleSupported = false;
@@ -149,7 +149,7 @@
     for (var i = 0; i < n; i++) {
       arr[i * 3] = rand(-45, 45);
       arr[i * 3 + 1] = rand(-26, 26);
-      arr[i * 3 + 2] = rand(-130, 40);
+      arr[i * 3 + 2] = rand(-80, 40);
     }
     geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
     dust = new THREE.Points(geo, new THREE.PointsMaterial({
@@ -164,7 +164,7 @@
     var spd = 13 + (boost ? 26 : 0);
     for (var i = 0; i < pos.count; i++) {
       var z = pos.getZ(i) + spd * dt;
-      if (z > 46) z -= 176;
+      if (z > 46) z -= 126;
       pos.setZ(i, z);
     }
     pos.needsUpdate = true;
@@ -184,7 +184,7 @@
       var px = rand(-BOUND_X - 6, BOUND_X + 6);
       var py = rand(-BOUND_Y - 4, BOUND_Y + 4);
       if (Math.abs(px) < 9 && Math.abs(py) < 6) px += (px >= 0 ? 12 : -12);
-      m.position.set(px, py, rand(-118, -14));
+      m.position.set(px, py, rand(-75, -8));
       m.rotation.set(rand(0, 3), rand(0, 3), rand(0, 3));
       scene.add(m);
       rocks.push({
@@ -266,9 +266,17 @@
     var hullMat = new THREE.MeshLambertMaterial({ color: col(vr.hull, 0x2a1740) });
     var trimMat = new THREE.MeshLambertMaterial({ color: col(vr.trim, 0x45246b) });
 
-    var hull = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), hullMat);
-    hull.scale.set(9, 3.4, 5.6);
+    /* casco principal (formato achatado e largo) */
+    var hull = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), hullMat);
+    hull.scale.set(9, 3.2, 5.6);
     grp.add(hull);
+
+    /* carapaça superior (placas de armadura) */
+    var armorMat = new THREE.MeshLambertMaterial({ color: col(vr.trim, 0x52327a) });
+    var armor = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), armorMat);
+    armor.scale.set(7.5, 1.4, 4.2);
+    armor.position.y = 1.6;
+    grp.add(armor);
 
     var belly = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), trimMat);
     belly.scale.set(6.4, 1.6, 3.4);
@@ -277,17 +285,37 @@
 
     /* "Boca" devoradora na frente (+Z aponta para o jogador) */
     var mawMat = new THREE.MeshBasicMaterial({ color: col(vr.maw, 0x39ff6a) });
-    var maw = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.6, 8, 18), mawMat);
+    var maw = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.65, 10, 22), mawMat);
     maw.position.set(0, 0, 4.6);
     grp.add(maw);
 
+    /* anel interno da boca (energia) */
+    var innerRingMat = new THREE.MeshBasicMaterial({ color: col(vr.core, 0xaaffc4), transparent: true, opacity: 0.5 });
+    var innerRing = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.2, 8, 16), innerRingMat);
+    innerRing.position.set(0, 0, 4.2);
+    grp.add(innerRing);
+
     var coreMat = new THREE.MeshBasicMaterial({ color: col(vr.core, 0xaaffc4) });
-    var core = new THREE.Mesh(new THREE.SphereGeometry(1.35, 10, 8), coreMat);
+    var core = new THREE.Mesh(new THREE.SphereGeometry(1.35, 12, 10), coreMat);
     core.position.set(0, 0, 3.6);
     grp.add(core);
 
+    /* mandíbulas laterais (6 presas) */
+    var mandibleMat = new THREE.MeshLambertMaterial({ color: col(vr.trim, 0x45246b) });
+    for (var s = 0; s < 2; s++) {
+      for (var t = 0; t < 3; t++) {
+        var fang = new THREE.Mesh(new THREE.ConeGeometry(0.35, 2.2, 5), mandibleMat);
+        var fx = (s ? 1 : -1) * (2.0 + t * 0.7);
+        var fy = (t - 1) * 1.1;
+        fang.position.set(fx, fy, 5.2 + t * 0.3);
+        fang.rotation.x = -0.35;
+        fang.rotation.z = (s ? -1 : 1) * (0.2 + t * 0.12);
+        grp.add(fang);
+      }
+    }
+
     /* Espinhos ao redor da carapaça */
-    var spikeGeo = new THREE.ConeGeometry(0.85, 3, 5);
+    var spikeGeo = new THREE.ConeGeometry(0.85, 3.2, 5);
     for (var i = 0; i < 8; i++) {
       var a = i / 8 * Math.PI * 2;
       var sp = new THREE.Mesh(spikeGeo, trimMat);
@@ -324,11 +352,20 @@
     finB.position.set(0, -3.6, -1.4);
     grp.add(finB);
 
+    /* escudo de energia pulsante (anel ao redor do casco) */
+    var shieldMat = new THREE.MeshBasicMaterial({
+      color: col(vr.maw, 0x39ff6a), transparent: true, opacity: 0.08,
+      side: THREE.DoubleSide, depthWrite: false
+    });
+    var shield = new THREE.Mesh(new THREE.SphereGeometry(11.5, 18, 12), shieldMat);
+    grp.add(shield);
+
     grp.position.set(0, 4, BOSS_Z);
     scene.add(grp);
     return {
       grp: grp, mawMat: mawMat, maw: maw, coreMat: coreMat, core: core,
-      engines: engines, hullMats: [hullMat, trimMat],
+      innerRing: innerRing, shield: shield, engines: engines,
+      hullMats: [hullMat, trimMat],
       baseColors: [new THREE.Color(col(vr.hull, 0x2a1740)), new THREE.Color(col(vr.trim, 0x45246b))]
     };
   }
@@ -541,7 +578,7 @@
       hudCtx = hudCanvas.getContext('2d');
 
       scene = new THREE.Scene();
-      scene.fog = new THREE.Fog(0x04060f, 95, 240);
+      scene.fog = new THREE.Fog(0x04060f, 55, 160);
       camera = new THREE.PerspectiveCamera(62, cssW / cssH, 0.1, 500);
       camera.position.set(0, 2.5, 43);
 
@@ -822,7 +859,10 @@
     if (!raycaster) raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(st.aimNdc, camera);
     var o = raycaster.ray.origin, dir = raycaster.ray.direction;
-    var targetZ = st.ship.pos.z - 58;
+    /* projeta a mira para a zona do boss (ou 60u à frente se sem boss) */
+    var targetZ = st.bossM
+      ? Math.min(st.ship.pos.z - 60, st.bossM.grp.position.z + 6)
+      : st.ship.pos.z - 60;
     if (Math.abs(dir.z) < 0.0001) dir.z = -0.0001;
     var tt = (targetZ - o.z) / dir.z;
     if (tt < 4) tt = 4;
@@ -987,13 +1027,13 @@
 
   var PH = {
     1: { ax: 15, ay: 8, wx: 0.40, wy: 0.62, zr: 4, ease: 2.2,
-         aimed: 2.0, aimedN: 1, boltSpd: 26, fan: 6.6, fanN: 3, fanSpd: 22,
+         aimed: 2.0, aimedN: 1, boltSpd: 30, fan: 6.6, fanN: 3, fanSpd: 26,
          homing: 0, dash: 0, ring: 0 },
     2: { ax: 21, ay: 11, wx: 0.55, wy: 0.78, zr: 7, ease: 2.8,
-         aimed: 1.25, aimedN: 1, boltSpd: 29, fan: 4.4, fanN: 5, fanSpd: 24,
+         aimed: 1.25, aimedN: 1, boltSpd: 34, fan: 4.4, fanN: 5, fanSpd: 28,
          homing: 7.5, dash: 5.5, ring: 0 },
     3: { ax: 26, ay: 13, wx: 0.72, wy: 0.98, zr: 10, ease: 3.4,
-         aimed: 0.95, aimedN: 2, boltSpd: 32, fan: 5.4, fanN: 10, fanSpd: 20,
+         aimed: 0.95, aimedN: 2, boltSpd: 38, fan: 5.4, fanN: 10, fanSpd: 24,
          homing: 5.5, dash: 4.2, ring: 9.0 }
   };
 
@@ -1072,17 +1112,17 @@
     var toPlayer = Math.atan2(st.ship.pos.y - from.y, st.ship.pos.x - from.x);
     for (var i = 0; i < count; i++) {
       var a = toPlayer + (i / count - 0.5) * Math.PI * 1.15;
-      enemyFire(from, new THREE.Vector3(Math.cos(a) * 0.86, Math.sin(a) * 0.86, 0.5).normalize(), spd, false);
+      enemyFire(from, new THREE.Vector3(Math.cos(a) * 0.7, Math.sin(a) * 0.7, 1.1).normalize(), spd, false);
     }
     AudioSys_sfx('enemyShot');
   }
 
   function bossRing(count) {
-    var from = st.bossM.grp.position.clone();
+    var from = st.bossM.grp.position.clone().add(new THREE.Vector3(0, 0, 4));
     var gap = rand(0, Math.PI * 2); /* sempre há uma brecha: esquiva é justa */
     for (var i = 0; i < count; i++) {
       var a = gap + (i + 0.5) / count * Math.PI * 2;
-      enemyFire(from, new THREE.Vector3(Math.cos(a), Math.sin(a), 0.12).normalize(), 19, false);
+      enemyFire(from, new THREE.Vector3(Math.cos(a), Math.sin(a), 1.4).normalize(), 19, false);
     }
     AudioSys_sfx('warning');
   }
@@ -1107,6 +1147,14 @@
     bm.core.scale.setScalar(pulse);
     bm.maw.scale.setScalar(1 + (b.tele > 0 ? 0.22 : 0));
     bm.coreMat.color.set(b.tele > 0 ? 0xffffaa : 0xaaffc4);
+    if (bm.innerRing) {
+      bm.innerRing.rotation.z += dt * 2.5;
+      bm.innerRing.material.opacity = 0.3 + Math.sin(st.t * 4) * 0.2 + (b.tele > 0 ? 0.4 : 0);
+    }
+    if (bm.shield) {
+      bm.shield.material.opacity = 0.04 + Math.sin(st.t * 1.8) * 0.03 + (b.hitFlash > 0 ? 0.25 : 0);
+      bm.shield.rotation.y += dt * 0.3;
+    }
     bm.engines.forEach(function (eng, ix) {
       eng.material.opacity = 0.55 + Math.random() * 0.45;
       eng.scale.setScalar(3 + Math.sin(st.t * 7 + ix) * 0.5 + b.phase * 0.5);
@@ -1126,7 +1174,7 @@
       Math.sin(b.wob * cfg.wx) * cfg.ax,
       4 + Math.sin(b.wob * cfg.wy * 1.31) * cfg.ay,
       BOSS_Z + Math.sin(b.wob * 0.23) * cfg.zr +
-        (b.phase === 3 ? Math.max(0, Math.sin(b.wob * 0.13) - 0.62) * 26 : 0)
+        (b.phase === 3 ? Math.max(0, Math.sin(b.wob * 0.13) - 0.62) * 16 : 0)
     );
     if (cfg.dash) {
       b.dashT -= dt;
@@ -1276,7 +1324,7 @@
       es.m.position.addScaledVector(es.vel, dt);
       es.m.rotation.z += dt * 6;
 
-      if (es.m.position.distanceTo(sp) < 1.45) {
+      if (es.m.position.distanceTo(sp) < 1.8) {
         hitShip();
         burst3D(es.m.position, '#ff5566', 8, 12, 1);
         es.life = 0; es.m.visible = false;
@@ -1334,7 +1382,7 @@
     var s = st.ship;
     var want = new THREE.Vector3(s.pos.x * 0.92, s.pos.y * 0.9 + 2.5, s.pos.z + 8.6);
     camera.position.lerp(want, 1 - Math.exp(-dt * 5));
-    var look = s.pos.clone().add(new THREE.Vector3(0, 0.4, -14));
+    var look = s.pos.clone().add(new THREE.Vector3(0, 0.3, -18));
     look.lerp(st.aimPoint, 0.18);
     camera.lookAt(look);
     camera.rotation.z += s.roll * 0.24;
@@ -1373,52 +1421,26 @@
     g.clearRect(0, 0, cssW, cssH);
     var u = uiS;
 
-    /* ---- mira (retículo) ---- */
-    var rp = projectToScreen(st.aimPoint);
-    if (!rp.behind) {
-      var col = st.ammo.color || '#7ff5ff';
-      var rad = (13 + st.reticlePulse * 7) * u;
-      g.save();
-      g.translate(rp.x, rp.y);
-      g.strokeStyle = col;
-      g.lineWidth = 2 * u * 0.7;
-      for (var q = 0; q < 2; q++) {
-        g.save();
-        g.rotate((q ? -1 : 1) * st.t * 1.5);
-        g.beginPath();
-        g.arc(0, 0, rad, q ? Math.PI * 0.6 : Math.PI * 0.1, q ? Math.PI * 1.4 : Math.PI * 0.9);
-        g.stroke();
-        g.restore();
-      }
-      g.fillStyle = col;
-      g.beginPath();
-      g.arc(0, 0, 2.4 * u, 0, Math.PI * 2);
-      g.fill();
-      g.globalAlpha = 0.35;
-      g.beginPath();
-      g.arc(0, 0, rad + 5 * u, 0, Math.PI * 2);
-      g.stroke();
-      g.restore();
-    }
-
-    /* ---- barra do boss ---- */
+    /* ---- barra de vida do boss (topo, larga e visível) ---- */
     var b = st.boss;
     if (b) {
-      var bw = Math.min(340 * u, cssW * 0.58), bh = 11 * u;
-      var bx = (cssW - bw) / 2, by = 22 * u;
+      var bw = Math.min(400 * u, cssW * 0.7), bh = 14 * u;
+      var bx = (cssW - bw) / 2, by = 10 * u;
       var phColor = ['#39d98a', '#ffd166', '#ff5d6c'][b.phase - 1];
       g.textAlign = 'center';
       g.font = (8 * u) + 'px "Press Start 2P", monospace';
       g.fillStyle = '#ffb3c2';
-      g.fillText(T('boss.name', 'DEVORADOR ESTELAR'), cssW / 2, by - 6 * u);
-      g.fillStyle = 'rgba(10,4,12,0.8)';
+      g.fillText(T('boss.name', 'DEVORADOR ESTELAR'), cssW / 2, by - 2 * u);
+      /* fundo escuro */
+      g.fillStyle = 'rgba(10,4,12,0.85)';
       g.fillRect(bx, by, bw, bh);
-      /* fantasma branco da vida perdida (escorrega até a vida atual) */
+      /* fantasma branco da vida perdida */
       g.fillStyle = 'rgba(255,255,255,0.35)';
       g.fillRect(bx, by, bw * clamp(b.dispHp / b.maxHp, 0, 1), bh);
+      /* barra de vida */
       g.fillStyle = phColor;
       g.fillRect(bx, by, bw * clamp(b.hp / b.maxHp, 0, 1), bh);
-      g.strokeStyle = 'rgba(255,255,255,0.3)';
+      g.strokeStyle = 'rgba(255,255,255,0.35)';
       g.lineWidth = 1;
       g.strokeRect(bx, by, bw, bh);
       /* marcas das fases (33% e 66%) */
@@ -1447,6 +1469,70 @@
         g.textAlign = 'center';
         g.fillText(shown, cssW / 2, qy + 13.5 * u);
         g.globalAlpha = 1;
+      }
+    }
+
+    /* ---- MIRA: dois arcos ciano no centro (quase formando círculo) ---- */
+    var cx = cssW / 2, cy = cssH / 2;
+    var arcR = 38 * u;
+    var arcLen = Math.PI * 0.42;
+    var arcGap = Math.PI * 0.08;
+    g.save();
+    g.translate(cx, cy);
+    /* arco superior-esquerdo */
+    g.strokeStyle = 'rgba(0,220,255,0.75)';
+    g.lineWidth = 2.5 * u;
+    g.beginPath();
+    g.arc(0, 0, arcR, -Math.PI + arcGap, -Math.PI + arcGap + arcLen);
+    g.stroke();
+    /* arco inferior-direito (oposto) */
+    g.beginPath();
+    g.arc(0, 0, arcR, arcGap, arcGap + arcLen);
+    g.stroke();
+    /* linhas de referência finas */
+    g.strokeStyle = 'rgba(0,220,255,0.25)';
+    g.lineWidth = 1 * u;
+    g.beginPath();
+    g.arc(0, 0, arcR, 0, Math.PI * 2);
+    g.stroke();
+    /* ponto central */
+    g.fillStyle = 'rgba(0,220,255,0.9)';
+    g.beginPath();
+    g.arc(0, 0, 2 * u, 0, Math.PI * 2);
+    g.fill();
+    g.restore();
+
+    /* ---- indicador de posição do boss nos arcos ---- */
+    if (b && st.bossM) {
+      var bp = projectToScreen(st.bossM.grp.position);
+      if (!bp.behind) {
+        var angle = Math.atan2(bp.y - cy, bp.x - cx);
+        var dist = Math.hypot(bp.x - cx, bp.y - cy);
+        /* seta pequena na borda dos arcos apontando para o boss */
+        if (dist > arcR * 0.4) {
+          var indAngle = angle;
+          var indR = arcR + 18 * u;
+          var ix = cx + Math.cos(indAngle) * indR;
+          var iy = cy + Math.sin(indAngle) * indR;
+          var arrowLen = 8 * u;
+          g.save();
+          g.translate(ix, iy);
+          g.rotate(indAngle);
+          g.fillStyle = 'rgba(255,80,100,0.9)';
+          g.beginPath();
+          g.moveTo(arrowLen, 0);
+          g.lineTo(-arrowLen * 0.5, -arrowLen * 0.6);
+          g.lineTo(-arrowLen * 0.5, arrowLen * 0.6);
+          g.closePath();
+          g.fill();
+          /* brilho de alerta */
+          g.strokeStyle = 'rgba(255,80,100,0.35)';
+          g.lineWidth = 1.5 * u;
+          g.beginPath();
+          g.arc(0, 0, arrowLen + 3 * u, 0, Math.PI * 2);
+          g.stroke();
+          g.restore();
+        }
       }
     }
 

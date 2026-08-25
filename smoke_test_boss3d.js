@@ -56,7 +56,7 @@ check('munição finita por composto; STD infinita nunca trava a campanha',
   srcBoss.includes('switchToStd()'));
 check('boss tem modelo próprio com boca devoradora, núcleo e espinhos',
   srcBoss.includes('buildBoss(') && srcBoss.includes('TorusGeometry(2.3') &&
-  srcBoss.includes('ConeGeometry(0.85, 3, 5)'));
+  srcBoss.includes('ConeGeometry(0.85, 3'));
 check('boss nunca fica parado: senoides + investidas por fase',
   srcBoss.includes('Math.sin(b.wob * cfg.wx) * cfg.ax') && srcBoss.includes('dashTo'));
 check('3 fases progressivas (66% / 33% da vida)',
@@ -308,11 +308,11 @@ check('#fx3d-boss existe dentro do canvas-wrap acima do canvas 2D',
   html.includes('<div id="fx3d-boss" class="fx3d" aria-hidden="true"></div>') &&
   html.indexOf('id="fx3d-game"') < html.indexOf('id="fx3d-boss"'));
 check('boss3d.js carregado depois do effects3d.js (THREE disponível)',
-  html.indexOf('effects3d.js?v=20260825b') > -1 &&
-  html.indexOf('effects3d.js?v=20260825b') < html.indexOf('boss3d.js?v=20260825b') &&
-  html.indexOf('boss3d.js?v=20260825b') < html.indexOf('atom3d.js?v=20260825b'));
-check('cache bumpado para 20260825b (15 assets)',
-  (html.match(/\?v=20260825b/g) || []).length === 15 &&
+  html.indexOf('effects3d.js?v=20260825c') > -1 &&
+  html.indexOf('effects3d.js?v=20260825c') < html.indexOf('boss3d.js?v=20260825c') &&
+  html.indexOf('boss3d.js?v=20260825c') < html.indexOf('atom3d.js?v=20260825c'));
+check('cache bumpado para 20260825c (15 assets)',
+  (html.match(/\?v=20260825c/g) || []).length === 15 &&
   !html.includes('?v=20260824f'));
 check('classe .mobile-ui.boss3d-off esconde os botões antigos na batalha 3D',
   css.includes('.mobile-ui.boss3d-off') && css.includes('.mobile-ui.boss3d-off { display: none !important; }'));

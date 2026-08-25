@@ -420,8 +420,8 @@ const css = fs.readFileSync(__dirname + '/style.css', 'utf8');
 const src = fs.readFileSync(__dirname + '/script.js', 'utf8');
 check('#route presente no HTML com opções e título',
   html.includes('id="route"') && html.includes('id="route-options"') && html.includes('id="route-title-text"'));
-check('cache bumpado para 20260825b em todos os assets',
-  html.includes('?v=20260825b') && !html.includes('?v=20260824f') && !html.includes('?v=20260823'));
+check('cache bumpado para 20260825c em todos os assets',
+  html.includes('?v=20260825c') && !html.includes('?v=20260824f') && !html.includes('?v=20260823'));
 check('CSS estiliza painel de rota e cartões de planeta opcional',
   css.includes('.route-panel') && css.includes('.route-btn.route-side') && css.includes('.planet-btn.side'));
 check('overlay route é escondido nas trocas de tela (hideOverhaulOverlays)',
