@@ -1088,7 +1088,8 @@ const S = {
   mouthOpen: false,
   diagT: 0,
   finished: {},
-  resume: {}
+  resume: {},
+  muted: false
 };
 
 const els = {};
@@ -1218,6 +1219,7 @@ function onSlideFullyRevealed() {
 }
 
 function setSpeech(text) {
+  if (S.muted) { els.speech.textContent = ''; S.speechFull = ''; S.speechPos = 0; return; }
   if (!text) { els.speech.textContent = ''; S.speechFull = ''; S.speechPos = 0; return; }
   startTypingSpeech(text);
 }
@@ -1371,6 +1373,13 @@ const Classroom = {
     S.lastT = 0;
     els.lessonTitle.textContent = lesson().label;
     renderSlide(false);
+    /* sincroniza estado de silêncio */
+    if (els.speechCol) els.speechCol.classList.toggle('muted', S.muted);
+    if (els.muteBtn) {
+      els.muteBtn.classList.toggle('muted', S.muted);
+      els.muteBtn.setAttribute('aria-pressed', String(S.muted));
+      els.muteBtn.textContent = S.muted ? '🔊 Habilitar Sérgio' : '🔇 Silenciar Sérgio';
+    }
     if (!S.raf) S.raf = requestAnimationFrame(loop);
   },
 
@@ -1438,6 +1447,25 @@ function bindDom() {
 
   els.blackboard = $('blackboard');
   els.blackboard.addEventListener('click', () => advance());
+
+  /* Silenciar Sérgio — toggle balão de fala */
+  els.speechCol = document.querySelector('#screen-classroom .speech-col');
+  els.muteBtn = $('btn-cls-mute');
+  els.muteBtn.addEventListener('click', () => {
+    sfxClick();
+    S.muted = !S.muted;
+    els.muteBtn.setAttribute('aria-pressed', String(S.muted));
+    els.muteBtn.textContent = S.muted ? '🔊 Habilitar Sérgio' : '🔇 Silenciar Sérgio';
+    els.muteBtn.classList.toggle('muted', S.muted);
+    if (els.speechCol) els.speechCol.classList.toggle('muted', S.muted);
+    if (S.muted) {
+      setSpeech('');
+      els.speech.textContent = '';
+    } else {
+      const sl = slide();
+      if (sl && sl.say && sl.say[S.reveal]) setSpeech(sl.say[S.reveal]);
+    }
+  });
 
   /* Treinamento (dentro de Ligações Covalentes) */
   const openLewis = $('btn-open-lewis');

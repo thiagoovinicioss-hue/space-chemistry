@@ -2650,6 +2650,25 @@ h3 .pix-icon { margin-right: 4px; }
 }
 .classroom-controls .btn-small { font-size: 13px; }
 
+/* Botão Silenciar Sérgio — empurrado para a esquerda */
+.btn-mute-prof { margin-right: auto; }
+.btn-mute-prof.muted {
+  background: rgba(255,80,80,0.25);
+  border-color: rgba(255,80,80,0.6);
+  color: #ff9a9a;
+}
+
+/* Quando silenciado, esconde o balão de fala */
+.speech-col.muted {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) scale(0.9);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.speech-col:not(.muted) {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
 /* Botão de tela cheia do menu */
 .fs-glyph { font-size: 20px; line-height: 1; margin-right: 2px; }
 
@@ -2664,6 +2683,13 @@ h3 .pix-icon { margin-right: 4px; }
     width: auto;
     max-width: none;
     margin: 0 auto;
+  }
+  .speech-col.muted {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
   }
   .speech-bubble { max-height: none; }
   .bubble-tail { display: none; }
