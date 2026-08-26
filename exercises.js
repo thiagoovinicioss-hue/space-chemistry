@@ -1336,19 +1336,6 @@
     /* ===== Fase 6 · SIDE QUEST — Planeta Bueno (covalente avançada) ===== */
     [
       {
-        type: 'structure',
-        instruction: 'Monte a estrutura do GÁS CARBÔNICO (CO₂): toque nos átomos da bandeja e nos círculos. Toque na ligação entre os átomos para torná-la DUPLA (duas linhas).',
-        anchors: [
-          { x: 0.18, y: 0.5, el: 'O' },
-          { x: 0.5, y: 0.5, el: 'C' },
-          { x: 0.82, y: 0.5, el: 'O' }
-        ],
-        bonds: [{ a: 0, b: 1, order: 2 }, { a: 1, b: 2, order: 2 }],
-        tray: ['C', 'O', 'H', 'N'],
-        explain: 'Correto! O=C=O: o carbono no centro compartilha 2 pares com cada oxigênio — DUAS ligações duplas, e todos completam o octeto.',
-        pts: 150
-      },
-      {
         type: 'lewis',
         instruction: 'Monte a Fórmula de Lewis do NITROGÊNIO (N): distribua os 5 elétrons de valência ao redor do símbolo.',
         symbol: 'N',
