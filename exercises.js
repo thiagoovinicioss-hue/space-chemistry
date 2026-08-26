@@ -582,7 +582,7 @@
         return ans;
       },
       grade: function (item, ans) {
-        if (!ans || Object.keys(ans).length !== item.anchors.length) return false;
+        if (!ans || Object.keys(ans).filter(function (k) { return k !== 'bondOrders'; }).length !== item.anchors.length) return false;
         if (!item.anchors.every(function (a, i) { return ans[i] === a.el; })) return false;
         if (item.bonds) {
           var bo = ans.bondOrders || [];
