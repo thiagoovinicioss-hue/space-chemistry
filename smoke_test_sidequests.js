@@ -356,10 +356,10 @@ check('6 questões novas por categoria, com gabarito válido',
     }
     return true;
   })());
-check('EXERCISE_LEVELS[5] com 4 desafios e [6] com 6, estruturas válidas',
+check('EXERCISE_LEVELS[5] com 4 desafios e [6] com 5, estruturas válidas',
   (() => {
     const lists = JSON.parse(run('JSON.stringify([EXERCISE_LEVELS[KINDER_INDEX], EXERCISE_LEVELS[BUENO_INDEX]])'));
-    const expected = [4, 6];
+    const expected = [4, 5];
     for (let li = 0; li < lists.length; li++) {
       const list = lists[li];
       if (!list || list.length !== expected[li]) return false;
@@ -379,10 +379,6 @@ check('EXERCISE_LEVELS[5] com 4 desafios e [6] com 6, estruturas válidas',
           const cap = (it.acceptors || [it.acceptor])
             .reduce((a, acc) => a + (acc.accepts || 1), 0);
           if (cap < it.need || it.donor.valence < it.need) return false;
-        } else if (it.type === 'drag') {
-          const ids = it.items.map(x => x.id);
-          if (Object.keys(it.answerKey).sort().join() !== ids.slice().sort().join()) return false;
-          if (!ids.every(id => it.answerKey[id] >= 0 && it.answerKey[id] < it.slots.length)) return false;
         } else if (it.type === 'structure') {
           if (!it.anchors.every(a => it.tray.indexOf(a.el) >= 0)) return false;
           if (!(it.bonds || []).every(b => b.a < it.anchors.length && b.b < it.anchors.length)) return false;
@@ -420,8 +416,8 @@ const css = fs.readFileSync(__dirname + '/style.css', 'utf8');
 const src = fs.readFileSync(__dirname + '/script.js', 'utf8');
 check('#route presente no HTML com opções e título',
   html.includes('id="route"') && html.includes('id="route-options"') && html.includes('id="route-title-text"'));
-check('cache bumpado para 20260825e em todos os assets',
-  html.includes('?v=20260825e') && !html.includes('?v=20260824f') && !html.includes('?v=20260823'));
+check('cache bumpado para 20260825f em todos os assets',
+  html.includes('?v=20260825f') && !html.includes('?v=20260824f') && !html.includes('?v=20260823'));
 check('CSS estiliza painel de rota e cartões de planeta opcional',
   css.includes('.route-panel') && css.includes('.route-btn.route-side') && css.includes('.planet-btn.side'));
 check('overlay route é escondido nas trocas de tela (hideOverhaulOverlays)',

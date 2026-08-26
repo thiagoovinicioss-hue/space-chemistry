@@ -315,11 +315,11 @@ check('#fx3d-boss existe dentro do canvas-wrap acima do canvas 2D',
   html.includes('<div id="fx3d-boss" class="fx3d" aria-hidden="true"></div>') &&
   html.indexOf('id="fx3d-game"') < html.indexOf('id="fx3d-boss"'));
 check('boss3d.js carregado depois do effects3d.js (THREE disponível)',
-  html.indexOf('effects3d.js?v=20260825e') > -1 &&
-  html.indexOf('effects3d.js?v=20260825e') < html.indexOf('boss3d.js?v=20260825e') &&
-  html.indexOf('boss3d.js?v=20260825e') < html.indexOf('atom3d.js?v=20260825e'));
-check('cache bumpado para 20260825e (15 assets)',
-  (html.match(/\?v=20260825e/g) || []).length === 15 &&
+  html.indexOf('effects3d.js?v=20260825f') > -1 &&
+  html.indexOf('effects3d.js?v=20260825f') < html.indexOf('boss3d.js?v=20260825f') &&
+  html.indexOf('boss3d.js?v=20260825f') < html.indexOf('atom3d.js?v=20260825f'));
+check('cache bumpado para 20260825f (15 assets)',
+  (html.match(/\?v=20260825f/g) || []).length === 15 &&
   !html.includes('?v=20260824f'));
 check('classe .mobile-ui.boss3d-off esconde os botões antigos na batalha 3D',
   css.includes('.mobile-ui.boss3d-off') && css.includes('.mobile-ui.boss3d-off { display: none !important; }'));

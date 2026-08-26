@@ -483,6 +483,7 @@
         x.body.appendChild(x.cv);
         x.state.placements = {};   /* index do âncora -> el */
         x.state.picked = null;
+        x.state.bondOrders = (item.bonds || []).map(function () { return 1; });
         x.cleanup.push(bindPointer(x, {
           up: function (p) { Exercise.structureTap(item, p); }
         }));
@@ -519,14 +520,32 @@
         var pts = item.anchors.map(function (a) { return { x: a.x * W, y: a.y * H }; });
 
         /* Ligações (barras) entre âncoras */
-        (item.bonds || []).forEach(function (b) {
+        (item.bonds || []).forEach(function (b, bi) {
+          var ord = (x.state.bondOrders && x.state.bondOrders[bi]) || 1;
+          var ax = pts[b.a].x, ay = pts[b.a].y;
+          var bx = pts[b.b].x, by = pts[b.b].y;
+          var dx = bx - ax, dy = by - ay;
+          var len = Math.sqrt(dx * dx + dy * dy) || 1;
+          var nx = -dy / len, ny = dx / len;
           ctx.save();
           ctx.strokeStyle = 'rgba(89,211,255,0.6)';
           ctx.lineWidth = 4;
-          ctx.beginPath();
-          ctx.moveTo(pts[b.a].x, pts[b.a].y);
-          ctx.lineTo(pts[b.b].x, pts[b.b].y);
-          ctx.stroke();
+          if (ord >= 2) {
+            var gap = 5;
+            ctx.beginPath();
+            ctx.moveTo(ax + nx * gap, ay + ny * gap);
+            ctx.lineTo(bx + nx * gap, by + ny * gap);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(ax - nx * gap, ay - ny * gap);
+            ctx.lineTo(bx - nx * gap, by - ny * gap);
+            ctx.stroke();
+          } else {
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(bx, by);
+            ctx.stroke();
+          }
           ctx.restore();
         });
 
@@ -555,14 +574,29 @@
           ctx.restore();
         });
       },
-      collect: function (x) { return x.state.placements; },
+      collect: function (x) {
+        var ans = {};
+        var k;
+        for (k in x.state.placements) ans[k] = x.state.placements[k];
+        if (x.state.bondOrders) ans.bondOrders = x.state.bondOrders.slice();
+        return ans;
+      },
       grade: function (item, ans) {
         if (!ans || Object.keys(ans).length !== item.anchors.length) return false;
-        return item.anchors.every(function (a, i) { return ans[i] === a.el; });
+        if (!item.anchors.every(function (a, i) { return ans[i] === a.el; })) return false;
+        if (item.bonds) {
+          var bo = ans.bondOrders || [];
+          return item.bonds.every(function (b, i) {
+            var required = b.order || 1;
+            return (bo[i] || 1) === required;
+          });
+        }
+        return true;
       },
       clear: function (x) {
         x.state.placements = {};
         x.state.badAnchors = null;
+        if (x.state.bondOrders) x.state.bondOrders = x.state.bondOrders.map(function () { return 1; });
         Exercise.refresh();
       },
       hint: function () { return 'Toque em um elemento da bandeja e depois toque em um círculo para posicionar.'; }
@@ -1303,13 +1337,13 @@
     [
       {
         type: 'structure',
-        instruction: 'Monte a estrutura do GÁS CARBÔNICO (CO₂): toque num átomo da bandeja e depois no círculo correspondente. As duas ligações já estão desenhadas.',
+        instruction: 'Monte a estrutura do GÁS CARBÔNICO (CO₂): toque nos átomos da bandeja e nos círculos. Toque na ligação entre os átomos para torná-la DUPLA (duas linhas).',
         anchors: [
           { x: 0.18, y: 0.5, el: 'O' },
           { x: 0.5, y: 0.5, el: 'C' },
           { x: 0.82, y: 0.5, el: 'O' }
         ],
-        bonds: [{ a: 0, b: 1 }, { a: 1, b: 2 }],
+        bonds: [{ a: 0, b: 1, order: 2 }, { a: 1, b: 2, order: 2 }],
         tray: ['C', 'O', 'H', 'N'],
         explain: 'Correto! O=C=O: o carbono no centro compartilha 2 pares com cada oxigênio — DUAS ligações duplas, e todos completam o octeto.',
         pts: 150
@@ -1333,23 +1367,6 @@
           { label: 'L', max: 8, answer: 6 }
         ],
         explain: 'Correto! O: 2-6. Com 6 elétrons de valência, o oxigênio precisa COMPARTILHAR 2 pares (ou receber 2 elétrons) para completar o octeto.',
-        pts: 150
-      },
-      {
-        type: 'drag',
-        instruction: 'Combine cada representação de molécula ao seu tipo arrastando os cartões.',
-        slots: [
-          { label: 'Elétrons como PONTOS' },
-          { label: 'Pares compartilhados como TRAÇOS' },
-          { label: 'Contagem dos átomos' }
-        ],
-        items: [
-          { id: 'lewis', label: 'FÓRMULA DE LEWIS', color: '#ffd166' },
-          { id: 'structural', label: 'FÓRMULA ESTRUTURAL', color: '#59d3ff' },
-          { id: 'molecular', label: 'FÓRMULA MOLECULAR', color: '#ff9df2' }
-        ],
-        answerKey: { lewis: 0, structural: 1, molecular: 2 },
-        explain: 'Correto! Lewis desenha PONTOS (elétrons), a estrutural desenha TRAÇOS (pares compartilhados) e a molecular resume a CONTAGEM (ex.: H₂O).',
         pts: 150
       },
       {
@@ -1705,11 +1722,35 @@
     structureTap: function (item, p) {
       if (this.answered || !this.x) return;
       var s = this.x.state;
+      var W = this.x.W, H = this.x.H;
+
+      if (item.bonds && s.bondOrders) {
+        for (var bi = 0; bi < item.bonds.length; bi++) {
+          var b = item.bonds[bi];
+          var ax = item.anchors[b.a].x * W, ay = item.anchors[b.a].y * H;
+          var bx = item.anchors[b.b].x * W, by = item.anchors[b.b].y * H;
+          var dx = bx - ax, dy = by - ay;
+          var len2 = dx * dx + dy * dy;
+          var t = len2 ? ((p.x - ax) * dx + (p.y - ay) * dy) / len2 : 0;
+          t = Math.max(0, Math.min(1, t));
+          var qx = ax + dx * t, qy = ay + dy * t;
+          var dd = Math.sqrt((p.x - qx) * (p.x - qx) + (p.y - qy) * (p.y - qy));
+          if (dd < 18) {
+            s.bondOrders[bi] = s.bondOrders[bi] >= 2 ? 1 : 2;
+            AudioSys.sfx('click');
+            var nomes = ['', 'Ligação SIMPLES (—)', 'Ligação DUPLA (=)'];
+            this.clearFeedback();
+            this.refresh();
+            return;
+          }
+        }
+      }
+
       var best = -1, bd = 1e9;
       item.anchors.forEach(function (a, i) {
-        var d = dist(p.x, p.y, a.x * this.x.W, a.y * this.x.H);
+        var d = dist(p.x, p.y, a.x * W, a.y * H);
         if (d < 40 && d < bd) { bd = d; best = i; }
-      }, this);
+      });
       if (best >= 0) {
         if (s.picked) {
           s.placements[best] = s.picked;
